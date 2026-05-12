@@ -8,6 +8,8 @@ const ParticleCmds = require('particle-commands');
 const HttpsProxyAgent = require('https-proxy-agent');
 const log = require('../lib/log');
 const settings = require('../../settings');
+const authErrors = require('../lib/auth-errors');
+const { classifyAuthError } = authErrors;
 
 
 module.exports = class ParticleApi {
@@ -536,21 +538,32 @@ module.exports = class ParticleApi {
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
-			.catch(this._checkToken);
+			.catch(err => {
+				const typed = classifyAuthError(err);
+				if (typed) {
+					return Promise.reject(typed);
+				}
+				// Non-auth API error: replace the generic `particle-api-js` message
+				// (e.g. "HTTP error 400 from ...") with the server's `error_description`
+				// or `error` body so callers and the top-level renderer get a useful message.
+				if (err && err instanceof Error) {
+					const body = err.body || {};
+					const extracted = err.shortErrorDescription
+						|| body.error_description
+						|| body.error
+						|| err.errorDescription;
+					if (extracted) {
+						err.message = extracted;
+					}
+				}
+				return Promise.reject(err);
+			});
 	}
 
 	_checkToken(err){
-		const { UnauthorizedError } = module.exports;
-
-		if ([400, 401].includes(err.statusCode)){
-			const { body = {}, errorDescription, shortErrorDescription, } = err;
-			let msg = shortErrorDescription;
-
-			if (!msg){
-				msg = body.error_description || body.error || errorDescription;
-			}
-
-			return Promise.reject(new UnauthorizedError(msg));
+		const typed = classifyAuthError(err);
+		if (typed) {
+			return Promise.reject(typed);
 		}
 		return Promise.reject(err);
 	}
@@ -621,16 +634,14 @@ function getEnvUri({ sandbox, org, productId, deviceId }) {
 	return uri;
 }
 
-module.exports.UnauthorizedError = class UnauthorizedError extends Error {
-	constructor(message){
-		super();
-		this.message = message || 'Invalid access token';
-		this.name = UnauthorizedError.name;
-		if (typeof Error.captureStackTrace === 'function'){
-			Error.captureStackTrace(this, UnauthorizedError);
-		}
-	}
-};
+// Back-compat alias: existing `instanceof UnauthorizedError` checks in container.js
+// keep firing for both InvalidTokenError and MissingTokenError because they extend
+// AuthenticationError.
+module.exports.UnauthorizedError = authErrors.AuthenticationError;
+module.exports.AuthenticationError = authErrors.AuthenticationError;
+module.exports.MissingTokenError = authErrors.MissingTokenError;
+module.exports.InvalidTokenError = authErrors.InvalidTokenError;
+module.exports.MfaRequiredError = authErrors.MfaRequiredError;
 
 module.exports.convertApiError = ParticleCmds.convertApiError;
 

@@ -1,6 +1,12 @@
 'use strict';
 const { expect, sinon } = require('../../test/setup');
 const commandProcessor = require('./command-processor');
+const {
+	AuthenticationError,
+	InvalidTokenError,
+	MissingTokenError,
+	MfaRequiredError
+} = require('../lib/auth-errors');
 
 
 describe('command-line parsing', () => {
@@ -480,5 +486,53 @@ describe('command-line parsing', () => {
 		expect(actual.data).to.eql(expected.data);
 		expect(actual.item).to.eql(expected.item);
 	}
+});
+
+describe('consoleErrorLogger (auth-error rendering)', () => {
+	let fakeConsole;
+	let fakeYargs;
+	const { consoleErrorLogger } = commandProcessor.test;
+
+	beforeEach(() => {
+		fakeConsole = { log: sinon.stub() };
+		fakeYargs = { showHelp: sinon.stub() };
+	});
+
+	function output() {
+		return fakeConsole.log.getCalls().map(c => c.args.join(' ')).join('\n');
+	}
+
+	it('renders the "run particle login" hint for InvalidTokenError', () => {
+		const err = new InvalidTokenError('Your token expired');
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.match(/Your token expired/);
+		expect(output()).to.match(/particle login/);
+	});
+
+	it('renders the "run particle login" hint for MissingTokenError', () => {
+		const err = new MissingTokenError();
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.match(/not logged in|Run.*particle login/);
+		expect(output()).to.match(/particle login/);
+	});
+
+	it('renders the "run particle login" hint for any AuthenticationError subtype except MFA', () => {
+		const err = new AuthenticationError('whatever');
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.match(/particle login/);
+	});
+
+	it('does NOT render the auth hint for MfaRequiredError (login handles it)', () => {
+		const err = new MfaRequiredError({ mfaToken: 'xyz' });
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.not.match(/Run.*particle login.*refresh/);
+	});
+
+	it('renders a generic message for non-auth errors', () => {
+		const err = new Error('Something else broke');
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.match(/Something else broke/);
+		expect(output()).to.not.match(/particle login/);
+	});
 });
 

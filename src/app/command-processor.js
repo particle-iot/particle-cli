@@ -24,6 +24,7 @@ const chalk = require('chalk');
 const VError = require('verror');
 const yargsFactory = require('yargs/yargs');
 const { JSONErrorResult } = require('../lib/json-result');
+const { AuthenticationError, MfaRequiredError } = require('../lib/auth-errors');
 
 // It's important to run yargs in the directory of the script so it picks up options from package.json
 const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
@@ -457,6 +458,12 @@ function consoleErrorLogger(console, yargs, exit, error){
 			console.log(
 				new JSONErrorResult(error).toString()
 			);
+		} else if (error instanceof AuthenticationError && !(error instanceof MfaRequiredError)){
+			console.log(chalk.red('!'), error.message);
+			console.log('  Run', chalk.cyan('particle login'), 'to refresh your access token.');
+			if (!usage && error.stack && verbose){
+				console.log(VError.fullStack(error));
+			}
 		} else {
 			console.log(
 				chalk.red(error.message || stringify(error))

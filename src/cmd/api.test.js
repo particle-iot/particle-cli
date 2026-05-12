@@ -26,7 +26,7 @@ describe('ParticleApi', () => {
 			expect(result).to.deep.equal(expectedDevice);
 		});
 
-		it('routes 401 through _checkToken and produces UnauthorizedError', async () => {
+		it('routes 401 through _checkToken and produces InvalidTokenError', async () => {
 			const apiError = new Error('API Error');
 			apiError.statusCode = 401;
 			apiError.body = { error_description: 'Invalid token' };
@@ -36,7 +36,7 @@ describe('ParticleApi', () => {
 				await particleApi.getDevice({ deviceId: 'abc' });
 				expect.fail('should have thrown');
 			} catch (error) {
-				expect(error.name).to.equal('UnauthorizedError');
+				expect(error.name).to.equal('InvalidTokenError');
 				expect(error.message).to.equal('Invalid token');
 			}
 		});
@@ -130,7 +130,7 @@ describe('ParticleApi', () => {
 				await particleApi.createWebhookWithObj({});
 				expect.fail('should have thrown');
 			} catch (error) {
-				expect(error.name).to.equal('UnauthorizedError');
+				expect(error.name).to.equal('InvalidTokenError');
 			}
 		});
 	});
@@ -239,7 +239,7 @@ describe('ParticleApi', () => {
 				expect.fail('should have thrown an error');
 			} catch (error) {
 				expect(error.message).to.equal('Unauthorized');
-				expect(error.name).to.equal('UnauthorizedError');
+				expect(error.name).to.equal('InvalidTokenError');
 			}
 		});
 	});
@@ -372,8 +372,10 @@ describe('ParticleApi', () => {
 				await particleApi.patchEnv({ sandbox: true, operations });
 				expect.fail('should have thrown an error');
 			} catch (error) {
-				expect(error.message).to.equal('Invalid operation');
-				expect(error.name).to.equal('UnauthorizedError');
+				// 400 is a request-validation error, not an auth error — should pass through unchanged.
+				expect(error.name).to.equal('Error');
+				expect(error.statusCode).to.equal(400);
+				expect(error.body.error_description).to.equal('Invalid operation');
 			}
 		});
 	});
