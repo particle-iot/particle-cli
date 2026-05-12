@@ -5,9 +5,7 @@ const chalk = require('chalk');
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const usbUtils = require('../cmd/usb-util');
-const ParticleApi = require('../cmd/api');
 const settings = require('../../settings');
-const createApiCache = require('../lib/api-cache');
 const { downloadDeviceOsVersionBinaries } = require('../lib/device-os-version-util');
 const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
@@ -372,10 +370,4 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 *
 	 * @returns {Object} The Particle API instance and authentication token.
 	 */
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 };

@@ -1,6 +1,5 @@
 'use strict';
 const fs = require('fs-extra');
-const ParticleApi = require('./api');
 const { ModuleInfo } = require('binary-version-reader');
 const { errors: { usageError } } = require('../app/command-processor');
 const usbUtils = require('./usb-util');
@@ -27,7 +26,6 @@ const {
 	flashFiles,
 	getFileFlashInfo
 } = require('../lib/flash-helper');
-const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
 const QdlFlasher = require('../lib/qdl');
@@ -558,13 +556,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	// Should be part fo CLICommandBase??
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 
 	async _prepareFilesToFlash({ knownApp, parsedFiles, platformId, platformName, target }) {
 		if (knownApp) {

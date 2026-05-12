@@ -24,6 +24,14 @@ class ParticleCache {
 		fs.outputJsonSync(path.join(this.path, `${key}.json`), value);
 	}
 
+	clear() {
+		try {
+			fs.removeSync(this.path);
+		} catch (_err) {
+			// Missing directory is fine.
+		}
+	}
+
 	_generateKey(requestName, options) {
 		return `${requestName}_${hashOptions(options)}`;
 	}

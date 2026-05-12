@@ -2,9 +2,7 @@
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const fs = require('fs-extra');
-const ParticleApi = require('./api');
 const settings = require('../../settings');
-const createApiCache = require('../lib/api-cache');
 const ApiClient = require('../lib/api-client');
 const os = require('os');
 const CloudCommand = require('./cloud');
@@ -297,12 +295,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.ui.write(`${os.EOL}Configuration file written here: ${config.saveConfig}${os.EOL}`);
 	}
 
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 
 	_setupApi() {
 		const { api } = this._particleApi();

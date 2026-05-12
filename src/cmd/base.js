@@ -1,6 +1,7 @@
 'use strict';
 const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
+const { createParticleApi } = require('../lib/api-factory');
 
 const DEVICE_ID_PTN = /^[0-9a-f]{24}$/i;
 
@@ -21,6 +22,10 @@ module.exports = class CLICommandBase {
 
 	isDeviceId(x){
 		return DEVICE_ID_PTN.test(x);
+	}
+
+	_particleApi(){
+		return createParticleApi();
 	}
 
 	async showUsageError(msg){

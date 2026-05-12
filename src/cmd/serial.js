@@ -23,8 +23,6 @@ const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
 const semver = require('semver');
 const { getProtectionStatus, disableDeviceProtection } = require('../lib/device-protection-helper');
-const ParticleApi = require('../cmd/api');
-const createApiCache = require('../lib/api-cache');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
@@ -258,12 +256,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 *
 	 * @returns {Object} The Particle API instance and authentication token.
 	 */
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 
 	/**
 	 * Device identify gives the following
