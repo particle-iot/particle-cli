@@ -11,7 +11,6 @@ const { normalizedApiError } = require('../lib/api-client');
 const utilities = require('../lib/utilities');
 const ensureError = require('../lib/utilities').ensureError;
 const ParticleAPI = require('./api');
-const apiInstance = require('../lib/api-instance');
 const prompts = require('../lib/prompts');
 const CLICommandBase = require('./base');
 
@@ -510,7 +509,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 				this.ui.stdout.write(`${arrow} Successfully completed login!${os.EOL}`);
 				settings.override(null, 'access_token', token);
-				apiInstance.setTokenOnAll(token);
 
 				if (username){
 					settings.override(null, 'username', username);
@@ -576,7 +574,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 			this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(settings.username)}${os.EOL}`);
 			settings.override(null, 'username', null);
 			settings.override(null, 'access_token', null);
-			apiInstance.setTokenOnAll(null);
 		} catch (err) {
 			throw new VError(ensureError(err), 'There was an error revoking the token');
 		}

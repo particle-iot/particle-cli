@@ -8,7 +8,6 @@ const ParticleCmds = require('particle-commands');
 const HttpsProxyAgent = require('https-proxy-agent');
 const log = require('../lib/log');
 const settings = require('../../settings');
-const apiInstance = require('../lib/api-instance');
 
 
 module.exports = class ParticleApi {
@@ -23,11 +22,6 @@ module.exports = class ParticleApi {
 			httpAgent: proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined
 		});
 		this.accessToken = options.accessToken;
-		apiInstance.register(this);
-	}
-
-	setAccessToken(token){
-		this.accessToken = token;
 	}
 
 	// `login` does NOT route through `_wrap`. It rejects with the body shape from

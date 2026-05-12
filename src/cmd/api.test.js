@@ -50,22 +50,6 @@ describe('ParticleApi', () => {
 		});
 	});
 
-	describe('setAccessToken', () => {
-		it('updates this.accessToken', () => {
-			particleApi.setAccessToken('rotated');
-			expect(particleApi.accessToken).to.equal('rotated');
-		});
-
-		it('subsequent calls use the new token', async () => {
-			const stub = sandbox.stub(particleApi.api, 'getDevice').resolves({ body: {} });
-
-			particleApi.setAccessToken('rotated');
-			await particleApi.getDevice({ deviceId: 'abc' });
-
-			expect(stub).to.have.been.calledWithMatch({ auth: 'rotated' });
-		});
-	});
-
 	describe('createAccessToken', () => {
 		it('returns the body and forwards expiresIn as tokenDuration', async () => {
 			const tokenBody = { access_token: 'new-token', expires_in: 3600 };
