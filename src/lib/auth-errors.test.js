@@ -7,7 +7,7 @@ const {
 	InvalidTokenError,
 	MfaRequiredError,
 	classifyAuthError,
-	requireToken
+	wrapClientErrors
 } = require('./auth-errors');
 
 const apiJsMfaRejectionFixture = require(path.resolve(__dirname, '../../test/__fixtures__/api-js-mfa-rejection.json'));
@@ -113,6 +113,16 @@ describe('auth-errors', () => {
 			expect(classifyAuthError({})).to.equal(null);
 		});
 
+		it('classifies a 400 with an "access token" body description as InvalidTokenError', () => {
+			const err = Object.assign(new Error('HTTP error 400'), {
+				statusCode: 400,
+				body: { error_description: 'The access token was not found' }
+			});
+			const typed = classifyAuthError(err);
+			expect(typed).to.be.instanceof(InvalidTokenError);
+			expect(typed.message).to.equal('The access token was not found');
+		});
+
 		it('prefers shortErrorDescription when 401', () => {
 			const err = Object.assign(new Error('API Error'), {
 				statusCode: 401,
@@ -123,21 +133,52 @@ describe('auth-errors', () => {
 		});
 	});
 
-	describe('requireToken', () => {
-		it('throws MissingTokenError when token is undefined', () => {
-			expect(() => requireToken(undefined)).to.throw(MissingTokenError);
+	describe('wrapClientErrors', () => {
+		it('translates a 401 rejection into InvalidTokenError', async () => {
+			const fakeClient = {
+				libraries: () => Promise.reject(Object.assign(new Error('HTTP 401'), {
+					statusCode: 401,
+					body: { error_description: 'Invalid access token' }
+				}))
+			};
+			const wrapped = wrapClientErrors(fakeClient);
+
+			try {
+				await wrapped.libraries({ filter: 'foo' });
+				expect.fail('should have rejected');
+			} catch (err) {
+				expect(err).to.be.instanceof(InvalidTokenError);
+				expect(err.message).to.equal('Invalid access token');
+			}
 		});
 
-		it('throws MissingTokenError when token is empty string', () => {
-			expect(() => requireToken('')).to.throw(MissingTokenError);
+		it('passes non-auth rejections through unchanged', async () => {
+			const underlying = new Error('network down');
+			const fakeClient = { libraries: () => Promise.reject(underlying) };
+			const wrapped = wrapClientErrors(fakeClient);
+
+			try {
+				await wrapped.libraries({});
+				expect.fail('should have rejected');
+			} catch (err) {
+				expect(err).to.equal(underlying);
+			}
 		});
 
-		it('throws MissingTokenError when token is null', () => {
-			expect(() => requireToken(null)).to.throw(MissingTokenError);
+		it('passes successful results through unchanged', async () => {
+			const payload = [{ name: 'lib-a' }];
+			const fakeClient = { libraries: () => Promise.resolve(payload) };
+			const wrapped = wrapClientErrors(fakeClient);
+
+			const result = await wrapped.libraries({});
+			expect(result).to.equal(payload);
 		});
 
-		it('returns silently when token is a non-empty string', () => {
-			expect(() => requireToken('abc')).to.not.throw();
+		it('returns non-function properties unchanged', () => {
+			const fakeClient = { baseUrl: 'https://api.particle.io' };
+			const wrapped = wrapClientErrors(fakeClient);
+			expect(wrapped.baseUrl).to.equal('https://api.particle.io');
 		});
 	});
+
 });

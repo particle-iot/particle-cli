@@ -9,7 +9,7 @@ const HttpsProxyAgent = require('https-proxy-agent');
 const log = require('../lib/log');
 const settings = require('../../settings');
 const authErrors = require('../lib/auth-errors');
-const { classifyAuthError } = authErrors;
+const { classifyAuthError, wrapClientErrors } = authErrors;
 
 
 module.exports = class ParticleApi {
@@ -50,6 +50,19 @@ module.exports = class ParticleApi {
 		return this._wrap(
 			this.api.getUserInfo({ auth: this.accessToken })
 		);
+	}
+
+	/**
+	 * Returns a `particle-api-js` `Client` bound to the current access token. The
+	 * `Client` API is what `particle-commands`' library code consumes; there is no
+	 * `ParticleApi` equivalent because `Client` is a different surface (e.g.
+	 * returns `Library` instances that hold a back-reference to the client).
+	 *
+	 * The token is captured at call time. Construct a fresh client per command
+	 * rather than caching one across login/logout.
+	 */
+	getLibraryClient(){
+		return wrapClientErrors(this.api.client({ auth: this.accessToken }));
 	}
 
 	createAccessToken({ username, password, expiresIn }){
@@ -137,6 +150,45 @@ module.exports = class ParticleApi {
 				auth: this.accessToken
 			})
 		);
+	}
+
+	getClaimCode({ iccid, product } = {}){
+		return this._wrap(
+			this.api.getClaimCode({
+				iccid,
+				product,
+				auth: this.accessToken
+			})
+		);
+	}
+
+	getCurrentAccessToken(){
+		return this._wrap(this.api.get({
+			uri: '/v1/access_tokens/current',
+			auth: this.accessToken
+		}));
+	}
+
+	sendPublicKey({ deviceId, key, algorithm, productId }){
+		// Direct POST instead of `this.api.sendPublicKey()` because particle-api-js
+		// doesn't expose a `product_id` form field, and the CLI needs it for the
+		// `keys send --product_id` flow.
+		const form = {
+			deviceID: deviceId,
+			publicKey: typeof key === 'string' ? key : key.toString(),
+			filename: 'cli',
+			order: `manual_${Date.now()}`,
+			algorithm
+		};
+		if (productId !== undefined){
+			form.product_id = productId;
+		}
+		return this._wrap(this.api.request({
+			uri: `/v1/provisioning/${deviceId}`,
+			method: 'post',
+			auth: this.accessToken,
+			form
+		}));
 	}
 
 	removeDevice({ deviceId, product }){

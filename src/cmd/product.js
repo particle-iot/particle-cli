@@ -1,11 +1,8 @@
 'use strict';
 const os = require('os');
 const fs = require('fs-extra');
-const VError = require('verror');
-const settings = require('../../settings');
 const { errors: { usageError } } = require('../app/command-processor');
-const ParticleAPI = require('./api');
-const { normalizedApiError } = require('../lib/api-client');
+const { createParticleApi } = require('../lib/api-factory');
 const { JSONResult } = require('../lib/json-result');
 const CLICommandBase = require('./base');
 
@@ -96,12 +93,8 @@ module.exports = class ProductCommand extends CLICommandBase {
 		}
 
 		const msg = `Removing device ${deviceID} from product ${product}`;
-		const remove = createAPI()
-			.removeDevice(deviceID, product)
-			.catch(error => {
-				const message = 'Error removing device from product';
-				throw createAPIErrorResult({ error, message, json: false });
-			});
+		const { api } = this._particleApi();
+		const remove = api.removeDevice({ deviceId: deviceID, product });
 
 		return this.ui.showBusySpinnerUntilResolved(msg, remove)
 			.then(() => this.showDeviceRemoveResult({ product, deviceID }));
@@ -113,7 +106,8 @@ module.exports = class ProductCommand extends CLICommandBase {
 
 	showDeviceDetail({ json, params: { product, device } }){
 		const msg = `Fetching device ${device} detail`;
-		const fetchData = createAPI().getDeviceAttributes({ deviceId: device, product });
+		const { api } = this._particleApi();
+		const fetchData = api.getDeviceAttributes({ deviceId: device, product });
 		return (json ? fetchData : this.ui.showBusySpinnerUntilResolved(msg, fetchData))
 			.then(res => {
 				if (json){
@@ -123,10 +117,6 @@ module.exports = class ProductCommand extends CLICommandBase {
 				} else {
 					this.ui.logDeviceDetail(res);
 				}
-			})
-			.catch(error => {
-				const message = 'Error showing product device detail';
-				throw createAPIErrorResult({ error, message, json });
 			});
 	}
 
@@ -135,7 +125,8 @@ module.exports = class ProductCommand extends CLICommandBase {
 			return this.showDeviceDetail({ json, params: { product, device } });
 		}
 		const msg = `Fetching product ${product} device list`;
-		const fetchData = createAPI().listDevices({ product, page, groups, perPage: limit, deviceName: name });
+		const { api } = this._particleApi();
+		const fetchData = api.listDevices({ product, page, groups, perPage: limit, deviceName: name });
 		return (json ? fetchData : this.ui.showBusySpinnerUntilResolved(msg, fetchData))
 			.then(res => {
 				if (json){
@@ -145,22 +136,12 @@ module.exports = class ProductCommand extends CLICommandBase {
 				} else {
 					this.ui.logDeviceDetail(res.devices);
 				}
-			})
-			.catch(error => {
-				const message = 'Error listing product devices';
-				throw createAPIErrorResult({ error, message, json });
 			});
 	}
 };
 
 
 // UTILS //////////////////////////////////////////////////////////////////////
-function createAPI(){
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}
-
 function createJSONResult(page, data){
 	const meta = typeof page === 'number'
 		? { previous: page - 1, current: page, next: page + 1 }
@@ -169,22 +150,12 @@ function createJSONResult(page, data){
 	return new JSONResult(meta, data).toString();
 }
 
-function createAPIErrorResult({ error: e, message, json }){
-	const error = new VError(normalizedApiError(e), message);
-	error.asJSON = json;
-	return error;
-}
-
 function uploadProductDevices(product, identifiers){
 	const file = Buffer.from(identifiers.join('\n'), 'utf8');
 
-	return createAPI()
-		.addDeviceToProduct(null, product, file)
-		.then(status => ({ product, identifiers, status }))
-		.catch(error => {
-			const message = 'Error adding device(s) to product';
-			throw createAPIErrorResult({ error, message, json: false });
-		});
+	const { api } = createParticleApi();
+	return api.addDeviceToProduct({ deviceId: null, product, file })
+		.then(status => ({ product, identifiers, status }));
 }
 
 function readDeviceListFile(file){
@@ -230,4 +201,3 @@ function hasDeviceIdentifier(x = '', ids = []){
 function dedupeAndStringifyIDList(array){
 	return `  ${[...new Set(array)].join(`${os.EOL}  `)}`;
 }
-

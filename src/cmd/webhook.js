@@ -2,9 +2,8 @@
 const fs = require('fs');
 const VError = require('verror');
 const inquirer = require('inquirer');
-const settings = require('../../settings');
 const CLICommandBase = require('./base');
-const { requireToken } = require('../lib/auth-errors');
+const { requireToken } = require('../lib/api-call');
 const { tryParse, getFilenameExt, asyncMapSeries } = require('../lib/utilities');
 
 
@@ -22,7 +21,7 @@ module.exports = class WebhookCommand extends CLICommandBase {
 	}
 
 	_createHook({ eventName, url, deviceID, requestType }) {
-		requireToken(settings.access_token);
+		requireToken();
 		const { api } = this._particleApi();
 
 		// if they gave us one thing, and it happens to be a file, and we could parse it as json
@@ -70,7 +69,7 @@ module.exports = class WebhookCommand extends CLICommandBase {
 	}
 
 	async deleteHook({ hookId }) {
-		requireToken(settings.access_token);
+		requireToken();
 		const { api } = this._particleApi();
 
 		if (hookId === 'all') {
@@ -94,7 +93,7 @@ module.exports = class WebhookCommand extends CLICommandBase {
 	}
 
 	async listHooks() {
-		requireToken(settings.access_token);
+		requireToken();
 		const { api } = this._particleApi();
 
 		const hooks = await api.listWebhooks();

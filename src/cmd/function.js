@@ -1,12 +1,6 @@
 'use strict';
 const os = require('os');
-const VError = require('verror');
-const ParticleAPI = require('./api');
-const LegacyApiClient = require('../lib/api-client');
-const settings = require('../../settings');
 const CLICommandBase = require('./base');
-
-const { normalizedApiError } = LegacyApiClient;
 
 
 module.exports = class FunctionCommand extends CLICommandBase {
@@ -15,14 +9,19 @@ module.exports = class FunctionCommand extends CLICommandBase {
 	}
 
 	listFunctions(){
-		const api = new LegacyApiClient();
-		api.ensureToken();
+		const { api } = this._particleApi();
 
-		return api.getAllAttributes()
-			.then(devices => this.ui.logDeviceDetail(devices, { fnsOnly: true }))
-			.catch(err => {
-				throw new VError(normalizedApiError(err), 'Error while listing variables');
-			});
+		return api.listDevices()
+			.then(devices => {
+				if (!devices || devices.length === 0){
+					throw new Error('No devices found');
+				}
+				return Promise.all(devices.map(d =>
+					d.connected ? api.getDeviceAttributes({ deviceId: d.id }) : Promise.resolve(d)
+				));
+			})
+			.then(devices => devices.sort((a, b) => (a.name || '').localeCompare(b.name)))
+			.then(devices => this.ui.logDeviceDetail(devices, { fnsOnly: true }));
 	}
 
 	callFunction({ product, params: { device, function: fn, argument: arg } }){
@@ -38,7 +37,8 @@ module.exports = class FunctionCommand extends CLICommandBase {
 			msg += ` in product ${product}`;
 		}
 
-		const fetchVar = createAPI().callFunction({ deviceId: device, name: fn, argument: arg, product });
+		const { api } = this._particleApi();
+		const fetchVar = api.callFunction({ deviceId: device, name: fn, argument: arg, product });
 		return this.ui.showBusySpinnerUntilResolved(msg, fetchVar)
 			.then(res => {
 				if (!res || !Object.prototype.hasOwnProperty.call(res, 'return_value')){
@@ -47,27 +47,16 @@ module.exports = class FunctionCommand extends CLICommandBase {
 				this.ui.stdout.write(`${res.return_value}${os.EOL}`);
 			})
 			.catch(error => {
-				let message = `Error calling function: \`${fn}\``;
-
 				if (error && error.statusCode === 404){
-					message = `Function call failed: Function \`${fn}\` not found`;
+					throw new Error(`Function call failed: Function \`${fn}\` not found`);
 				}
-				throw createAPIErrorResult({ error, message });
+				// The API can resolve with `{ok: false, error: '...'}` for some
+				// failure modes (which `then` re-throws as-is). Convert to a real
+				// Error so the top-level handler can render a message.
+				if (error && !(error instanceof Error) && error.error){
+					throw new Error(error.error);
+				}
+				throw error;
 			});
 	}
 };
-
-// UTILS //////////////////////////////////////////////////////////////////////
-function createAPI(){
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}
-
-function createAPIErrorResult({ error: e, message, json }){
-	const error = new VError(normalizedApiError(e), message);
-	error.asJSON = json;
-	return error;
-}
-
-

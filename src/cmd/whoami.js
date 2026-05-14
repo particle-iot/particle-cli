@@ -3,7 +3,7 @@ const chalk = require('chalk');
 const settings = require('../../settings');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
-const { requireToken } = require('../lib/auth-errors');
+const { requireToken } = require('../lib/api-call');
 
 const arrow = chalk.green('>');
 
@@ -15,7 +15,7 @@ module.exports = class WhoAmICommand extends CLICommandBase {
 	}
 
 	async getUsername() {
-		requireToken(settings.access_token);
+		requireToken();
 
 		const { api } = this._particleApi();
 

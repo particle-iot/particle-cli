@@ -79,7 +79,7 @@ describe('Variable Command', () => {
 			}
 
 			expect(error).to.an.instanceof(Error);
-			expect(error).to.have.property('message', 'Error while monitoring variable: whoops!');
+			expect(error).to.have.property('message', 'whoops!');
 		});
 	});
 });

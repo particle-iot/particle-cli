@@ -77,7 +77,7 @@ describe('Function Command', () => {
 					throw new Error('expected promise to be rejected');
 				})
 				.catch(error => {
-					expect(error).to.have.property('message', `Error calling function: \`${fn}\`: Function fn not found`);
+					expect(error).to.have.property('message', 'Function fn not found');
 				});
 		});
 	});

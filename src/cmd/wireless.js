@@ -2,7 +2,7 @@
 const _ = require('lodash');
 const util = require('util');
 const WiFiManager = require('../lib/wifi-manager');
-const ApiClient = require('../lib/api-client');
+const { createParticleApi } = require('../lib/api-factory');
 const settings = require('../../settings');
 const inquirer = require('inquirer');
 const prompt = inquirer.prompt;
@@ -55,7 +55,8 @@ module.exports = class WirelessCommand {
 
 		this.sap = new SAP();
 		this.manual = false;
-		this.api = new ApiClient();
+		const { api } = createParticleApi();
+		this.api = api;
 		this.prompt = prompt;
 	}
 
@@ -914,7 +915,7 @@ module.exports = class WirelessCommand {
 			self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
 
 			setTimeout(() => {
-				self.api.listDevices({ silent: true }).then((body) => {
+				self.api.listDevices().then((body) => {
 					checkDevices(null, body);
 				}, (error) => {
 					checkDevices(error);
@@ -969,7 +970,7 @@ module.exports = class WirelessCommand {
 
 			function recheck(ans) {
 				if (ans.recheck === 'recheck') {
-					self.api.listDevices({ silent: true }).then((body) => {
+					self.api.listDevices().then((body) => {
 						checkDevices(null, body);
 					}, (error) => {
 						checkDevices(error);

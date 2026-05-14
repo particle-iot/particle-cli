@@ -1,5 +1,6 @@
 'use strict';
-const { AuthenticationError } = require('./auth-errors');
+const settings = require('../../settings');
+const { AuthenticationError, MissingTokenError } = require('./auth-errors');
 
 /**
  * Run `fn()`; if it rejects with an `AuthenticationError`, return `fallback`
@@ -21,6 +22,22 @@ async function optionalApiCall(fn, fallback) {
 	}
 }
 
+/**
+ * Pre-flight check for commands that require authentication. Throws
+ * `MissingTokenError` if no token is configured.
+ *
+ * Defaults to `settings.access_token` so call sites don't have to thread it
+ * through. Pass an explicit token only when validating one that isn't (yet)
+ * the persisted value (e.g. `login --token` verifying a user-supplied value
+ * before persisting, or unit tests).
+ */
+function requireToken(token = settings.access_token) {
+	if (!token) {
+		throw new MissingTokenError();
+	}
+}
+
 module.exports = {
-	optionalApiCall
+	optionalApiCall,
+	requireToken
 };

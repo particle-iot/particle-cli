@@ -1,6 +1,8 @@
 'use strict';
+const sinon = require('sinon');
 const { expect } = require('../../test/setup');
-const { optionalApiCall } = require('./api-call');
+const settings = require('../../settings');
+const { optionalApiCall, requireToken } = require('./api-call');
 const { AuthenticationError, InvalidTokenError, MissingTokenError } = require('./auth-errors');
 
 describe('api-call', () => {
@@ -56,6 +58,44 @@ describe('api-call', () => {
 				caught = err;
 			}
 			expect(caught).to.be.instanceof(TypeError);
+		});
+	});
+
+	describe('requireToken', () => {
+		let sandbox;
+
+		beforeEach(() => {
+			sandbox = sinon.createSandbox();
+		});
+
+		afterEach(() => {
+			sandbox.restore();
+		});
+
+		it('throws MissingTokenError when token is undefined', () => {
+			expect(() => requireToken(undefined)).to.throw(MissingTokenError);
+		});
+
+		it('throws MissingTokenError when token is empty string', () => {
+			expect(() => requireToken('')).to.throw(MissingTokenError);
+		});
+
+		it('throws MissingTokenError when token is null', () => {
+			expect(() => requireToken(null)).to.throw(MissingTokenError);
+		});
+
+		it('returns silently when token is a non-empty string', () => {
+			expect(() => requireToken('abc')).to.not.throw();
+		});
+
+		it('defaults to settings.access_token when called without args', () => {
+			sandbox.stub(settings, 'access_token').value('persisted-token');
+			expect(() => requireToken()).to.not.throw();
+		});
+
+		it('throws MissingTokenError when called without args and settings.access_token is empty', () => {
+			sandbox.stub(settings, 'access_token').value('');
+			expect(() => requireToken()).to.throw(MissingTokenError);
 		});
 	});
 });
