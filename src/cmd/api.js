@@ -26,15 +26,8 @@ module.exports = class ParticleApi {
 		this.accessToken = options.accessToken;
 	}
 
-	// `login` does NOT route through `_wrap`. It rejects with the body shape from
-	// `particle-api-js` (top-level `error`, `error_description`, `mfa_token`),
-	// which `cloud.js` reads directly. Changing this would break those reads.
 	login(username, password){
-		return this.api.login({ username: username, password: password })
-			.then(result => {
-				this.accessToken = result.body.access_token;
-				return this.accessToken;
-			});
+		return this._wrap(this.api.login({ username, password }));
 	}
 
 	async deleteCurrentAccessToken(){
@@ -59,20 +52,16 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	// Like `login` (above), this does NOT route through `_wrap`. Callers depend on
-	// the body-shaped rejection (top-level `error`, `error_description`, `mfa_token`).
 	createAccessToken({ username, password, expiresIn }){
-		return this.api.login({
+		return this._wrap(this.api.login({
 			username,
 			password,
 			tokenDuration: expiresIn
-		}).then(result => result.body);
+		}));
 	}
 
-	// Same envelope contract as `createAccessToken`.
 	sendOtp({ mfaToken, otp }){
-		return this.api.sendOtp({ mfaToken, otp })
-			.then(result => result.body);
+		return this._wrap(this.api.sendOtp({ mfaToken, otp }));
 	}
 
 	createWebhookWithObj(obj){

@@ -6,13 +6,13 @@ const prompt = require('inquirer').prompt;
 
 const settings = require('../../settings');
 const deviceSpecs = require('../lib/device-specs');
-const ApiClient = require('../lib/api-client'); // TODO (mirande): remove in favor of `ParticleAPI`
 const { normalizedApiError } = require('../lib/api-client');
 const utilities = require('../lib/utilities');
 const ensureError = require('../lib/utilities').ensureError;
 const ParticleAPI = require('./api');
 const prompts = require('../lib/prompts');
 const CLICommandBase = require('./base');
+const { MfaRequiredError, requireToken } = require('../lib/auth-errors');
 
 const fs = require('fs-extra');
 const path = require('path');
@@ -292,7 +292,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files }) {
 		let targetVersion, assets, env;
 
-		ensureAPIToken();
+		requireToken(settings.access_token);
 
 		if (target) {
 			if (target === 'latest') {
@@ -474,7 +474,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 			.then(credentials => {
 				const { token, username, password, sso } = credentials;
 				const msg = 'Sending login details...';
-				const api = new ApiClient(null, token);
 
 				this._usernameProvided = username;
 
@@ -490,15 +489,17 @@ module.exports = class CloudCommand extends CLICommandBase {
 				}
 
 				if (token){
-					return this.ui.showBusySpinnerUntilResolved(msg, api.getUser())
+					const { api } = this._particleApi({ accessToken: token });
+					return this.ui.showBusySpinnerUntilResolved(msg, api.getUserInfo())
 						.then(response => ({ token, username: response.username }));
 				}
-				const login = api.login(settings.clientId, username, password);
+				const { api } = this._particleApi();
+				const login = api.login(username, password);
 				return this.ui.showBusySpinnerUntilResolved(msg, login)
 					.catch((error) => {
-						if (error.error === 'mfa_required'){
+						if (error instanceof MfaRequiredError){
 							this.tries = 0;
-							return this.enterOtp({ otp, mfaToken: error.mfa_token, shouldRetry });
+							return this.enterOtp({ otp, mfaToken: error.mfaToken, shouldRetry });
 						}
 						throw error;
 					})
@@ -521,7 +522,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			})
 			.catch(error => {
 				this.ui.stdout.write(`${alert} There was an error logging you in! ${shouldRetry ? "Let's try again." : ''}${os.EOL}`);
-				this.ui.stderr.write(`${alert} ${error.message || error.error_description}${os.EOL}`);
+				this.ui.stderr.write(`${alert} ${error.message}${os.EOL}`);
 				this.tries = (this.tries || 0) + 1;
 
 				if (shouldRetry && this.tries < 3){
@@ -546,14 +547,14 @@ module.exports = class CloudCommand extends CLICommandBase {
 			})
 			.then(_otp => {
 				otp = _otp;
-				const api = new ApiClient();
+				const { api } = this._particleApi();
 				const msg = 'Sending login code...';
-				const sendOtp = api.sendOtp(settings.clientId, mfaToken, otp);
+				const sendOtp = api.sendOtp({ mfaToken, otp });
 				return this.ui.showBusySpinnerUntilResolved(msg, sendOtp);
 			})
 			.catch(error => {
 				this.ui.stdout.write(`${alert} This login code didn't work. ${shouldRetry ? "Let's try again." : ''}${os.EOL}`);
-				this.ui.stderr.write(`${alert} ${error.message || error.error_description}${os.EOL}`);
+				this.ui.stderr.write(`${alert} ${error.message}${os.EOL}`);
 				this.tries = (this.tries || 0) + 1;
 
 				if (shouldRetry && this.tries < 3){
@@ -582,8 +583,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 	getAllDeviceAttributes(filter) {
 		const { buildDeviceFilter } = utilities;
-		const api = new ApiClient();
-		api.ensureToken();
+		requireToken(settings.access_token);
+		const { api } = this._particleApi();
 
 		const filterFunc = buildDeviceFilter(filter);
 
@@ -604,7 +605,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 						if (device.connected){
 							promises.push(
-								api.getAttributes(device.id)
+								api.getDeviceAttributes({ deviceId: device.id })
 									.then(attrs => extend(device, attrs))
 							);
 						} else {
@@ -622,7 +623,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 						}));
 				}
 			}).catch(err => {
-				throw api.normalizedApiError(err);
+				throw normalizedApiError(err);
 			});
 	}
 
@@ -904,11 +905,4 @@ function formatAPIErrorMessage(error){
 	}
 
 	return error;
-}
-
-// TODO (mirande): refactor cmd/api.js to do this check by default when appropriate
-function ensureAPIToken(){
-	if (!settings.access_token){
-		throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle login')} before using this command`);
-	}
 }

@@ -24,8 +24,8 @@ module.exports = class CLICommandBase {
 		return DEVICE_ID_PTN.test(x);
 	}
 
-	_particleApi(){
-		return createParticleApi();
+	_particleApi(opts){
+		return createParticleApi(opts);
 	}
 
 	async showUsageError(msg){

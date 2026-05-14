@@ -4,7 +4,7 @@ const settings = require('../../settings');
 const prompts = require('../lib/prompts');
 const CloudCommand = require('./cloud');
 const CLICommandBase = require('./base');
-const { classifyAuthError, MfaRequiredError } = require('../lib/auth-errors');
+const { MfaRequiredError } = require('../lib/auth-errors');
 
 
 module.exports = class AccessTokenCommands extends CLICommandBase {
@@ -87,12 +87,12 @@ module.exports = class AccessTokenCommands extends CLICommandBase {
 		try {
 			result = await api.createAccessToken({ username, password, expiresIn });
 		} catch (error) {
-			const typed = classifyAuthError(error);
-			if (typed instanceof MfaRequiredError) {
+			if (error instanceof MfaRequiredError) {
 				const cloud = new CloudCommand();
-				return cloud.enterOtp({ mfaToken: typed.mfaToken });
+				result = await cloud.enterOtp({ mfaToken: error.mfaToken });
+			} else {
+				throw error;
 			}
-			throw typed || error;
 		}
 
 		if (result.expires_in) {

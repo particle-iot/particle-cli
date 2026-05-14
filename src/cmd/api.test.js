@@ -63,17 +63,19 @@ describe('ParticleApi', () => {
 			expect(result).to.deep.equal(tokenBody);
 		});
 
-		it('preserves the MFA rejection envelope (does not route through _wrap)', async () => {
-			const mfaError = { error: 'mfa_required', mfa_token: 'mfa-xyz' };
+		it('routes MFA rejection through _wrap and produces MfaRequiredError', async () => {
+			const mfaError = Object.assign(new Error('HTTP error 403'), {
+				statusCode: 403,
+				body: { error: 'mfa_required', mfa_token: 'mfa-xyz' }
+			});
 			sandbox.stub(particleApi.api, 'login').rejects(mfaError);
 
 			try {
 				await particleApi.createAccessToken({ username: 'u', password: 'p' });
 				expect.fail('should have rejected');
 			} catch (err) {
-				expect(err.error).to.equal('mfa_required');
-				expect(err.mfa_token).to.equal('mfa-xyz');
-				expect(err.name).to.not.equal('UnauthorizedError');
+				expect(err.name).to.equal('MfaRequiredError');
+				expect(err.mfaToken).to.equal('mfa-xyz');
 			}
 		});
 	});
@@ -89,16 +91,19 @@ describe('ParticleApi', () => {
 			expect(result).to.deep.equal(tokenBody);
 		});
 
-		it('preserves error envelope (does not route through _wrap)', async () => {
-			const otpError = { error: 'invalid_grant', error_description: 'OTP expired' };
+		it('routes a wrong-OTP rejection through _wrap and surfaces the server description', async () => {
+			const otpError = Object.assign(new Error('HTTP error 400'), {
+				statusCode: 400,
+				body: { error: 'invalid_grant', error_description: 'OTP expired' }
+			});
 			sandbox.stub(particleApi.api, 'sendOtp').rejects(otpError);
 
 			try {
 				await particleApi.sendOtp({ mfaToken: 'm', otp: 'wrong' });
 				expect.fail('should have rejected');
 			} catch (err) {
-				expect(err.error_description).to.equal('OTP expired');
-				expect(err.name).to.not.equal('UnauthorizedError');
+				expect(err.message).to.equal('OTP expired');
+				expect(err.name).to.equal('Error');
 			}
 		});
 	});

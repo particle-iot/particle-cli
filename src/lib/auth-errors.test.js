@@ -1,4 +1,5 @@
 'use strict';
+const path = require('path');
 const { expect } = require('../../test/setup');
 const {
 	AuthenticationError,
@@ -8,6 +9,8 @@ const {
 	classifyAuthError,
 	requireToken
 } = require('./auth-errors');
+
+const apiJsMfaRejectionFixture = require(path.resolve(__dirname, '../../test/__fixtures__/api-js-mfa-rejection.json'));
 
 describe('auth-errors', () => {
 	describe('class hierarchy', () => {
@@ -74,6 +77,16 @@ describe('auth-errors', () => {
 			const typed = classifyAuthError(err);
 			expect(typed).to.be.instanceof(MfaRequiredError);
 			expect(typed.mfaToken).to.equal('mfa-top');
+		});
+
+		it('classifies the real particle-api-js MFA rejection envelope as MfaRequiredError', () => {
+			const { _comment, message, ...props } = apiJsMfaRejectionFixture;
+			const err = Object.assign(new Error(message), props);
+
+			const typed = classifyAuthError(err);
+
+			expect(typed).to.be.instanceof(MfaRequiredError);
+			expect(typed.mfaToken).to.equal('mfa_token_fixture_abc123');
 		});
 
 		it('returns null for HTTP 403 (not an auth-class error)', () => {

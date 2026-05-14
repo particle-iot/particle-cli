@@ -4,6 +4,7 @@ const settings = require('../../settings');
 const ParticleApi = require('./api');
 const AccessTokenCommands = require('./token');
 const CloudCommand = require('./cloud');
+const { MfaRequiredError } = require('../lib/auth-errors');
 
 describe('AccessTokenCommands', () => {
 	const sandbox = sinon.createSandbox();
@@ -58,16 +59,19 @@ describe('AccessTokenCommands', () => {
 	});
 
 	describe('createAccessToken', () => {
-		it('detects MFA via typed error and routes to enterOtp', async () => {
+		it('detects MFA via typed error, routes to enterOtp, and prints the resulting token', async () => {
 			const cmd = new AccessTokenCommands();
 			sandbox.stub(cmd, 'getCredentials').resolves({ username: 'u', password: 'p' });
-			const mfaErr = { error: 'mfa_required', mfa_token: 'mfa-xyz' };
-			sandbox.stub(ParticleApi.prototype, 'createAccessToken').rejects(mfaErr);
-			const enterOtpStub = sandbox.stub(CloudCommand.prototype, 'enterOtp').resolves();
+			sandbox.stub(ParticleApi.prototype, 'createAccessToken')
+				.rejects(new MfaRequiredError({ mfaToken: 'mfa-xyz' }));
+			const enterOtpStub = sandbox.stub(CloudCommand.prototype, 'enterOtp')
+				.resolves({ access_token: 'mfa-issued-token', expires_in: 7200 });
 
 			await cmd.createAccessToken({ expiresIn: 3600 });
 
 			expect(enterOtpStub).to.have.been.calledWith(sinon.match({ mfaToken: 'mfa-xyz' }));
+			expect(logStub).to.have.been.calledWithMatch(/expires on/);
+			expect(logStub).to.have.been.calledWithMatch(/mfa-issued-token/);
 		});
 
 		it('prints the access token + expiry on success', async () => {

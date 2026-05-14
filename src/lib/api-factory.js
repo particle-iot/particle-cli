@@ -10,11 +10,14 @@ const ApiCache = require('./api-cache');
  *   - `auth`: the access token at the moment of construction (kept for callers that need
  *      to pass it through to lower-level helpers).
  *
+ * Pass `{ accessToken }` to override the persisted token — used by the `login --token`
+ * flow which verifies a user-supplied token before persisting it.
+ *
  * Callers should not new up `ApiCache` or `ParticleApi` directly — use this so the
  * construction shape stays consistent across the codebase.
  */
-function createParticleApi() {
-	const auth = settings.access_token;
+function createParticleApi({ accessToken } = {}) {
+	const auth = accessToken !== undefined ? accessToken : settings.access_token;
 	const api = new ApiCache(settings.apiUrl, { accessToken: auth });
 	return { api, auth };
 }
