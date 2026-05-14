@@ -1,11 +1,10 @@
 'use strict';
-const settings = require('../../settings');
 const utilities = require('../lib/utilities');
 
 function usbCommand() {
 	if (!usbCommand._instance) {
 		const UsbCommand = require('../cmd/usb');
-		usbCommand._instance = new UsbCommand(settings);
+		usbCommand._instance = new UsbCommand();
 	}
 	return usbCommand._instance;
 }
