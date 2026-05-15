@@ -7,6 +7,7 @@ const path = require('node:path');
 const { URL } = require('node:url');
 const readline = require('node:readline');
 const fetch = require('node-fetch');
+const { getProxyAgent } = require('./lib/http-proxy');
 const pkg = require('../package.json');
 
 const PARTICLE_CONFIG_DIR = path.join(os.homedir(), '.particle');
@@ -37,10 +38,12 @@ const PARTICLE_API_URL = 'https://api.particle.io';
  * @returns {Promise<boolean>}
  */
 async function isTokenValid(apiHost, config) {
-	const res = await fetch(`https://${apiHost}/v1/access_tokens/current`, {
+	const url = `https://${apiHost}/v1/access_tokens/current`;
+	const res = await fetch(url, {
 		headers: {
 			Authorization: `Bearer ${config.access_token}`
-		}
+		},
+		agent: getProxyAgent(url)
 	});
 	return res.ok;
 }
