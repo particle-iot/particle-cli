@@ -10,8 +10,8 @@ const utilities = require('../lib/utilities');
 const ensureError = require('../lib/utilities').ensureError;
 const prompts = require('../lib/prompts');
 const CLICommandBase = require('./base');
-const { MfaRequiredError } = require('../lib/auth-errors');
-const { requireToken } = require('../lib/api-call');
+const { MfaRequiredError, AuthenticationError } = require('../lib/auth-errors');
+const { requireToken, setActiveAccessToken, clearActiveAccessToken } = require('../lib/api-call');
 
 const fs = require('fs-extra');
 const path = require('path');
@@ -454,6 +454,10 @@ module.exports = class CloudCommand extends CLICommandBase {
 				}
 
 				if (token){
+					// `--token` flow: caller supplied the token; we don't know
+					// its expiry. Leave `access_token_expires_at` untouched
+					// (expiresIn omitted) and let `verifyFreshTokenMiddleware`
+					// discover it on the next auth-required command.
 					const { api } = this._particleApi({ accessToken: token });
 					return this.ui.showBusySpinnerUntilResolved(msg, api.getUserInfo())
 						.then(response => ({ token, username: response.username }));
@@ -468,13 +472,13 @@ module.exports = class CloudCommand extends CLICommandBase {
 						}
 						throw error;
 					})
-					.then(body => ({ token: body.access_token, username }));
+					.then(body => ({ token: body.access_token, expiresIn: body.expires_in, username }));
 			})
 			.then(credentials => {
-				const { token, username } = credentials;
+				const { token, expiresIn, username } = credentials;
 
 				this.ui.stdout.write(`${arrow} Successfully completed login!${os.EOL}`);
-				settings.override(null, 'access_token', token);
+				setActiveAccessToken({ token, expiresIn });
 
 				if (username){
 					settings.override(null, 'username', username);
@@ -538,12 +542,18 @@ module.exports = class CloudCommand extends CLICommandBase {
 		try {
 			const { api } = this._particleApi();
 			await api.deleteCurrentAccessToken();
-			this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(settings.username)}${os.EOL}`);
-			settings.override(null, 'username', null);
-			settings.override(null, 'access_token', null);
 		} catch (err) {
-			throw new VError(ensureError(err), 'There was an error revoking the token');
+			// If the server already considers the token gone (revoked or
+			// expired), that's the desired end state — don't surface it as
+			// an error. Any other failure (network, 500, etc.) still throws.
+			if (!(err instanceof AuthenticationError)) {
+				throw new VError(ensureError(err), 'There was an error revoking the token');
+			}
 		}
+
+		this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(settings.username)}${os.EOL}`);
+		settings.override(null, 'username', null);
+		clearActiveAccessToken();
 	}
 
 

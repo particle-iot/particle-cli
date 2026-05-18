@@ -32,6 +32,7 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true
 			}
 		},
+		authRequired: true,
 		handler: (args) => {
 			const EnvCommands = require('../cmd/env');
 			return new EnvCommands(args).list(args);
@@ -46,6 +47,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(env, 'set', 'Set an environment variable', {
 		params: '<name> [value]',
+		authRequired: true,
 		handler: (args) => {
 			const EnvCommands = require('../cmd/env');
 			return new EnvCommands(args).setEnv(args);
@@ -61,6 +63,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(env, 'delete', 'Delete an environment variable', {
 		params: '<name>',
+		authRequired: true,
 		handler: (args) => {
 			const EnvCommands = require('../cmd/env');
 			return new EnvCommands(args).deleteEnv(args);
@@ -94,6 +97,7 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true
 			}
 		},
+		authRequired: true,
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).list(args);
@@ -106,6 +110,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(secret, 'get', 'Get a specific secret',{
 		params: '<name>',
+		authRequired: true,
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).get(args);
@@ -118,6 +123,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(secret, 'set', 'Set a secret', {
 		params: '<name> [value]',
+		authRequired: true,
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).set(args);
@@ -132,6 +138,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(secret, 'delete', 'Delete a specific secret',{
 		params: '<name>',
+		authRequired: true,
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).deleteSecret(args);

@@ -6,6 +6,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(webhook, 'create', 'Creates a postback to the given url when your event is sent', {
 		params: '<eventName|filename> [url] [device] [requestType]',
+		authRequired: true,
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
 			return new WebhookCommand().createHook(args.params);
@@ -36,6 +37,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(webhook, 'list', 'Show your current Webhooks', {
+		authRequired: true,
 		handler: () => {
 			const WebhookCommand = require('../cmd/webhook');
 			return new WebhookCommand().listHooks();
@@ -44,6 +46,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(webhook, 'delete', 'Deletes a Webhook', {
 		params: '<hookId>',
+		authRequired: true,
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
 			return new WebhookCommand().deleteHook(args.params);
@@ -56,6 +59,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(webhook, 'POST', 'Create a new POST request hook', {
 		params: '<eventName> <url> [device]',
+		authRequired: true,
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
 			return new WebhookCommand().createPOSTHook(args.params);
@@ -64,6 +68,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(webhook, 'GET', 'Create a new GET request hook', {
 		params: '<eventName> <url> [device]',
+		authRequired: true,
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
 			return new WebhookCommand().createGETHook(args.params);

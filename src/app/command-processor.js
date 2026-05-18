@@ -24,11 +24,49 @@ const chalk = require('chalk');
 const VError = require('verror');
 const yargsFactory = require('yargs/yargs');
 const { JSONErrorResult } = require('../lib/json-result');
-const { AuthenticationError, MfaRequiredError, MissingTokenError } = require('../lib/auth-errors');
+const { AuthenticationError, MfaRequiredError, MissingTokenError, InvalidTokenError } = require('../lib/auth-errors');
+const { verifyFreshTokenMiddleware, clearActiveAccessToken } = require('../lib/api-call');
 
 // It's important to run yargs in the directory of the script so it picks up options from package.json
 const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
 Yargs.$0 = 'particle';
+
+
+/**
+ * Pre-flight + post-flight auth middleware around a command handler.
+ *
+ * Pre-flight runs `verifyFreshTokenMiddleware` only when the command spec
+ * opts in via `authRequired: true`. Threshold is `tokenExpiryThresholdMs`
+ * if set, otherwise the default (5 min).
+ *
+ * Post-flight catches `InvalidTokenError` (reactive 401 from the handler's
+ * own API calls) for **every** command — including MIXED commands (`flash`,
+ * `usb cloud-status`, `keys new/load/save`) that skip pre-flight but can
+ * still hit a 401 mid-flight. Clears the locally-stored token + expiry and
+ * re-throws as `MissingTokenError` so the user sees the consistent "Please
+ * run `particle login`" UX. For OPTIONAL / OFFLINE / M8-exempt commands the
+ * branch is dead (they either swallow `AuthenticationError` via
+ * `optionalApiCall`, never call the cloud, or handle the error inside the
+ * handler — see `cloud.js#logout`).
+ *
+ * @param {object} options  The command spec — same object yargs passed to
+ *   `createCommand`.
+ * @param {object} argv     Parsed CLI arguments.
+ */
+async function runWithAuthMiddleware(options, argv){
+	if (options.authRequired) {
+		await verifyFreshTokenMiddleware({ thresholdMs: options.tokenExpiryThresholdMs });
+	}
+	try {
+		return await options.handler(argv);
+	} catch (err) {
+		if (err instanceof InvalidTokenError) {
+			clearActiveAccessToken();
+			throw new MissingTokenError();
+		}
+		throw err;
+	}
+}
 
 
 class CLICommandItem {
@@ -262,7 +300,7 @@ class CLICommandItem {
 	 */
 	exec(argv){
 		if (this.options.handler){
-			return Promise.resolve().then(() => this.options.handler(argv));
+			return Promise.resolve().then(() => runWithAuthMiddleware(this.options, argv));
 		}
 		if (argv.version && this.version){
 			return Promise.resolve(this.version(argv));

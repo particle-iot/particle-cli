@@ -34,6 +34,7 @@ module.exports = ({ commandProcessor, root }) => {
 				hidden: true // Not supported officially
 			}
 		},
+		authRequired: true,
 		handler: (args) => {
 			const ContainerCommand = require('../cmd/container');
 			return new ContainerCommand().push({ ...args.params, blueprintDir: args.blueprintDir, deviceId: args.device, instance: args.instance, amd64: args.amd64 });
@@ -52,6 +53,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'The directory containing the containerized application'
 			}
 		},
+		authRequired: true,
 		handler: (args) => {
 			const ContainerCommand = require('../cmd/container');
 			return new ContainerCommand().list({ ...args.params, blueprintDir: args.blueprintDir, deviceId: args.device });
@@ -73,6 +75,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'The directory containing the containerized application'
 			}
 		},
+		authRequired: true,
 		handler: (args) => {
 			const ContainerCommand = require('../cmd/container');
 			return new ContainerCommand().remove({ deviceId: args.device, appInstance: args.instance, blueprintDir: args.blueprintDir });

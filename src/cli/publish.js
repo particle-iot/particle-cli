@@ -7,6 +7,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Publish to the given Product ID or Slug\'s stream'
 			}
 		},
+		authRequired: true,
 		handler: (args) => {
 			const PublishCommand = require('../cmd/publish');
 			return new PublishCommand(args).publishEvent(args);

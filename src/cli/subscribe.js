@@ -21,6 +21,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Target a device within the given Product ID or Slug'
 			}
 		},
+		authRequired: true,
 		handler: (args) => {
 			const SubscribeCommand = require('../cmd/subscribe');
 			return new SubscribeCommand(args).startListening(args);

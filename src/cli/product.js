@@ -35,6 +35,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command 12345 0123456789abcdef01234567': 'Get details for device with id `0123456789abcdef01234567` within in product `12345`',
 			'$0 $command 12345 --groups foo bar': 'Lists devices in product which are assigned the `foo` or `bar` groups'
 		},
+		authRequired: true,
 		handler: (args) => {
 			const ProdCmd = require('../cmd/product');
 			return new ProdCmd(args).showDeviceList(args);
@@ -53,6 +54,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command 12345 0123456789abcdef01234567': 'Add device id `0123456789abcdef01234567` into product `12345`',
 			'$0 $command 12345 --file ./path/to/device_ids.txt': 'Adds a list of devices into product `12345`',
 		},
+		authRequired: true,
 		handler: (args) => {
 			const ProdCmd = require('../cmd/product');
 			return new ProdCmd(args).addDevices(args);
@@ -64,6 +66,7 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command 12345 0123456789abcdef01234567': 'Remove device id `0123456789abcdef01234567` from product `12345`',
 		},
+		authRequired: true,
 		handler: (args) => {
 			const ProdCmd = require('../cmd/product');
 			return new ProdCmd(args).removeDevice(args);

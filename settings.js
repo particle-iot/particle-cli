@@ -11,6 +11,7 @@ let settings = {
 	},
 	clientId: 'CLI2',
 	access_token: null,
+	access_token_expires_at: null,
 	username: null,
 	minimumApiDelay: 500,
 	useSudoForDfu: false,

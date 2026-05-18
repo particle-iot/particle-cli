@@ -12,6 +12,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Force deleting access token used by this CLI'
 			}
 		},
+		authRequired: true,
 		handler: (args) => {
 			return new AccessTokenCommands().revokeAccessToken(args.params.tokens, args);
 		}
