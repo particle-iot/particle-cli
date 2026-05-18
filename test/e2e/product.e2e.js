@@ -176,7 +176,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'list', 'LOLWUTNOPE'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('HTTP error 404');
+			expect(stdout).to.include('Permission denied');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -191,7 +191,7 @@ describe('Product Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('HTTP error 404');
+			expect(json.error.message).include('Permission denied');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -355,7 +355,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'add', 'LOLWUTNOPE', PRODUCT_01_DEVICE_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('HTTP error 404');
+			expect(stdout).to.include('Permission denied');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -492,7 +492,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'remove', 'LOLWUTNOPE', PRODUCT_01_DEVICE_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('HTTP error 404');
+			expect(stdout).to.include('Permission denied');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
