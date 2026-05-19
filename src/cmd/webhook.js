@@ -20,7 +20,7 @@ module.exports = class WebhookCommand extends CLICommandBase {
 		return this._createHook({ eventName, url, deviceID: device, requestType });
 	}
 
-	_createHook({ eventName, url, deviceID, requestType }) {
+	async _createHook({ eventName, url, deviceID, requestType }) {
 		requireToken();
 		const { api } = this._particleApi();
 
@@ -65,7 +65,12 @@ module.exports = class WebhookCommand extends CLICommandBase {
 			requestType: requestType || data.requestType,
 		}, data);
 
-		return api.createWebhookWithObj(webhookData);
+		const response = await api.createWebhookWithObj(webhookData);
+		if (!response || !response.ok) {
+			throw new VError((response && response.error) || 'Failed to create webhook');
+		}
+		console.log(`Successfully created webhook with ID ${response.id}`);
+		return response;
 	}
 
 	async deleteHook({ hookId }) {

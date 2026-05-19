@@ -124,40 +124,47 @@ module.exports = class CloudCommand extends CLICommandBase {
 			}
 		}
 
-		if (files.length === 0) {
-			// default to current directory
-			files.push('.');
+		try {
+			if (files.length === 0) {
+				// default to current directory
+				files.push('.');
+			}
+
+			const filename = files[0];
+
+			if (!await fs.exists(filename)) {
+				await this._flashKnownApp({ product, deviceId: device, filePath: files[0] });
+				return;
+			}
+
+			let fileMapping;
+			// check if extension is .bin or .zip
+			const ext = path.extname(filename);
+			if (['.bin', '.zip'].includes(ext)) {
+				fileMapping = { map: { [filename]: filename } };
+			} else {
+				this.ui.stdout.write(`Compiling code for ${device}${os.EOL}`);
+
+				const { api } = this._particleApi();
+				const attrs = await api.getDeviceAttributes({ deviceId: device });
+				const platformId = attrs.platform_id;
+				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
+				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
+
+				const { filename } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
+
+				fileMapping = { map: { [filename]: filename } };
+			}
+
+			await this._doFlash({ product, deviceId: device, fileMapping });
+
+			this.ui.stdout.write(`Flash success!${os.EOL}`);
+		} catch (e) {
+			if (e instanceof AuthenticationError) {
+				throw e;
+			}
+			throw new VError(e, `Failed to flash ${device}`);
 		}
-
-		const filename = files[0];
-
-		if (!await fs.exists(filename)) {
-			await this._flashKnownApp({ product, deviceId: device, filePath: files[0] });
-			return;
-		}
-
-		let fileMapping;
-		// check if extension is .bin or .zip
-		const ext = path.extname(filename);
-		if (['.bin', '.zip'].includes(ext)) {
-			fileMapping = { map: { [filename]: filename } };
-		} else {
-			this.ui.stdout.write(`Compiling code for ${device}${os.EOL}`);
-
-			const { api } = this._particleApi();
-			const attrs = await api.getDeviceAttributes({ deviceId: device });
-			const platformId = attrs.platform_id;
-			const deviceType = PLATFORMS_ID_TO_NAME[platformId];
-			const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
-
-			const { filename } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
-
-			fileMapping = { map: { [filename]: filename } };
-		}
-
-		await this._doFlash({ product, deviceId: device, fileMapping });
-
-		this.ui.stdout.write(`Flash success!${os.EOL}`);
 	}
 
 	async _doFlash({ product, deviceId, fileMapping, targetVersion }){
@@ -242,28 +249,34 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 	}
 
-	// create a new function that handles errors from compileCode function
 	async compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
-		if (files.length === 0) {
-			files.push('.'); // default to current directory
+		try {
+			if (files.length === 0) {
+				files.push('.'); // default to current directory
+			}
+
+			let platformId;
+			if (deviceType in PLATFORMS) {
+				platformId = PLATFORMS[deviceType];
+			} else {
+				throw new Error([
+					`Target device ${deviceType} is not valid`,
+					'	eg. particle compile boron xxx',
+					'	eg. particle compile p2 xxx'
+				].join('\n'));
+			}
+
+			this.ui.stdout.write(`Compiling code for ${deviceType}${os.EOL}`);
+
+			const { filename, isBundle } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
+
+			this.ui.stdout.write(`Saved ${isBundle ? 'bundle' : 'firmware' } to: ${filename}${os.EOL}`);
+		} catch (e) {
+			if (e instanceof AuthenticationError) {
+				throw e;
+			}
+			throw new VError(e, 'Compile failed');
 		}
-
-		let platformId;
-		if (deviceType in PLATFORMS) {
-			platformId = PLATFORMS[deviceType];
-		} else {
-			throw new Error([
-				`Target device ${deviceType} is not valid`,
-				'	eg. particle compile boron xxx',
-				'	eg. particle compile p2 xxx'
-			].join('\n'));
-		}
-
-		this.ui.stdout.write(`Compiling code for ${deviceType}${os.EOL}`);
-
-		const { filename, isBundle } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
-
-		this.ui.stdout.write(`Saved ${isBundle ? 'bundle' : 'firmware' } to: ${filename}${os.EOL}`);
 	}
 
 	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files }) {
@@ -337,7 +350,17 @@ module.exports = class CloudCommand extends CLICommandBase {
 		let respSizeInfo, bundle;
 
 		const { api } = this._particleApi();
-		const resp = await api.compileCode({ files: fileMapping, platformId, targetVersion });
+		let resp;
+		try {
+			resp = await api.compileCode({ files: fileMapping, platformId, targetVersion });
+		} catch (err) {
+			const body = (err && err.body) || {};
+			if (body.output === 'Compiler timed out or encountered an error') {
+				this.ui.stdout.write(`${os.EOL}${(body.errors && body.errors[0]) || ''}${os.EOL}`);
+				throw new Error('Compiler encountered an error');
+			}
+			throw err;
+		}
 
 		if (resp && resp.binary_url && resp.binary_id) {
 			const data = await api.downloadFirmwareBinary({ binaryId: resp.binary_id });

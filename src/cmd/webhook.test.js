@@ -30,11 +30,15 @@ describe('WebhookCommand', () => {
 			}
 		});
 
-		it('createHook throws MissingTokenError when no token is configured', () => {
+		it('createHook throws MissingTokenError when no token is configured', async () => {
 			settings.access_token = null;
 			const cmd = new WebhookCommand();
-			expect(() => cmd._createHook({ eventName: 'e', url: 'https://x' }))
-				.to.throw(MissingTokenError);
+			try {
+				await cmd._createHook({ eventName: 'e', url: 'https://x' });
+				throw new Error('expected to throw');
+			} catch (err) {
+				expect(err).to.be.instanceof(MissingTokenError);
+			}
 		});
 	});
 

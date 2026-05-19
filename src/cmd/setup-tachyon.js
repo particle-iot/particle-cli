@@ -1,9 +1,11 @@
 'use strict';
+const VError = require('verror');
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const fs = require('fs-extra');
 const settings = require('../../settings');
 const { requireToken } = require('../lib/api-call');
+const { AuthenticationError } = require('../lib/auth-errors');
 const os = require('os');
 const CloudCommand = require('./cloud');
 
@@ -65,46 +67,53 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async setup({ skip_flashing_os: skipFlashingOs, timezone, load_config: loadConfig, save_config: saveConfig, region, version, variant, board, distro_version: distroVersion, skip_cli: skipCli } = {}) {
 		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, distroVersion, skipCli };
-		await this.ui.write(showWelcomeMessage(this.ui));
-		// step 1 login
-		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...");
-		await this._verifyLogin();
-		this.ui.write('');
-		this.ui.write(`...All set! You're logged in as ${this.ui.chalk.bold(settings.username)} and ready to go!`);
-		// step 2 get device info
-		this._formatAndDisplaySteps("Now let's get the device info");
-		this.ui.write('');
-		const device = await getEDLDevice({ ui: this.ui, showSetupMessage: true });
-		this.device = device;
-		// ensure logs dir
-		await fs.ensureDir(this._logsDir);
-		this.outputLog = path.join(this._logsDir, `tachyon_flash_${this.device.id}_${Date.now()}.log`);
-		await fs.ensureFile(this.outputLog);
-		this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
-		const deviceInfo = await this._getDeviceInfo();
-		deviceInfo.usbVersion = this.device.usbVersion.major;
-		this._printDeviceInfo(deviceInfo);
-		// check if there is a config file
-		// validate version if local then workflow will be inferred from the manifest
-		const isLocalVersion = version ? await isFile(version) : false;
-		const config = await this._loadConfig({ options, deviceInfo, isLocalVersion });
+		try {
+			await this.ui.write(showWelcomeMessage(this.ui));
+			// step 1 login
+			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...");
+			await this._verifyLogin();
+			this.ui.write('');
+			this.ui.write(`...All set! You're logged in as ${this.ui.chalk.bold(settings.username)} and ready to go!`);
+			// step 2 get device info
+			this._formatAndDisplaySteps("Now let's get the device info");
+			this.ui.write('');
+			const device = await getEDLDevice({ ui: this.ui, showSetupMessage: true });
+			this.device = device;
+			// ensure logs dir
+			await fs.ensureDir(this._logsDir);
+			this.outputLog = path.join(this._logsDir, `tachyon_flash_${this.device.id}_${Date.now()}.log`);
+			await fs.ensureFile(this.outputLog);
+			this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
+			const deviceInfo = await this._getDeviceInfo();
+			deviceInfo.usbVersion = this.device.usbVersion.major;
+			this._printDeviceInfo(deviceInfo);
+			// check if there is a config file
+			// validate version if local then workflow will be inferred from the manifest
+			const isLocalVersion = version ? await isFile(version) : false;
+			const config = await this._loadConfig({ options, deviceInfo, isLocalVersion });
 
-		const context = {
-			...config,
-			ui: this.ui,
-			api: this.api,
-			deviceInfo: deviceInfo,
-			device: this.device,
-			log: {
-				file: this.outputLog,
-				info: (msg) => fs.appendFileSync(this.outputLog, `info: ${msg} ${os.EOL}`),
-				error: (msg) => fs.appendFileSync(this.outputLog, `error: ${msg} ${os.EOL}`),
+			const context = {
+				...config,
+				ui: this.ui,
+				api: this.api,
+				deviceInfo: deviceInfo,
+				device: this.device,
+				log: {
+					file: this.outputLog,
+					info: (msg) => fs.appendFileSync(this.outputLog, `info: ${msg} ${os.EOL}`),
+					error: (msg) => fs.appendFileSync(this.outputLog, `error: ${msg} ${os.EOL}`),
+				}
+			};
+
+			const workflowContext = await workflowRun(config.workflow, context);
+			if (workflowContext.saveConfig) {
+				await this._saveConfig(workflowContext);
 			}
-		};
-
-		const workflowContext = await workflowRun(config.workflow, context);
-		if (workflowContext.saveConfig) {
-			await this._saveConfig(workflowContext);
+		} catch (e) {
+			if (e instanceof AuthenticationError) {
+				throw e;
+			}
+			throw new VError(e, 'Tachyon setup failed');
 		}
 	}
 

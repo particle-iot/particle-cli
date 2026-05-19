@@ -32,39 +32,22 @@ const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..
 Yargs.$0 = 'particle';
 
 
-/**
- * Pre-flight + post-flight auth middleware around a command handler.
- *
- * Pre-flight runs `verifyFreshTokenMiddleware` only when the command spec
- * opts in via `authRequired: true`. Threshold is `tokenExpiryThresholdMs`
- * if set, otherwise the default (5 min).
- *
- * Post-flight catches `InvalidTokenError` (reactive 401 from the handler's
- * own API calls) for **every** command — including MIXED commands (`flash`,
- * `usb cloud-status`, `keys new/load/save`) that skip pre-flight but can
- * still hit a 401 mid-flight. Clears the locally-stored token + expiry and
- * re-throws as `MissingTokenError` so the user sees the consistent "Please
- * run `particle login`" UX. For OPTIONAL / OFFLINE / M8-exempt commands the
- * branch is dead (they either swallow `AuthenticationError` via
- * `optionalApiCall`, never call the cloud, or handle the error inside the
- * handler — see `cloud.js#logout`).
- *
- * @param {object} options  The command spec — same object yargs passed to
- *   `createCommand`.
- * @param {object} argv     Parsed CLI arguments.
- */
 async function runWithAuthMiddleware(options, argv){
-	if (options.authRequired) {
-		await verifyFreshTokenMiddleware({ thresholdMs: options.tokenExpiryThresholdMs });
-	}
 	try {
+		if (options.authRequired) {
+			await verifyFreshTokenMiddleware({ thresholdMs: options.tokenExpiryThresholdMs });
+		}
 		return await options.handler(argv);
 	} catch (err) {
+		let toThrow = err;
 		if (err instanceof InvalidTokenError) {
 			clearActiveAccessToken();
-			throw new MissingTokenError();
+			toThrow = new MissingTokenError();
 		}
-		throw err;
+		if (argv && argv.json && toThrow) {
+			toThrow.asJSON = true;
+		}
+		throw toThrow;
 	}
 }
 

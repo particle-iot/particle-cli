@@ -139,7 +139,7 @@ describe('Function Commands [@device]', () => {
 			const args = ['function', 'call', 'DOESNOTEXIST', 'WATNOPE'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('Error calling function: `WATNOPE`');
+			expect(stdout).to.include('Function call failed: Function `WATNOPE` not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
