@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.47.3 - May 19 2026
+* Show compile errors when using `flash --local` command
+* Allow proxy usage on `container push` command
+
 # 3.47.2 - Mar 16 2026
 * Add support for HTTPS proxy (through HTTPS_PROXY env var or particle profile set proxyUrl http://proxy:8080)
 * Limit firmware to 100 env vars at a time
