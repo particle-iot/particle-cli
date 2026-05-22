@@ -8,7 +8,6 @@ const { v4: uuidv4 } = require('uuid');
 
 const CLICommandBase = require('./base');
 const settings = require('../../settings');
-const ParticleApi = require('./api');
 const { UnauthorizedError } = require('./api');
 const Table = require('cli-table');
 const { platformForId } = require('../lib/platform');
@@ -21,8 +20,7 @@ const PARTICLE_ENV_FILE = '.particle_env.yaml';
 module.exports = class ContainerCommands extends CLICommandBase {
 	constructor() {
 		super();
-		const auth = settings.access_token;
-		this.api = new ParticleApi(settings.apiUrl, { accessToken: auth });
+		this.api = this._particleApi().api;
 	}
 
 	async run({ blueprintDir = '.' }) {

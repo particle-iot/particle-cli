@@ -5,7 +5,6 @@ const chalk = require('chalk');
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const usbUtils = require('../cmd/usb-util');
-const settings = require('../../settings');
 const { downloadDeviceOsVersionBinaries } = require('../lib/device-os-version-util');
 const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
@@ -272,7 +271,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			return false;
 		}
 
-		const res = await this.api.getProduct({ product: this.productId, auth: settings.access_token });
+		const res = await this.api.getProduct({ product: this.productId });
 		return res?.product?.device_protection === 'active';
 	}
 

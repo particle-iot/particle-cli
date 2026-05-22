@@ -2,8 +2,6 @@
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
-const ParticleAPI = require('./api');
-const settings = require('../../settings');
 const LogicFunction = require('../lib/logic-function');
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 const CLICommandBase = require('./base');
@@ -15,7 +13,7 @@ const CLICommandBase = require('./base');
 module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
-		this.api = createAPI();
+		this.api = this._particleApi().api;
 		this.logicFuncList = null;
 		this.org = null;
 	}
@@ -558,15 +556,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 };
 
 // UTILS //////////////////////////////////////////////////////////////////////
-function createAPI() {
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}
-
 // get org name from org slug
 function getOrgName(org) {
 	return org || 'your Sandbox';
 }
-
-module.exports.createAPI = createAPI;
