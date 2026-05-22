@@ -1,10 +1,9 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const extend = require('xtend');
 const _ = require('lodash');
 
-let settings = {
+const settings = {
 	apiUrl: 'https://api.particle.io',
 	get isStaging() {
 		return this.apiUrl.includes('staging');
@@ -205,9 +204,6 @@ settings.override = (profile, key, value) => {
 
 	//store that in overrides
 	settings.overrides[key] = value;
-
-	//make sure our overrides are in sync
-	settings = extend(settings, settings.overrides);
 
 	try {
 		const filename = settings.findOverridesFile(profile);

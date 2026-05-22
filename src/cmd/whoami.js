@@ -1,9 +1,8 @@
 'use strict';
 const chalk = require('chalk');
-const settings = require('../../settings');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
-const { requireToken } = require('../lib/api-call');
+const { requireToken, getCurrentUsername } = require('../lib/api-call');
 
 const arrow = chalk.green('>');
 
@@ -17,12 +16,9 @@ module.exports = class WhoAmICommand extends CLICommandBase {
 	async getUsername() {
 		requireToken();
 
-		const { api } = this._particleApi();
-
 		this.newSpin('Checking...').start();
 		try {
-			const user = await api.getUserInfo();
-			const username = settings.username || user.username || 'unknown username';
+			const username = await getCurrentUsername();
 			console.log(arrow, username);
 			return username;
 		} finally {

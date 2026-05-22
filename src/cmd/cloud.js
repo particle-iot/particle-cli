@@ -11,7 +11,7 @@ const ensureError = require('../lib/utilities').ensureError;
 const prompts = require('../lib/prompts');
 const CLICommandBase = require('./base');
 const { MfaRequiredError, AuthenticationError } = require('../lib/auth-errors');
-const { requireToken, setActiveAccessToken, clearActiveAccessToken } = require('../lib/api-call');
+const { requireToken, setActiveAccessToken, clearActiveAccessToken, getCurrentUsername } = require('../lib/api-call');
 
 const fs = require('fs-extra');
 const path = require('path');
@@ -562,6 +562,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			return;
 		}
 
+		const username = await getCurrentUsername();
+
 		try {
 			const { api } = this._particleApi();
 			await api.deleteCurrentAccessToken();
@@ -574,7 +576,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			}
 		}
 
-		this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(settings.username)}${os.EOL}`);
+		this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(username)}${os.EOL}`);
 		settings.override(null, 'username', null);
 		clearActiveAccessToken();
 	}

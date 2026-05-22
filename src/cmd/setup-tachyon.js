@@ -4,7 +4,7 @@ const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const fs = require('fs-extra');
 const settings = require('../../settings');
-const { requireToken } = require('../lib/api-call');
+const { verifyFreshTokenMiddleware, getCurrentUsername } = require('../lib/api-call');
 const { AuthenticationError } = require('../lib/auth-errors');
 const os = require('os');
 const CloudCommand = require('./cloud');
@@ -73,7 +73,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...");
 			await this._verifyLogin();
 			this.ui.write('');
-			this.ui.write(`...All set! You're logged in as ${this.ui.chalk.bold(settings.username)} and ready to go!`);
+			this.ui.write(`...All set! You're logged in as ${this.ui.chalk.bold(await getCurrentUsername())} and ready to go!`);
 			// step 2 get device info
 			this._formatAndDisplaySteps("Now let's get the device info");
 			this.ui.write('');
@@ -152,13 +152,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _verifyLogin() {
 		try {
-			requireToken();
-			const currentToken = await this.api.getCurrentAccessToken();
-			const minRemainingTime = 60 * 60 * 1000; // 1 hour
-			const expiresAt = currentToken.expires_at ? new Date(currentToken.expires_at) : null;
-			if (expiresAt !== null && (expiresAt - Date.now()) < minRemainingTime) {
-				throw new Error('Token expired or near to expire');
-			}
+			await verifyFreshTokenMiddleware({ thresholdMs: 60 * 60 * 1000 });
 		} catch {
 			const cloudCommand = new CloudCommand();
 			await cloudCommand.login();

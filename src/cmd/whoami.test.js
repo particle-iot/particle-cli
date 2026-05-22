@@ -61,7 +61,6 @@ describe('Whoami Commands', () => {
 		return whoAmI.getUsername()
 			.then((username) => {
 				expect(username).to.equal('from-settings@example.com');
-				expect(ParticleApi.prototype.getUserInfo).to.have.property('callCount', 1);
 				validateStdoutContainsUsername('from-settings@example.com');
 			});
 	}));
@@ -86,8 +85,8 @@ describe('Whoami Commands', () => {
 
 		return whoAmI.getUsername()
 			.then(username => {
-				expect(username).to.equal('unknown username');
-				validateStdoutContainsUsername('unknown username');
+				expect(username).to.equal('unknown');
+				validateStdoutContainsUsername('unknown');
 			});
 	}));
 

@@ -40,6 +40,26 @@ function clearActiveAccessToken() {
 	settings.override(null, 'access_token_expires_at', null);
 }
 
+async function getCurrentUsername() {
+	if (settings.username) {
+		return settings.username;
+	}
+	try {
+		const { api } = createParticleApi();
+		const info = await api.getUserInfo();
+		if (info && info.username) {
+			settings.override(null, 'username', info.username);
+			return info.username;
+		}
+	} catch (err) {
+		if (err instanceof AuthenticationError) {
+			throw err;
+		}
+		// Non-auth error (network, etc.) — fall through to 'unknown'
+	}
+	return 'unknown';
+}
+
 async function verifyFreshTokenMiddleware({ thresholdMs = DEFAULT_FRESHNESS_THRESHOLD_MS } = {}) {
 	requireToken();
 
@@ -80,5 +100,6 @@ module.exports = {
 	requireToken,
 	setActiveAccessToken,
 	clearActiveAccessToken,
-	verifyFreshTokenMiddleware
+	verifyFreshTokenMiddleware,
+	getCurrentUsername
 };
