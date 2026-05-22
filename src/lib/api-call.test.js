@@ -220,12 +220,6 @@ describe('api-call', () => {
 			expect(getCurrentAccessTokenStub).to.have.property('callCount', 0);
 		});
 
-		it('resolves silently when access_token_expires_at is null (never-expires sentinel)', async () => {
-			settings.access_token_expires_at = null;
-			await verifyFreshTokenMiddleware({ thresholdMs: Number.MAX_SAFE_INTEGER });
-			expect(getCurrentAccessTokenStub).to.have.property('callCount', 0);
-		});
-
 		it('clears local state and throws MissingTokenError when remaining < thresholdMs', async () => {
 			settings.access_token_expires_at = inFuture(60 * 1000);   // 1 minute out
 			let caught;
@@ -266,12 +260,6 @@ describe('api-call', () => {
 				const persisted = overrideStub.getCalls().find(c => c.args[1] === 'access_token_expires_at');
 				expect(persisted).to.exist;
 				expect(persisted.args[2]).to.be.a('string');
-			});
-
-			it('persists null and resolves when the server says never-expires', async () => {
-				getCurrentAccessTokenStub.resolves({ expires_at: null });
-				await verifyFreshTokenMiddleware({ thresholdMs: Number.MAX_SAFE_INTEGER });
-				expect(overrideStub).to.have.been.calledWith(null, 'access_token_expires_at', null);
 			});
 
 			it('clears local state and throws MissingTokenError when server responds with AuthenticationError', async () => {

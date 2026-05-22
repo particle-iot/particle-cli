@@ -63,10 +63,6 @@ async function getCurrentUsername() {
 async function verifyFreshTokenMiddleware({ thresholdMs = DEFAULT_FRESHNESS_THRESHOLD_MS } = {}) {
 	requireToken();
 
-	if (settings.access_token_expires_at === null) {
-		return;
-	}
-
 	let expiresAtStr = settings.access_token_expires_at;
 
 	if (!expiresAtStr) {
@@ -80,9 +76,6 @@ async function verifyFreshTokenMiddleware({ thresholdMs = DEFAULT_FRESHNESS_THRE
 				clearActiveAccessToken();
 				throw new MissingTokenError();
 			}
-			return;
-		}
-		if (expiresAtStr === null) {
 			return;
 		}
 	}
