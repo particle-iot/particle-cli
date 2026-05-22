@@ -16,7 +16,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'list', 'Display a list of your devices, as well as their variables and functions', {
 		params: '[filter]',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).listDevices(args);
@@ -26,7 +26,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'claim', 'Register a device with your user account with the cloud', {
 		params: '<deviceID>',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).claimDevice(args);
@@ -44,7 +44,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Answer yes to all questions'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).removeDevice(args);
@@ -56,7 +56,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'name', 'Give a device a name!', {
 		params: '<device> <name>',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).renameDevice(args);
@@ -73,7 +73,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Target a device within the given Product ID or Slug'
 			}
 		}),
-		authRequired: true,
+		verifyTokenFreshness: true,
 		tokenExpiryThresholdMs: 15 * 60 * 1000,   // cloud compile + OTA can run several minutes
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
@@ -95,7 +95,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Filename for the compiled binary'
 			}
 		}),
-		authRequired: true,
+		verifyTokenFreshness: true,
 		tokenExpiryThresholdMs: 15 * 60 * 1000,   // cloud compile can run several minutes
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
@@ -115,7 +115,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Target a device within the given Product ID or Slug'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).nyanMode(args);

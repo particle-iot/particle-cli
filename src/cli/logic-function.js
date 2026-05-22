@@ -11,7 +11,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Specify the organization'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).list(args);
@@ -34,7 +34,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Id of the Logic Function'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).get(args);
@@ -64,7 +64,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Overwrites all the prompts',
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).create(args);
@@ -103,7 +103,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Payload to send to the device could be a string or a file path'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).execute(args);
@@ -150,7 +150,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Overwrites all the prompts',
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).deploy(args);
@@ -177,7 +177,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Id of the Logic Function'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).updateStatus(args, { enable: false });
@@ -202,7 +202,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Id of the Logic Function'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).updateStatus(args, { enable: true });
@@ -231,7 +231,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Overwrites all the prompts',
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).delete(args);
@@ -258,7 +258,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'File name to save the logs'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd(args).logs(args);

@@ -37,7 +37,7 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		tokenExpiryThresholdMs: 30 * 60 * 1000,   // long interactive setup; needs runway after the pre-flight
 		handler: (args) => {
 			const SetupTachyonCommands = require('../cmd/setup-tachyon');

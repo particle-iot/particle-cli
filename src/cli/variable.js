@@ -10,7 +10,7 @@ module.exports = ({ commandProcessor, root }) => {
 	};
 
 	commandProcessor.createCommand(variable, 'list', 'Show variables provided by your device(s)', {
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
 			return new VariableCommand(args).listVariables();
@@ -24,7 +24,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Target a device within the given Product ID or Slug'
 			}
 		}),
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
 			return new VariableCommand(args).getValue(args);
@@ -45,7 +45,7 @@ module.exports = ({ commandProcessor, root }) => {
 				nargs: 1
 			}
 		}),
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
 			return new VariableCommand(args).monitorVariables(args);

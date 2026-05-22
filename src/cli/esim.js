@@ -26,7 +26,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Force provisioning profiles in the input JSON without checking profiles already on the device'
 			}
 		}),
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const ESimCommands = require('../cmd/esim');
 			if (args.bulk) {
@@ -50,7 +50,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(esim, 'enable', '(Only for Tachyon) Enables a downloaded eSIM profile', {
 		params: '<iccid>',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const ESimCommands = require('../cmd/esim');
 			return new ESimCommands().enableCommand(args.params.iccid);
@@ -67,7 +67,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 		}),
 		params: '<iccid>',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const ESimCommands = require('../cmd/esim');
 			return new ESimCommands().deleteCommand(args, args.params.iccid);
@@ -78,7 +78,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(esim, 'list', '(Only for Tachyon) Lists all the profiles on the eSIM', {
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const ESimCommands = require('../cmd/esim');
 			return new ESimCommands().listCommand(args);

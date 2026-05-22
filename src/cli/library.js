@@ -17,7 +17,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(lib, 'add', 'Add a library to the current project.', {
 		params: '<name>',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_add').command(api(), ...args),
 		examples: {
 			'$0 $command InternetButton': 'Add the InternetButton library to your project. Create a project with the project init command'
@@ -62,13 +62,13 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		params: '[name]',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_install').command('install', api(), ...args),
 	});
 
 	commandProcessor.createCommand(lib, 'copy', 'Copy a library to the current project', {
 		params: '[name]',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_install').command('copy', api(), ...args)
 	});
 
@@ -96,7 +96,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		params: '[sections...]',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_list').command(api(), ...args)
 	});
 
@@ -127,7 +127,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'output JSON formatted data [experimental]'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_search').command(api(), ...args)
 	});
 
@@ -138,13 +138,13 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'perform validation steps but don\'t actually upload the library.'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_upload').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'publish', 'Publish a private library, making it public', {
 		params: '[name]',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_publish').command(api(), ...args)
 	});
 
@@ -169,13 +169,13 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		params: '<name>',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_view').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'delete', false, {
 		params: '<name>',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_delete').command(api(), ...args)
 	});
 

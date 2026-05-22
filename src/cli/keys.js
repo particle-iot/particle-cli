@@ -41,7 +41,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'The product ID to use when provisioning a new device'
 			}
 		},
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
 			return new KeysCommand().sendPublicKeyToServer(args);
@@ -50,7 +50,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(keys, 'doctor', 'Creates and assigns a new key to your device, and uploads it to the cloud', {
 		params: '[deviceID]',
-		authRequired: true,
+		verifyTokenFreshness: true,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
 			return new KeysCommand().keyDoctor(args);

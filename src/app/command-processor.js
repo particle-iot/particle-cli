@@ -34,7 +34,7 @@ Yargs.$0 = 'particle';
 
 async function runWithAuthMiddleware(options, argv){
 	try {
-		if (options.authRequired) {
+		if (options.verifyTokenFreshness) {
 			await verifyFreshTokenMiddleware({ thresholdMs: options.tokenExpiryThresholdMs });
 		}
 		return await options.handler(argv);
