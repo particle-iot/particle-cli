@@ -9,7 +9,6 @@ module.exports = ({ commandProcessor, root }) => {
 				alias: 'd'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
 			return new DeviceProtectionCommands().getStatus(args);
@@ -26,7 +25,6 @@ module.exports = ({ commandProcessor, root }) => {
 				alias: 'device'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
 			return new DeviceProtectionCommands().disableProtection(args);
@@ -47,7 +45,6 @@ module.exports = ({ commandProcessor, root }) => {
 				alias: 'device'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
 			return new DeviceProtectionCommands().enableProtection(args);

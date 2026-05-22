@@ -1,6 +1,7 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'update', 'Update Device OS on a device via USB', {
+		verifyTokenFreshness: false,
 		params: '[device]',
 		options: {
 			'target': {

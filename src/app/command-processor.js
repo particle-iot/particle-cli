@@ -34,7 +34,7 @@ Yargs.$0 = 'particle';
 
 async function runWithAuthMiddleware(options, argv){
 	try {
-		if (options.verifyTokenFreshness) {
+		if (options.verifyTokenFreshness !== false) {
 			await verifyFreshTokenMiddleware({ thresholdMs: options.tokenExpiryThresholdMs });
 		}
 		return await options.handler(argv);
@@ -283,12 +283,25 @@ class CLICommandItem {
 	 */
 	exec(argv){
 		if (this.options.handler){
-			return Promise.resolve().then(() => runWithAuthMiddleware(this.options, argv));
+			const verifyTokenFreshness = this._resolveVerifyTokenFreshness();
+			const effectiveOptions = { ...this.options, verifyTokenFreshness };
+			return Promise.resolve().then(() => runWithAuthMiddleware(effectiveOptions, argv));
 		}
 		if (argv.version && this.version){
 			return Promise.resolve(this.version(argv));
 		}
 		return this.showHelp();
+	}
+
+	_resolveVerifyTokenFreshness(){
+		let item = this;
+		while (item){
+			if (item.options && item.options.verifyTokenFreshness !== undefined){
+				return item.options.verifyTokenFreshness;
+			}
+			item = item.parent;
+		}
+		return true;
 	}
 
 	showHelp(){

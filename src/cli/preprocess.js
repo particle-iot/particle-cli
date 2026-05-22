@@ -1,6 +1,7 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'preprocess', 'Preprocess a Wiring file (ino) into a C++ file (cpp)', {
+		verifyTokenFreshness: false,
 		params: '<file>',
 		options: {
 			'name': {

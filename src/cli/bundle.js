@@ -1,6 +1,7 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'bundle', 'Creates a bundle of application binary and assets', {
+		verifyTokenFreshness: false,
 		params: '<appBinary>',
 		options: {
 			'saveTo': {

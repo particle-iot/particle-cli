@@ -16,7 +16,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'list', 'Display a list of your devices, as well as their variables and functions', {
 		params: '[filter]',
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).listDevices(args);
@@ -26,7 +25,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'claim', 'Register a device with your user account with the cloud', {
 		params: '<deviceID>',
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).claimDevice(args);
@@ -44,7 +42,6 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Answer yes to all questions'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).removeDevice(args);
@@ -56,7 +53,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'name', 'Give a device a name!', {
 		params: '<device> <name>',
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).renameDevice(args);
@@ -73,7 +69,6 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Target a device within the given Product ID or Slug'
 			}
 		}),
-		verifyTokenFreshness: true,
 		tokenExpiryThresholdMs: 15 * 60 * 1000,   // cloud compile + OTA can run several minutes
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
@@ -95,7 +90,6 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Filename for the compiled binary'
 			}
 		}),
-		verifyTokenFreshness: true,
 		tokenExpiryThresholdMs: 15 * 60 * 1000,   // cloud compile can run several minutes
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
@@ -115,7 +109,6 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Target a device within the given Product ID or Slug'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).nyanMode(args);
@@ -128,6 +121,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
+		verifyTokenFreshness: false,
 		options: {
 			u: {
 				description: 'your username',
@@ -162,6 +156,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(cloud, 'logout', 'Log out of your session and clear your saved access token', {
+		verifyTokenFreshness: false,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).logout();

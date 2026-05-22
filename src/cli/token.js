@@ -12,13 +12,13 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Force deleting access token used by this CLI'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			return new AccessTokenCommands().revokeAccessToken(args.params.tokens, args);
 		}
 	});
 
 	commandProcessor.createCommand(token, 'create', 'Create a new access token', {
+		verifyTokenFreshness: false,
 		options: {
 			'expires-in': {
 				description: 'Create a token valid for this many seconds. When omitted, the Particle API assigns a default expiration.',

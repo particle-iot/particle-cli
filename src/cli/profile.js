@@ -1,6 +1,7 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'profile', 'Configure and switch between multiple accounts', {
+		verifyTokenFreshness: false,
 		params: '[profile] [setting] [value]',
 		options: {
 			'list': {

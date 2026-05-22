@@ -17,7 +17,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(lib, 'add', 'Add a library to the current project.', {
 		params: '<name>',
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_add').command(api(), ...args),
 		examples: {
 			'$0 $command InternetButton': 'Add the InternetButton library to your project. Create a project with the project init command'
@@ -25,6 +24,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(lib, 'create', 'Create a new library in the specified or current directory', {
+		verifyTokenFreshness: false,
 		options: {
 			'name': {
 				description: 'The name of the library to create.'
@@ -62,13 +62,11 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		params: '[name]',
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_install').command('install', api(), ...args),
 	});
 
 	commandProcessor.createCommand(lib, 'copy', 'Copy a library to the current project', {
 		params: '[name]',
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_install').command('copy', api(), ...args)
 	});
 
@@ -96,11 +94,11 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		params: '[sections...]',
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_list').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'migrate', 'Migrate a local library from v1 to v2 format', {
+		verifyTokenFreshness: false,
 		options: {
 			test: {
 				alias: 'dryrun',
@@ -127,7 +125,6 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'output JSON formatted data [experimental]'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_search').command(api(), ...args)
 	});
 
@@ -138,13 +135,11 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'perform validation steps but don\'t actually upload the library.'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_upload').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'publish', 'Publish a private library, making it public', {
 		params: '[name]',
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_publish').command(api(), ...args)
 	});
 
@@ -169,13 +164,11 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		params: '<name>',
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_view').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'delete', false, {
 		params: '<name>',
-		verifyTokenFreshness: true,
 		handler: (...args) => require('./library_delete').command(api(), ...args)
 	});
 

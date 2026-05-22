@@ -1,6 +1,6 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
-	const binary = commandProcessor.createCategory(root, 'binary', 'Inspect binaries');
+	const binary = commandProcessor.createCategory(root, 'binary', 'Inspect binaries', { verifyTokenFreshness: false });
 
 	commandProcessor.createCommand(binary, 'inspect', 'Describe binary contents', {
 		params: '<filename>',

@@ -1,6 +1,6 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
-	const keys = commandProcessor.createCategory(root, 'keys', "Manage your device's key pair and server public key");
+	const keys = commandProcessor.createCategory(root, 'keys', "Manage your device's key pair and server public key", { verifyTokenFreshness: false });
 
 	commandProcessor.createCommand(keys, 'new', 'Generate a new set of keys for your device', {
 		params: '[filename]',
@@ -41,7 +41,6 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'The product ID to use when provisioning a new device'
 			}
 		},
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
 			return new KeysCommand().sendPublicKeyToServer(args);
@@ -50,7 +49,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(keys, 'doctor', 'Creates and assigns a new key to your device, and uploads it to the cloud', {
 		params: '[deviceID]',
-		verifyTokenFreshness: true,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
 			return new KeysCommand().keyDoctor(args);

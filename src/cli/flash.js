@@ -3,6 +3,7 @@ const unindent = require('../lib/unindent');
 
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'flash', 'Send firmware to your device', {
+		verifyTokenFreshness: false,
 		params: '[device|binary] [files...]',
 		options: {
 			'cloud': {

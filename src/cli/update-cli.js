@@ -1,6 +1,7 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'update-cli', 'Update the Particle CLI to the latest version', {
+		verifyTokenFreshness: false,
 		options: {
 			'enable-updates': {
 				boolean: true,
