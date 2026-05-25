@@ -160,9 +160,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Flash success!${os.EOL}`);
 		} catch (e) {
-			if (e instanceof AuthenticationError) {
-				throw e;
-			}
 			throw new VError(e, `Failed to flash ${device}`);
 		}
 	}
@@ -272,9 +269,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Saved ${isBundle ? 'bundle' : 'firmware' } to: ${filename}${os.EOL}`);
 		} catch (e) {
-			if (e instanceof AuthenticationError) {
-				throw e;
-			}
 			throw new VError(e, 'Compile failed');
 		}
 	}

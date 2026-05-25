@@ -6,9 +6,9 @@ const yaml = require('yaml');
 const execa = require('execa');
 const { v4: uuidv4 } = require('uuid');
 
+const VError = require('verror');
 const CLICommandBase = require('./base');
 const settings = require('../../settings');
-const { UnauthorizedError } = require('./api');
 const Table = require('cli-table');
 const { platformForId } = require('../lib/platform');
 const pkg = require('../../package.json');
@@ -74,59 +74,52 @@ module.exports = class ContainerCommands extends CLICommandBase {
 	}
 
 	async push({ deviceId, instance, blueprintDir = '.', amd64 }) {
-		try {
-			const doc = await this._loadFromEnv(blueprintDir);
-			deviceId ||= doc.get('deviceId');
-			const device = await this._getDevice(deviceId);
-			deviceId = device.id;
-			instance ||= doc.get('instance') || Math.random().toString(36).substring(2, 8);
+		const doc = await this._loadFromEnv(blueprintDir);
+		deviceId ||= doc.get('deviceId');
+		const device = await this._getDevice(deviceId);
+		deviceId = device.id;
+		instance ||= doc.get('instance') || Math.random().toString(36).substring(2, 8);
 
-			await this.validateApplicationsHaveBeenMigrated(device);
+		await this.validateApplicationsHaveBeenMigrated(device);
 
-			const appName = await this._getAppName(blueprintDir);
-			const appInstance = `${appName}_${instance}`;
-			doc.set('deviceId', deviceId);
-			doc.set('instance', instance);
-			await this._saveToEnv(doc, blueprintDir);
+		const appName = await this._getAppName(blueprintDir);
+		const appInstance = `${appName}_${instance}`;
+		doc.set('deviceId', deviceId);
+		doc.set('instance', instance);
+		await this._saveToEnv(doc, blueprintDir);
 
-			this.ui.write(`Pushing application ${appInstance} to device ${deviceId}...${os.EOL}`);
+		this.ui.write(`Pushing application ${appInstance} to device ${deviceId}...${os.EOL}`);
 
-			this.ui.write('Building application...');
-			const composeDir = path.join(blueprintDir, appName);
-			const uuid = uuidv4();
+		this.ui.write('Building application...');
+		const composeDir = path.join(blueprintDir, appName);
+		const uuid = uuidv4();
 
-			await this._checkDockerVersion();
-			await this._installDockerCredHelper();
+		await this._checkDockerVersion();
+		await this._installDockerCredHelper();
 
-			// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
-			// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
-			// Then remove the build key from the docker-compose.yaml and replace it by the image key with the serviceTag
-			const dockerCompose = await this._getDockerCompose(composeDir);
+		// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
+		// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
+		// Then remove the build key from the docker-compose.yaml and replace it by the image key with the serviceTag
+		const dockerCompose = await this._getDockerCompose(composeDir);
 
-			const services = dockerCompose.get('services');
-			if (services) {
-				for (const { key: { value: service }, value: serviceConfig } of services.items) {
-					const buildDir = serviceConfig.get('build');
-					if (buildDir) {
-						const registryName = this._getRegistryName();
-						const serviceTag = `${registryName}/devices/${deviceId}/${service}:${uuid}`;
-						await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag, { amd64 });
-						this._updateDockerCompose(serviceConfig, serviceTag);
-					}
+		const services = dockerCompose.get('services');
+		if (services) {
+			for (const { key: { value: service }, value: serviceConfig } of services.items) {
+				const buildDir = serviceConfig.get('build');
+				if (buildDir) {
+					const registryName = this._getRegistryName();
+					const serviceTag = `${registryName}/devices/${deviceId}/${service}:${uuid}`;
+					await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag, { amd64 });
+					this._updateDockerCompose(serviceConfig, serviceTag);
 				}
 			}
-
-			this.ui.write(`${os.EOL}Successfully built ${appInstance}${os.EOL}`);
-
-			await this._pushApp(device, appInstance, dockerCompose.toString());
-
-			this.ui.write(`Successfully pushed ${appInstance} to device ${deviceId}${os.EOL}`);
-		} catch (error) {
-			if (error instanceof UnauthorizedError) {
-				throw new Error('You must be logged in to push an application to a device.');
-			}
-			throw error;
 		}
+
+		this.ui.write(`${os.EOL}Successfully built ${appInstance}${os.EOL}`);
+
+		await this._pushApp(device, appInstance, dockerCompose.toString());
+
+		this.ui.write(`Successfully pushed ${appInstance} to device ${deviceId}${os.EOL}`);
 	}
 
 	async _getAppName(blueprintDir) {
@@ -328,9 +321,6 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				this.ui.write(table.toString() + os.EOL);
 			}
 		} catch (error) {
-			if (error instanceof UnauthorizedError) {
-				throw new Error('You must be logged in to list applications. Run particle login and try again.');
-			}
 			if (error.statusCode === 404) {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
@@ -372,9 +362,6 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				this.ui.write(`Application ${appInstance} not found on device ${deviceId}.${os.EOL}`);
 			}
 		} catch (error) {
-			if (error instanceof UnauthorizedError) {
-				throw new Error('You must be logged in to remove an application. Run particle login and try again.');
-			}
 			if (error.statusCode === 404) {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
@@ -408,7 +395,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		try {
 			return await this.api.getDeviceAttributes({ deviceId });
 		} catch (error) {
-			throw new Error(`You do not have access to the ${deviceId}: ${error.message}`);
+			throw new VError(error, `You do not have access to the ${deviceId}`);
 		}
 	}
 

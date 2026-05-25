@@ -32,6 +32,17 @@ const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..
 Yargs.$0 = 'particle';
 
 
+function findAuthenticationError(err) {
+	let current = err;
+	while (current) {
+		if (current instanceof AuthenticationError) {
+			return current;
+		}
+		current = VError.cause ? VError.cause(current) : null;
+	}
+	return null;
+}
+
 async function runWithAuthMiddleware(options, argv){
 	try {
 		if (options.verifyTokenFreshness !== false) {
@@ -40,9 +51,12 @@ async function runWithAuthMiddleware(options, argv){
 		return await options.handler(argv);
 	} catch (err) {
 		let toThrow = err;
-		if (err instanceof InvalidTokenError) {
+		const authErr = findAuthenticationError(err);
+		if (authErr instanceof InvalidTokenError) {
 			clearActiveAccessToken();
 			toThrow = new MissingTokenError();
+		} else if (authErr) {
+			toThrow = authErr;
 		}
 		if (argv && argv.json && toThrow) {
 			toThrow.asJSON = true;

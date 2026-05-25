@@ -2,6 +2,7 @@
 const os = require('os');
 const path = require('path');
 const chalk = require('chalk');
+const VError = require('verror');
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const usbUtils = require('../cmd/usb-util');
@@ -66,7 +67,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (error.message === 'Not supported') {
 				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information.`);
 			}
-			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
+			throw new VError(error, 'Unable to get device status');
 		}
 
 		addToOutput.forEach((line) => {
@@ -110,7 +111,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (error.message === 'Not supported') {
 				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information.`);
 			}
-			throw new Error(`Failed to disable Device Protection: ${error.message}${os.EOL}`);
+			throw new VError(error, 'Failed to disable Device Protection');
 		}
 
 		addToOutput.forEach((line) => {
@@ -190,7 +191,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (error.message === 'Not supported') {
 				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 			}
-			throw new Error(`Failed to enable Device Protection: ${error.message}${os.EOL}`);
+			throw new VError(error, 'Failed to enable Device Protection');
 		}
 
 		addToOutput.forEach((line) => {
