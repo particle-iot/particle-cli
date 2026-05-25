@@ -4,6 +4,7 @@ const { AuthenticationError, MissingTokenError } = require('./auth-errors');
 const { createParticleApi } = require('./api-factory');
 
 const DEFAULT_FRESHNESS_THRESHOLD_MS = 5 * 60 * 1000;
+const NEVER_EXPIRES_SENTINEL = '9999-12-31T23:59:59.999Z';
 
 async function optionalApiCall(fn, fallback) {
 	try {
@@ -69,7 +70,7 @@ async function verifyFreshTokenMiddleware({ thresholdMs = DEFAULT_FRESHNESS_THRE
 		const { api } = createParticleApi();
 		try {
 			const info = await api.getCurrentAccessToken();
-			expiresAtStr = info && info.expires_at ? info.expires_at : null;
+			expiresAtStr = info && info.expires_at ? info.expires_at : NEVER_EXPIRES_SENTINEL; // treat tokens without expiration as never expiring
 			settings.override(null, 'access_token_expires_at', expiresAtStr);
 		} catch (err) {
 			if (err instanceof AuthenticationError) {
@@ -79,7 +80,6 @@ async function verifyFreshTokenMiddleware({ thresholdMs = DEFAULT_FRESHNESS_THRE
 			return;
 		}
 	}
-
 	const remaining = new Date(expiresAtStr).getTime() - Date.now();
 	if (remaining < thresholdMs) {
 		clearActiveAccessToken();
