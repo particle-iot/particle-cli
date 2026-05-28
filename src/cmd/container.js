@@ -59,7 +59,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			// Executing docker-compose up
 			await execa('docker', ['compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir, env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
-			throw new Error(`Failed to run Docker Compose: ${error.message}`);
+			throw new VError(error, 'Failed to run Docker Compose');
 		}
 	}
 
@@ -69,7 +69,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			await this._installDockerCredHelper();
 			this.ui.write('Docker is configured successfully.' + os.EOL);
 		} catch (error) {
-			throw new Error(`Failed to configure Docker: ${error.message}`);
+			throw new VError(error, 'Failed to configure Docker');
 		}
 	}
 
@@ -133,7 +133,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			const blueprintContent = await fs.readFile(blueprintPath, 'utf8');
 			doc = yaml.parseDocument(blueprintContent);
 		} catch (error) {
-			throw new Error(`Failed to parse blueprint.yaml: ${error.message}`);
+			throw new VError(error, 'Failed to parse blueprint.yaml');
 		}
 		const appName = doc.get('containers');
 		if (!appName || typeof appName !== 'string') {
@@ -151,7 +151,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			const composeData = await fs.readFile(dockerComposePath, 'utf8');
 			return yaml.parseDocument(composeData);
 		} catch (error) {
-			throw new Error(`Failed to read ${dockerComposePath}: ${error.message}`);
+			throw new VError(error, `Failed to read ${dockerComposePath}`);
 		}
 	}
 
@@ -221,7 +221,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				await fs.writeJson(configPath, config, { spaces: 2 });
 			}
 		} catch (error) {
-			throw new Error(`Failed to install Docker credential helper: ${error.message}`);
+			throw new VError(error, 'Failed to install Docker credential helper');
 		}
 	}
 
@@ -233,7 +233,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			}
 			await execa('docker', ['build', buildDir, '--platform', platforms.join(','), '--tag', serviceTag, '--push'], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
-			throw new Error(`Failed to build container ${serviceTag}. See the Docker output for details: ${error.message}`);
+			throw new VError(error, `Failed to build container ${serviceTag}. See the Docker output for details`);
 		}
 	}
 
@@ -264,7 +264,6 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			if (error.statusCode === 404) {
 				throw new Error(`Connect ${device.id} to the cloud before pushing an application. Run particle login and try again.`);
 			}
-			console.error('Error pushing application to the device:', error);
 			throw error;
 		}
 	}
@@ -324,7 +323,6 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			if (error.statusCode === 404) {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
-			console.error('Error getting application from the device:', error);
 			throw error;
 		}
 	}
@@ -366,7 +364,6 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
 
-			console.error(`Error removing application ${appInstance} from device ${deviceId}:`, error);
 			throw error;
 		}
 	}

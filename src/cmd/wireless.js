@@ -655,7 +655,7 @@ module.exports = class WirelessCommand {
 			self.stopSpin();
 
 			if (err) {
-				console.error(err);
+				console.log(chalk.red('!'), 'Scan error:', err.message);
 				console.log(
 					arrow,
 					'Your Photon encountered an error while trying to scan for nearby Wi-Fi networks. Retrying...'
@@ -999,7 +999,7 @@ module.exports = class WirelessCommand {
 						console.log();
 						self.exit();
 					}, (err) => {
-						console.error(alert, 'Error naming your photon: ', err);
+						console.error(alert, 'Error naming your photon:', err.message);
 						namePhoton(deviceId);
 					});
 				} else {
@@ -1036,7 +1036,7 @@ module.exports = class WirelessCommand {
 
 function manualDone(err, dat) {
 	if (err) {
-		return console.log(chalk.read('!'), 'An error occurred:', err);
+		return console.log(chalk.red('!'), 'An error occurred:', err.message);
 	}
 	if (dat && dat.id) {
 		return console.log(arrow, 'We successfully configured your Photon! Great work. We make a good team!', chalk.magenta('<3'));

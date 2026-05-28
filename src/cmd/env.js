@@ -3,6 +3,7 @@ const CLICommandBase = require('./base');
 const fs = require('node:fs/promises');
 const { displayEnv, displayRolloutInstructions } = require('../lib/env');
 const os = require('os');
+const VError = require('verror');
 
 module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
@@ -138,7 +139,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 			});
 			return operations.ops;
 		} catch (error) {
-			throw new Error(`Unable to process the file ${filename}: ${ error.message }`);
+			throw new VError(error, `Unable to process the file ${filename}`);
 		}
 	}
 

@@ -7,6 +7,7 @@ const UI = require('./ui');
 const crypto = require('crypto');
 const { delay } = require('./utilities');
 const os = require('os');
+const VError = require('verror');
 
 class DownloadManager {
 	/**
@@ -120,7 +121,7 @@ class DownloadManager {
 			} catch (error) {
 				attempt++;
 				if (attempt >= maxRetries) {
-					throw new Error(`Failed to download file after ${maxRetries} attempts: ${error.message}`);
+					throw new VError(error, `Failed to download file after ${maxRetries} attempts`);
 				}
 				this.ui.write(`Retrying download for ${outputFileName} after waiting for ${waitTime}ms...`);
 				await delay(waitTime);

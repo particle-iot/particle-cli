@@ -11,6 +11,7 @@ const { platformForId, PLATFORMS } = require('../platform');
 const { supportedCountries } = require('../supported-countries');
 const DownloadManager = require('../download-manager');
 const FlashCommand = require('../../cmd/flash');
+const VError = require('verror');
 
 /**
  *
@@ -507,7 +508,7 @@ async function runStepWithTiming(ui, stepDesc, stepNumber, asyncTask, minDuratio
 
 		return result;
 	} catch (err) {
-		throw new Error(`Step ${stepNumber} failed with the following error: ${err.message}`);
+		throw new VError(err, `Step ${stepNumber} failed with the following error`);
 	}
 }
 

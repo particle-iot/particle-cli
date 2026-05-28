@@ -13,6 +13,7 @@ const {
 	prepareFlashFiles, handleFlashError
 } = require('../lib/tachyon-utils');
 const settings = require('../../settings');
+const VError = require('verror');
 const { compressDir, fileExists } = require('../lib/utilities');
 
 const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
@@ -199,7 +200,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 			return tmpOutputDir;
 		} catch (err) {
-			throw new Error(`Zip file could not be extracted: ${err.message}`);
+			throw new VError(err, 'Zip file could not be extracted');
 		}
 	}
 

@@ -258,7 +258,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				delete config.board;
 				return { ...config, silent: true, loadedFromFile: true };
 			} catch (error) {
-				throw new Error(`The configuration file is not a valid JSON file: ${error.message}`);
+				throw new VError(error, 'The configuration file is not a valid JSON file');
 			}
 		}
 	}

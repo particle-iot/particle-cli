@@ -13,6 +13,7 @@ const {
 const utilities = require('../lib/utilities');
 const os = require('os');
 const temp = require('temp').track();
+const VError = require('verror');
 
 const MIN_ASSET_SUPPORT_VERSION = 5500;
 
@@ -50,7 +51,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 			this.ui.stdout.write(`Writing ${envPath} data into the binary...${os.EOL}`);
 			return await fs.readJSON(envPath);
 		} catch (error) {
-			throw new Error(`Env vars in file ${envPath} cannot be processed: ${ error.message }`);
+			throw new VError(error, `Env vars in file ${envPath} cannot be processed`);
 		}
 	}
 

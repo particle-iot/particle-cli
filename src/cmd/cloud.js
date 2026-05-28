@@ -691,7 +691,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		try {
 			return await fs.readJSON(envPath);
 		} catch (error) {
-			throw new Error(`Env vars in file ${envPath} cannot be processed: ${ error.message }`);
+			throw new VError(error, `Env vars in file ${envPath} cannot be processed`);
 		}
 
 	}

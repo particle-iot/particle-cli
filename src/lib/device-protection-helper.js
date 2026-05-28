@@ -38,6 +38,7 @@ async function disableDeviceProtection(device) {
 		if (error.message === 'Device public key was not found') {
 			throw new Error(`Server key mismatch while putting device in Service Mode. Check that device is accessible through ${settings.apiUrl || 'https://api.particle.io'}.${os.EOL}`);
 		}
+		throw error;
 	}
 }
 
