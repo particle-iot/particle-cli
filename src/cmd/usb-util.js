@@ -141,6 +141,9 @@ async function executeWithUsbDevice({ args, func, enterDfuMode = false, allowPro
 	} finally {
 		if (deviceIsProtected) {
 			try {
+				if (device && device.isOpen) {
+					await device.close();
+				}
 				device = await waitForDeviceToRespond(deviceId);
 				await deviceProtectionHelper.turnOffServiceMode(device);
 			} catch (_err) {
@@ -201,6 +204,10 @@ async function _putDeviceInSafeMode(dev) {
 		await dev.enterSafeMode();
 	} catch (_err) {
 		// ignore errors
+	} finally {
+		if (dev.isOpen) {
+			await dev.close();
+		}
 	}
 	return reopenInNormalMode({ id: deviceId });
 }
