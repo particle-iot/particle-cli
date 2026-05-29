@@ -34,11 +34,11 @@ Yargs.$0 = 'particle';
 
 function findAuthenticationError(err) {
 	let current = err;
-	while (current) {
+	while (current instanceof Error) {
 		if (current instanceof AuthenticationError) {
 			return current;
 		}
-		current = VError.cause ? VError.cause(current) : null;
+		current = VError.cause(current);
 	}
 	return null;
 }
