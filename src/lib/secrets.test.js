@@ -145,12 +145,11 @@ describe('secrets', () => {
 
 		it('throws an error in case there is no secret with the given name', async () => {
 			const name = 'SECRET_NAME';
-			const errorMessage = 'HTTP error 404 from https://api.particle.io/v1/secrets/SECRET_NAME';
 			nock(baseUrl)
 				.intercept(`/secrets/${name}`, 'GET')
 				.reply(404, { ok: false, error: 'not found' });
 			const secretResponse = secrets.get({ api, name, sandbox: true });
-			await expect(secretResponse).to.be.rejectedWith(errorMessage);
+			await expect(secretResponse).to.be.rejectedWith('not found');
 		});
 
 	});

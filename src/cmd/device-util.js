@@ -30,15 +30,13 @@ module.exports.formatDeviceInfo = ({ id, type, name = null }) => {
  *
  * @param {Object} options Options.
  * @param {String} options.id Device ID or name.
- * @param {Object} options.api API client.
- * @param {String} options.auth Access token.
+ * @param {Object} options.api Wrapped `ParticleApi`-like client (its `getDevice` returns the unwrapped body).
  * @param {String} [options.displayName] Device name as shown to the user.
  * @param {Boolean} [options.dontThrow] Return 'null' instead of throwing an error if the device cannot be found.
  * @param {Promise<Object>}
  */
-module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = false }) => {
-	return api.getDevice({ deviceId: id, auth })
-		.then(res => res.body)
+module.exports.getDevice = ({ id, api, displayName = null, dontThrow = false }) => {
+	return api.getDevice({ deviceId: id })
 		.catch(error => {
 			if (error.statusCode === 403 || error.statusCode === 404) {
 				if (dontThrow) {

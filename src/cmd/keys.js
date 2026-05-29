@@ -2,30 +2,29 @@
 const fs = require('fs');
 const url = require('url');
 const path = require('path');
-const settings = require('../../settings');
 const usbUtils = require('./usb-util');
 const VError = require('verror');
 const temp = require('temp').track();
 const utilities = require('../lib/utilities');
-const ApiClient = require('../lib/api-client');
+const { requireToken } = require('../lib/api-call');
 const { keysDctOffsets } = require('../lib/keys-specs');
 const { platforms } = require('@particle/device-constants');
 const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
-const UI = require('../lib/ui');
-const ParticleApi = require('./api');
+const CLICommandBase = require('./base');
 const { DeviceProtectionError } = require('particle-usb');
 
 /**
  * Commands for managing encryption keys.
  * @constructor
  */
-module.exports = class KeysCommand {
-	constructor(){
+module.exports = class KeysCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
 		this.platform = null;
-		this.auth = settings.access_token;
-		this.api = new ParticleApi(settings.apiUrl, { accessToken: this.auth }).api;
-		this.ui = new UI({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, quiet: false });
+		const { api, auth } = this._particleApi();
+		this.auth = auth;
+		this.api = api;
 	}
 
 	async makeKeyOpenSSL(filename, alg) {
@@ -183,8 +182,7 @@ module.exports = class KeysCommand {
 			}
 		}
 
-		const api = new ApiClient();
-		api.ensureToken();
+		requireToken();
 
 		const pubKey = temp.path({ suffix: '.pub.pem' });
 		const inform = path.extname(filename).toLowerCase() === '.der' ? 'DER' : 'PEM';
@@ -208,7 +206,9 @@ module.exports = class KeysCommand {
 
 			const keyBuf = await readFile(pubKey);
 			const apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
-			await api.sendPublicKey(deviceID, keyBuf, apiAlg, productId);
+			console.log('attempting to add a new public key for device ' + deviceID);
+			await this.api.sendPublicKey({ deviceId: deviceID, key: keyBuf, algorithm: apiAlg, productId });
+			console.log('submitting public key succeeded!');
 		} catch (err) {
 			cleanup();
 			throw new VError(ensureError(err), 'Error sending public key to server');

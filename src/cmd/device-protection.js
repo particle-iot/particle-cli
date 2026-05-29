@@ -2,12 +2,10 @@
 const os = require('os');
 const path = require('path');
 const chalk = require('chalk');
+const VError = require('verror');
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const usbUtils = require('../cmd/usb-util');
-const ParticleApi = require('../cmd/api');
-const settings = require('../../settings');
-const createApiCache = require('../lib/api-cache');
 const { downloadDeviceOsVersionBinaries } = require('../lib/device-os-version-util');
 const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
@@ -69,7 +67,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (error.message === 'Not supported') {
 				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information.`);
 			}
-			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
+			throw new VError(error, 'Unable to get device status');
 		}
 
 		addToOutput.forEach((line) => {
@@ -113,7 +111,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (error.message === 'Not supported') {
 				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information.`);
 			}
-			throw new Error(`Failed to disable Device Protection: ${error.message}${os.EOL}`);
+			throw new VError(error, 'Failed to disable Device Protection');
 		}
 
 		addToOutput.forEach((line) => {
@@ -193,7 +191,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (error.message === 'Not supported') {
 				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 			}
-			throw new Error(`Failed to enable Device Protection: ${error.message}${os.EOL}`);
+			throw new VError(error, 'Failed to enable Device Protection');
 		}
 
 		addToOutput.forEach((line) => {
@@ -248,11 +246,11 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async _markAsDevelopmentDevice(state) {
 		try {
 			if (this.productId) {
-				const data = await this.api.getDeviceAttributes(this.deviceId, this.productId);
+				const data = await this.api.getDeviceAttributes({ deviceId: this.deviceId, product: this.productId });
 				if (data.development === state) {
 					return;
 				}
-				await this.api.markAsDevelopmentDevice(this.deviceId, state, this.productId);
+				await this.api.markAsDevelopmentDevice({ deviceId: this.deviceId, development: state, product: this.productId });
 				return true;
 			}
 		} catch (_err) {
@@ -274,7 +272,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			return false;
 		}
 
-		const res = await this.api.getProduct({ product: this.productId, auth: settings.access_token });
+		const res = await this.api.getProduct({ product: this.productId });
 		return res?.product?.device_protection === 'active';
 	}
 
@@ -291,7 +289,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 
 		try {
-			const attrs = await this.api.getDeviceAttributes(this.deviceId);
+			const attrs = await this.api.getDeviceAttributes({ deviceId: this.deviceId });
 			this.productId = attrs.platform_id !== attrs.product_id ? attrs.product_id : null;
 		} catch (_err) {
 			return null;
@@ -372,10 +370,4 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 *
 	 * @returns {Object} The Particle API instance and authentication token.
 	 */
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 };

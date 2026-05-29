@@ -87,7 +87,7 @@ describe('Publish Commands', () => {
 		await cli.logout();
 		const { stdout, stderr, exitCode } = await cli.run(['publish', eventName]);
 
-		expect(stdout).to.include('Error publishing event: The access token was not found');
+		expect(stdout).to.include("You're not logged in. Run `particle login` to authenticate.");
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

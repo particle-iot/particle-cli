@@ -2,7 +2,7 @@
 const _ = require('lodash');
 const util = require('util');
 const WiFiManager = require('../lib/wifi-manager');
-const ApiClient = require('../lib/api-client');
+const { createParticleApi } = require('../lib/api-factory');
 const settings = require('../../settings');
 const inquirer = require('inquirer');
 const prompt = inquirer.prompt;
@@ -55,7 +55,8 @@ module.exports = class WirelessCommand {
 
 		this.sap = new SAP();
 		this.manual = false;
-		this.api = new ApiClient();
+		const { api } = createParticleApi();
+		this.api = api;
 		this.prompt = prompt;
 	}
 
@@ -654,7 +655,7 @@ module.exports = class WirelessCommand {
 			self.stopSpin();
 
 			if (err) {
-				console.error(err);
+				console.log(chalk.red('!'), 'Scan error:', err.message);
 				console.log(
 					arrow,
 					'Your Photon encountered an error while trying to scan for nearby Wi-Fi networks. Retrying...'
@@ -914,7 +915,7 @@ module.exports = class WirelessCommand {
 			self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
 
 			setTimeout(() => {
-				self.api.listDevices({ silent: true }).then((body) => {
+				self.api.listDevices().then((body) => {
 					checkDevices(null, body);
 				}, (error) => {
 					checkDevices(error);
@@ -969,7 +970,7 @@ module.exports = class WirelessCommand {
 
 			function recheck(ans) {
 				if (ans.recheck === 'recheck') {
-					self.api.listDevices({ silent: true }).then((body) => {
+					self.api.listDevices().then((body) => {
 						checkDevices(null, body);
 					}, (error) => {
 						checkDevices(error);
@@ -991,14 +992,14 @@ module.exports = class WirelessCommand {
 				// todo - retrieve existing name of the device?
 				const deviceName = ans.deviceName;
 				if (deviceName) {
-					self.api.renameDevice(deviceId, deviceName).then(() => {
+					self.api.renameDevice({ deviceId, name: deviceName }).then(() => {
 						console.log();
 						console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
 						console.log(arrow, "Congratulations! You've just won the internet!");
 						console.log();
 						self.exit();
 					}, (err) => {
-						console.error(alert, 'Error naming your photon: ', err);
+						console.error(alert, 'Error naming your photon:', err.message);
 						namePhoton(deviceId);
 					});
 				} else {
@@ -1035,7 +1036,7 @@ module.exports = class WirelessCommand {
 
 function manualDone(err, dat) {
 	if (err) {
-		return console.log(chalk.read('!'), 'An error occurred:', err);
+		return console.log(chalk.red('!'), 'An error occurred:', err.message);
 	}
 	if (dat && dat.id) {
 		return console.log(arrow, 'We successfully configured your Photon! Great work. We make a good team!', chalk.magenta('<3'));

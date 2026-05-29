@@ -24,10 +24,49 @@ const chalk = require('chalk');
 const VError = require('verror');
 const yargsFactory = require('yargs/yargs');
 const { JSONErrorResult } = require('../lib/json-result');
+const { AuthenticationError, MfaRequiredError, MissingTokenError, InvalidTokenError } = require('../lib/auth-errors');
+const { verifyFreshTokenMiddleware, clearActiveAccessToken } = require('../lib/api-call');
 
 // It's important to run yargs in the directory of the script so it picks up options from package.json
 const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
 Yargs.$0 = 'particle';
+
+
+function findAuthenticationError(err) {
+	let current = err;
+	while (current instanceof Error) {
+		if (current instanceof AuthenticationError) {
+			return current;
+		}
+		current = VError.cause(current);
+	}
+	return null;
+}
+
+async function runWithAuthMiddleware(options, argv){
+	try {
+		if (options.tokenExpiryThresholdMs) {
+			await verifyFreshTokenMiddleware({
+				thresholdMs: options.tokenExpiryThresholdMs,
+				relogin: options.relogin
+			});
+		}
+		return await options.handler(argv);
+	} catch (err) {
+		let toThrow = err;
+		const authErr = findAuthenticationError(err);
+		if (authErr instanceof InvalidTokenError) {
+			clearActiveAccessToken();
+			toThrow = new MissingTokenError();
+		} else if (authErr) {
+			toThrow = authErr;
+		}
+		if (argv && argv.json && toThrow) {
+			toThrow.asJSON = true;
+		}
+		throw toThrow;
+	}
+}
 
 
 class CLICommandItem {
@@ -261,12 +300,25 @@ class CLICommandItem {
 	 */
 	exec(argv){
 		if (this.options.handler){
-			return Promise.resolve().then(() => this.options.handler(argv));
+			const tokenExpiryThresholdMs = this._resolveTokenExpiryThresholdMs();
+			const effectiveOptions = { ...this.options, tokenExpiryThresholdMs };
+			return Promise.resolve().then(() => runWithAuthMiddleware(effectiveOptions, argv));
 		}
 		if (argv.version && this.version){
 			return Promise.resolve(this.version(argv));
 		}
 		return this.showHelp();
+	}
+
+	_resolveTokenExpiryThresholdMs(){
+		let item = this;
+		while (item){
+			if (item.options && item.options.tokenExpiryThresholdMs !== undefined){
+				return item.options.tokenExpiryThresholdMs;
+			}
+			item = item.parent;
+		}
+		return undefined;
 	}
 
 	showHelp(){
@@ -457,6 +509,17 @@ function consoleErrorLogger(console, yargs, exit, error){
 			console.log(
 				new JSONErrorResult(error).toString()
 			);
+		} else if (error instanceof AuthenticationError && !(error instanceof MfaRequiredError)){
+			console.log(chalk.red('!'), error.message);
+			// MissingTokenError's message already directs the user to `particle login`;
+			// only add the hint for the bad-token case where the message is short
+			// (e.g. extracted server text like "Invalid token").
+			if (!(error instanceof MissingTokenError)){
+				console.log('  Run', chalk.cyan('particle login'), 'to log in again.');
+			}
+			if (!usage && error.stack && verbose){
+				console.log(VError.fullStack(error));
+			}
 		} else {
 			console.log(
 				chalk.red(error.message || stringify(error))

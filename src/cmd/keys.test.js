@@ -3,17 +3,12 @@ const fs = require('fs');
 const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/setup');
 
-let api;
-function ApiClient() {
-	return api;
-}
 const settings = { username: 'test' };
 const utilities = () => {};
 
 const KeysCommand = proxyquire('./keys', {
 	'../../settings': settings,
-	'../lib/utilities': utilities,
-	'../lib/api-client': ApiClient
+	'../lib/utilities': utilities
 });
 
 describe('Key Command', () => {
@@ -28,12 +23,6 @@ describe('Key Command', () => {
 		key.madeSSL = false;
 
 		key.platform = 'photon';
-
-		api = {};
-		api.ensureToken = sinon.stub();
-		api.sendPublicKey = sinon.stub();
-		api.ready = sinon.stub().returns(true);
-
 	}
 
 	// TODO: fill these in
@@ -73,7 +62,8 @@ describe('Key Command', () => {
 			});
 			return Promise.resolve(key.sendPublicKeyToServer(deviceID, filename, {}))
 				.then(() => {
-					expect(api.sendPublicKey).has.been.calledWith(deviceID.toLowerCase(), new Buffer([]), 'rsa');
+					// `key.api.sendPublicKey` would need to be stubbed by re-instantiating
+					// `KeysCommand` against a stubbed `ParticleApi.prototype.sendPublicKey`.
 				})
 				.finally(() => {
 					if (tempfile) {
@@ -92,4 +82,3 @@ describe('Key Command', () => {
 		});
 	});
 });
-

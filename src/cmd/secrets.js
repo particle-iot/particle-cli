@@ -1,7 +1,6 @@
 
 'use strict';
 const CLICommandBase = require('./base');
-const ParticleAPI = require('./api');
 const settings = require('../../settings');
 const secrets = require('../lib/secrets');
 
@@ -13,7 +12,7 @@ const secrets = require('../lib/secrets');
 module.exports = class SecretsCommand extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
-		this.api = createAPI();
+		this.api = this._particleApi().api;
 		this.consoleBaseUrl = settings.isStaging ? 'https://console.staging.particle.io' : 'https://console.particle.io';
 	}
 
@@ -143,8 +142,3 @@ module.exports = class SecretsCommand extends CLICommandBase {
 
 
 
-function createAPI() {
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}

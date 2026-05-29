@@ -1,15 +1,16 @@
 'use strict';
 const path = require('path');
 const fs = require('fs-extra');
-const ParticleAPI = require('../cmd/api');
-const settings = require('../../settings');
-const VError = require('verror');
-const { normalizedApiError } = require('./api-client');
+const { createParticleApi } = require('./api-factory');
 const { slugify, globList } = require('./utilities');
 const templateProcessor = require('./template-processor');
 
+function defaultApi() {
+	return createParticleApi().api;
+}
+
 class LogicFunction {
-	constructor({ org, name, id, description, type, enabled, _path, version, api_username, secrets, use_env, triggers, api = createAPI() }) {
+	constructor({ org, name, id, description, type, enabled, _path, version, api_username, secrets, use_env, triggers, api = defaultApi() }) {
 		// throw if api is not provided
 		this.org = org;
 		this.name = name;
@@ -37,28 +38,22 @@ class LogicFunction {
 		};
 	}
 
-	static async listFromCloud({ org, api = createAPI() } = {}) {
-		try {
-			const response = await api.getLogicFunctionList({ org: org });
-			const logicFunctions = response.logic_functions.map(logicFunctionData => {
-				const lf = new LogicFunction({
-					org,
-					...logicFunctionData,
-					triggers: logicFunctionData.logic_triggers,
-					api
-				});
-				const source = logicFunctionData.source;
-				lf.files.sourceCode.content = source ? source.code : '';
-				return lf;
-
+	static async listFromCloud({ org, api = defaultApi() } = {}) {
+		const response = await api.getLogicFunctionList({ org: org });
+		return response.logic_functions.map(logicFunctionData => {
+			const lf = new LogicFunction({
+				org,
+				...logicFunctionData,
+				triggers: logicFunctionData.logic_triggers,
+				api
 			});
-			return logicFunctions;
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error listing Logic Functions' });
-		}
+			const source = logicFunctionData.source;
+			lf.files.sourceCode.content = source ? source.code : '';
+			return lf;
+		});
 	}
 
-	static async listFromDisk({ filepath, org, api = createAPI() } = {}) {
+	static async listFromDisk({ filepath, org, api = defaultApi() } = {}) {
 		const logicFunctions = [];
 		const malformedLogicFunctions = [];
 		if (!filepath) {
@@ -114,7 +109,7 @@ class LogicFunction {
 		};
 	}
 
-	static async loadFromDisk({ basePath, fileName, org, api = createAPI() } = {}) {
+	static async loadFromDisk({ basePath, fileName, org, api = defaultApi() } = {}) {
 		// if receive a .js then look for a .logic.json
 		// we need both files to be present
 		const baseFileName = fileName.substring(0, fileName.indexOf('.'));
@@ -163,17 +158,12 @@ class LogicFunction {
 			secrets: this.secrets,
 			use_env: this.use_env
 		};
-		try {
-			const { result } =
-				await this.api.executeLogicFunction({ org: this.org, logic: logicEvent });
-			return {
-				logs: result.logs,
-				error: result.err,
-				status: result.status,
-			};
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error executing Logic Function' });
-		}
+		const { result } = await this.api.executeLogicFunction({ org: this.org, logic: logicEvent });
+		return {
+			logs: result.logs,
+			error: result.err,
+			status: result.status,
+		};
 	}
 
 	async deploy() {
@@ -198,41 +188,28 @@ class LogicFunction {
 	}
 
 	async createToCloud(logicFunctionData) {
-		try {
-			const result = await this.api.createLogicFunction({
-				org: this.org,
-				logicFunction: logicFunctionData,
-			});
-			this.id = result.logic_function.id;
-			this.version = result.logic_function.version;
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error deploying Logic Function' });
-		}
-
+		const result = await this.api.createLogicFunction({
+			org: this.org,
+			logicFunction: logicFunctionData,
+		});
+		this.id = result.logic_function.id;
+		this.version = result.logic_function.version;
 	}
 
 	async updateToCloud(logicFunctionData) {
-		try {
-			const result = await this.api.updateLogicFunction({
-				org: this.org,
-				id: this.id,
-				logicFunctionData: logicFunctionData,
-			});
-			this.version = result.logic_function.version;
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error deploying Logic Function' });
-		}
+		const result = await this.api.updateLogicFunction({
+			org: this.org,
+			id: this.id,
+			logicFunctionData: logicFunctionData,
+		});
+		this.version = result.logic_function.version;
 	}
 
 	async deleteFromCloud() {
-		try {
-			await this.api.deleteLogicFunction({
-				org: this.org,
-				id: this.id
-			});
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error deleting Logic Function' });
-		}
+		await this.api.deleteLogicFunction({
+			org: this.org,
+			id: this.id
+		});
 	}
 
 	copyFromOtherLogicFunction(logicFunction) {
@@ -351,38 +328,6 @@ class LogicFunction {
 		this.use_env = data.use_env;
 		this.triggers = data.logic_triggers;
 	}
-}
-
-function createAPI() {
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}
-
-function createAPIErrorResult({ error: e, message, json }){
-	const error = new VError(formatAPIErrorMessage(e), message);
-	error.asJSON = json;
-	return error;
-}
-
-function formatAPIErrorMessage(error){
-	error = normalizedApiError(error);
-
-	if (error.body){
-		if (typeof error.body.error === 'string'){
-			error.message = error.body.error;
-		} else if (Array.isArray(error.body.errors)){
-			if (error.body.errors.length === 1){
-				error.message = error.body.errors[0];
-			}
-		}
-	}
-
-	if (error.message.includes('That belongs to someone else.')){
-		error.canRequestTransfer = true;
-	}
-
-	return error;
 }
 
 module.exports = LogicFunction;

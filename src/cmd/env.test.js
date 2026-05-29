@@ -193,9 +193,7 @@ describe('config env Command', () => {
 			const deviceId = 'abc123';
 
 			// Stub API methods for displayRolloutInstructions
-			sinon.stub(envCommands.api, 'getDevice').resolves({
-				body: { id: deviceId, product_id: 12345 }
-			});
+			sinon.stub(envCommands.api, 'getDevice').resolves({ id: deviceId, product_id: 12345 });
 			sinon.stub(envCommands.api, 'getProduct').resolves({
 				product: { slug: 'my-product' }
 			});
@@ -338,9 +336,7 @@ describe('config env Command', () => {
 			let receivedBody;
 			const params = { name: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
-			sinon.stub(envCommands.api, 'getDevice').resolves({
-				body: { id: deviceId, product_id: 12345 }
-			});
+			sinon.stub(envCommands.api, 'getDevice').resolves({ id: deviceId, product_id: 12345 });
 			sinon.stub(envCommands.api, 'getProduct').resolves({
 				product: { slug: 'my-product' }
 			});

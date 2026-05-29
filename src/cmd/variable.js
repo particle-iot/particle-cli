@@ -8,11 +8,7 @@ const find = require('lodash/find');
 const filter = require('lodash/filter');
 const prompt = require('inquirer').prompt;
 const settings = require('../../settings');
-const LegacyApiClient = require('../lib/api-client');
-const ParticleAPI = require('./api');
 const CLICommandBase = require('./base');
-
-const { normalizedApiError } = LegacyApiClient;
 
 
 module.exports = class VariableCommand extends CLICommandBase {
@@ -22,10 +18,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 
 	listVariables(){
 		return this.getAllVariablesWithCache()
-			.then(devices => this.ui.logDeviceDetail(devices, { varsOnly: true }))
-			.catch(err => {
-				throw new VError(normalizedApiError(err), 'Error while listing variables');
-			});
+			.then(devices => this.ui.logDeviceDetail(devices, { varsOnly: true }));
 	}
 
 	getValue({ time, product, params: { device, variableName } }){
@@ -45,14 +38,11 @@ module.exports = class VariableCommand extends CLICommandBase {
 			}
 
 			const msg = `Fetching variable ${variableName} from device ${device} in product ${product}`;
-			const fetchVar = createAPI().getVariable(device, variableName, product);
+			const { api } = this._particleApi();
+			const fetchVar = api.getVariable({ deviceId: device, name: variableName, product });
 			return this.ui.showBusySpinnerUntilResolved(msg, fetchVar)
 				.then(res => {
 					this.ui.stdout.write(`${res.result}${os.EOL}`);
-				})
-				.catch(error => {
-					const message = `Error fetching variable: \`${variableName}\``;
-					throw createAPIErrorResult({ error, message });
 				});
 		}
 
@@ -73,10 +63,6 @@ module.exports = class VariableCommand extends CLICommandBase {
 				}
 
 				return this._getValue(device, variableName, { time });
-			})
-			.catch(err => {
-				const api = new LegacyApiClient();
-				throw new VError(api.normalizedApiError(err), 'Error while reading value');
 			});
 	}
 
@@ -85,11 +71,15 @@ module.exports = class VariableCommand extends CLICommandBase {
 			deviceId = [deviceId];
 		}
 
-		const api = new LegacyApiClient();
-		api.ensureToken();
+		const { api } = this._particleApi();
 
 		const multipleCores = deviceId.length > 1;
-		const getVariables = deviceId.map((id) => api.getVariable(id, variableName));
+		// Catch per-device so a single failure doesn't reject the whole batch — the
+		// loop below renders `result.error` per row, matching the legacy UX.
+		const getVariables = deviceId.map((id) =>
+			api.getVariable({ deviceId: id, name: variableName })
+				.catch(err => ({ error: err.message || String(err) }))
+		);
 
 		return Promise.all(getVariables)
 			.then((results) => {
@@ -145,10 +135,6 @@ module.exports = class VariableCommand extends CLICommandBase {
 				}
 				this.ui.stderr.write(`Hit CTRL-C to stop!${os.EOL}`);
 				return this._pollForVariable(deviceIds, variableName, { delay, time });
-			})
-			.catch(err => {
-				const api = new LegacyApiClient();
-				throw new VError(api.normalizedApiError(err), 'Error while monitoring variable');
 			});
 	}
 
@@ -220,51 +206,22 @@ module.exports = class VariableCommand extends CLICommandBase {
 
 		this.ui.stdout.write(`polling server to see what devices are online, and what variables are available${os.EOL}`);
 
-		const api = new LegacyApiClient();
-		api.ensureToken();
+		const { api } = this._particleApi();
 
-		return Promise.resolve()
-			.then(() => api.listDevices())
+		return api.listDevices()
 			.then(devices => {
 				if (!devices || (devices.length === 0)){
 					this.ui.stdout.write(`No devices found.${os.EOL}`);
 					this._cachedVariableList = null;
-				} else {
-					const promises = [];
-					for (let i = 0; i < devices.length; i++){
-						const deviceid = devices[i].id;
-						if (devices[i].connected){
-							promises.push(api.getAttributes(deviceid));
-						} else {
-							promises.push(Promise.resolve(devices[i]));
-						}
-					}
-
-					return Promise.all(promises).then((devices) => {
-						//sort alphabetically
-						devices = devices.sort((a, b) => {
-							return (a.name || '').localeCompare(b.name);
-						});
-
-						this._cachedVariableList = devices;
-						return devices;
-					});
+					return null;
 				}
+				return Promise.all(devices.map(d =>
+					d.connected ? api.getDeviceAttributes({ deviceId: d.id }) : Promise.resolve(d)
+				)).then((devices) => {
+					devices = devices.sort((a, b) => (a.name || '').localeCompare(b.name));
+					this._cachedVariableList = devices;
+					return devices;
+				});
 			});
 	}
 };
-
-
-// UTILS //////////////////////////////////////////////////////////////////////
-function createAPI(){
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}
-
-function createAPIErrorResult({ error: e, message, json }){
-	const error = new VError(normalizedApiError(e), message);
-	error.asJSON = json;
-	return error;
-}
-

@@ -54,12 +54,11 @@ describe('library', () => {
 		});
 
 		itHasAccessToken('can fetch a list of libraries with a filter', () => {
-			// todo - I copied this from the libraryAdd command - why do we need to specify access token twice? --mdma
 			const apiJS = new ParticleApi(settings.apiUrl, {
 				accessToken: fetchAccessToken()
-			}).api;
+			});
 
-			const apiClient = apiJS.client({ auth: settings.access_token });
+			const apiClient = apiJS.getLibraryClient();
 			const sut = new LibraryAddCommand({ apiClient });
 			const site = new LibraryAddCommandSite();
 			site.notifyListLibrariesStart = sinon.spy(site.notifyListLibrariesStart);

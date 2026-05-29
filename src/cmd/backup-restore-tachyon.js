@@ -13,9 +13,8 @@ const {
 	prepareFlashFiles, handleFlashError
 } = require('../lib/tachyon-utils');
 const settings = require('../../settings');
+const VError = require('verror');
 const { compressDir, fileExists } = require('../lib/utilities');
-const ParticleApi = require('./api');
-const createApiCache = require('../lib/api-cache');
 
 const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
 
@@ -201,16 +200,10 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 			return tmpOutputDir;
 		} catch (err) {
-			throw new Error(`Zip file could not be extracted: ${err.message}`);
+			throw new VError(err, 'Zip file could not be extracted');
 		}
 	}
 
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 
 	_setupApi() {
 		const { api } = this._particleApi();

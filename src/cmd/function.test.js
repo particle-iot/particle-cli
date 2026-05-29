@@ -51,7 +51,7 @@ describe('Function Command', () => {
 					expect(ParticleAPI.prototype.callFunction)
 						.to.have.property('callCount', 1);
 					expect(ParticleAPI.prototype.callFunction.firstCall.args)
-						.to.eql([device, fn, arg, product]);
+						.to.eql([{ deviceId: device, name: fn, argument: arg, product }]);
 				});
 		});
 
@@ -64,7 +64,7 @@ describe('Function Command', () => {
 					expect(ParticleAPI.prototype.callFunction)
 						.to.have.property('callCount', 1);
 					expect(ParticleAPI.prototype.callFunction.firstCall.args)
-						.to.eql([device, fn, arg, product]);
+						.to.eql([{ deviceId: device, name: fn, argument: arg, product }]);
 				});
 		});
 	});
@@ -77,7 +77,7 @@ describe('Function Command', () => {
 					throw new Error('expected promise to be rejected');
 				})
 				.catch(error => {
-					expect(error).to.have.property('message', `Error calling function: \`${fn}\`: Function fn not found`);
+					expect(error).to.have.property('message', 'Function fn not found');
 				});
 		});
 	});

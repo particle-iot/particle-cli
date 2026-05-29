@@ -319,7 +319,7 @@ describe('Subscribe Commands [@device]', () => {
 		await cli.logout();
 		const { stdout, stderr, exitCode } = await cli.run(['subscribe']);
 
-		expect(stdout).to.include('Error fetching event stream: The access token provided is invalid.');
+		expect(stdout).to.include('! You\'re not logged in. Run `particle login` to authenticate.');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

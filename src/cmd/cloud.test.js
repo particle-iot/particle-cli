@@ -4,14 +4,16 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const { expect } = require('../../test/setup');
-const sandbox = require('sinon').createSandbox();
+const sinon = require('sinon');
+const sandbox = sinon.createSandbox();
 const { PATH_FIXTURES_THIRDPARTY_OTA_DIR, PATH_TMP_DIR } = require('../../test/lib/env');
+const { MfaRequiredError } = require('../lib/auth-errors');
 
 const stubs = {
 	api: {
 		login: () => {},
 		sendOtp: () => {},
-		getUser: () => {}
+		getUserInfo: () => {}
 	},
 	utils: {},
 	prompts: {
@@ -22,16 +24,12 @@ const stubs = {
 		clientId: 'CLITESTS',
 		username: 'test@example.com',
 		override: () => {}
-	},
-	ApiClient: function ApiClient(){
-		return stubs.api;
 	}
 };
 
 const CloudCommands = proxyquire('./cloud', {
 	'../../settings': stubs.settings,
 	'../lib/utilities': stubs.utils,
-	'../lib/api-client': stubs.ApiClient,
 	'../lib/prompts': stubs.prompts
 });
 
@@ -42,12 +40,12 @@ describe('Cloud Commands', () => {
 
 	beforeEach(() => {
 		fakeToken = 'FAKE-ACCESS-TOKEN';
-		fakeTokenResponse = { access_token: fakeToken };
+		fakeTokenResponse = { access_token: fakeToken, expires_in: 7776000 };   // 90 days
 		fakeCredentials = { username: 'test@example.com', password: 'fake-pw' };
 		fakeUser = { username: 'test@example.com' };
 		fakeMfaToken = 'abc1234';
 		fakeOtp = '123456';
-		fakeOtpError = { error: 'mfa_required', mfa_token: fakeMfaToken };
+		fakeOtpError = new MfaRequiredError({ mfaToken: fakeMfaToken });
 	});
 
 	afterEach(() => {
@@ -58,16 +56,21 @@ describe('Cloud Commands', () => {
 		it('accepts token arg', withConsoleStubs(() => {
 			const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
 			const { username } = fakeCredentials;
-			api.getUser.resolves(fakeUser);
+			api.getUserInfo.resolves(fakeUser);
 
 			return cloud.login({ token: fakeToken })
 				.then(t => {
 					expect(t).to.equal(fakeToken);
 					expect(api.login).to.have.property('callCount', 0);
-					expect(api.getUser).to.have.property('callCount', 1);
+					expect(api.getUserInfo).to.have.property('callCount', 1);
+					// `--token` flow: expiry not known yet. setActiveAccessToken
+					// writes only `access_token` (leaves `access_token_expires_at`
+					// for the freshness middleware to discover later). Plus the
+					// `username` write = 2 total.
 					expect(settings.override).to.have.property('callCount', 2);
-					expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
-					expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
+					expect(settings.override).to.have.been.calledWith(null, 'access_token', fakeToken);
+					expect(settings.override).to.have.been.calledWith(null, 'username', username);
+					expect(settings.override).to.not.have.been.calledWith(null, 'access_token_expires_at', sinon.match.any);
 				});
 		}));
 
@@ -80,13 +83,8 @@ describe('Cloud Commands', () => {
 				.then(t => {
 					expect(t).to.equal(fakeToken);
 					expect(api.login).to.have.property('callCount', 1);
-					expect(api.login.firstCall).to.have.property('args').lengthOf(3);
-					expect(api.login.firstCall.args[0]).to.equal(stubs.settings.clientId);
-					expect(api.login.firstCall.args[1]).to.equal(username);
-					expect(api.login.firstCall.args[2]).to.equal(password);
-					expect(settings.override).to.have.property('callCount', 2);
-					expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
-					expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
+					expect(api.login.firstCall.args).to.eql([username, password]);
+					expectSuccessfulLoginPersisted({ settings, fakeToken, username });
 				});
 		}));
 
@@ -102,13 +100,8 @@ describe('Cloud Commands', () => {
 					expect(prompts.getCredentials).to.have.property('callCount', 1);
 					expect(cloud.ui.showBusySpinnerUntilResolved).to.have.property('callCount', 1);
 					expect(api.login).to.have.property('callCount', 1);
-					expect(api.login.firstCall).to.have.property('args').lengthOf(3);
-					expect(api.login.firstCall.args[0]).to.equal(stubs.settings.clientId);
-					expect(api.login.firstCall.args[1]).to.equal(username);
-					expect(api.login.firstCall.args[2]).to.equal(password);
-					expect(settings.override).to.have.property('callCount', 2);
-					expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
-					expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
+					expect(api.login.firstCall.args).to.eql([username, password]);
+					expectSuccessfulLoginPersisted({ settings, fakeToken, username });
 				});
 		}));
 
@@ -165,18 +158,10 @@ describe('Cloud Commands', () => {
 				.then(t => {
 					expect(t).to.equal(fakeToken);
 					expect(api.login).to.have.property('callCount', 1);
-					expect(api.login.firstCall).to.have.property('args').lengthOf(3);
-					expect(api.login.firstCall.args[0]).to.equal(stubs.settings.clientId);
-					expect(api.login.firstCall.args[1]).to.equal(username);
-					expect(api.login.firstCall.args[2]).to.equal(password);
+					expect(api.login.firstCall.args).to.eql([username, password]);
 					expect(api.sendOtp).to.have.property('callCount', 1);
-					expect(api.sendOtp.firstCall).to.have.property('args').lengthOf(3);
-					expect(api.sendOtp.firstCall.args[0]).to.equal(stubs.settings.clientId);
-					expect(api.sendOtp.firstCall.args[1]).to.equal(fakeMfaToken);
-					expect(api.sendOtp.firstCall.args[2]).to.equal(fakeOtp);
-					expect(settings.override).to.have.property('callCount', 2);
-					expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
-					expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
+					expect(api.sendOtp.firstCall.args).to.eql([{ mfaToken: fakeMfaToken, otp: fakeOtp }]);
+					expectSuccessfulLoginPersisted({ settings, fakeToken, username });
 				});
 		}));
 
@@ -195,18 +180,10 @@ describe('Cloud Commands', () => {
 					expect(prompts.getOtp).to.have.property('callCount', 1);
 					expect(cloud.ui.showBusySpinnerUntilResolved).to.have.property('callCount', 2);
 					expect(api.login).to.have.property('callCount', 1);
-					expect(api.login.firstCall).to.have.property('args').lengthOf(3);
-					expect(api.login.firstCall.args[0]).to.equal(stubs.settings.clientId);
-					expect(api.login.firstCall.args[1]).to.equal(username);
-					expect(api.login.firstCall.args[2]).to.equal(password);
+					expect(api.login.firstCall.args).to.eql([username, password]);
 					expect(api.sendOtp).to.have.property('callCount', 1);
-					expect(api.sendOtp.firstCall).to.have.property('args').lengthOf(3);
-					expect(api.sendOtp.firstCall.args[0]).to.equal(stubs.settings.clientId);
-					expect(api.sendOtp.firstCall.args[1]).to.equal(fakeMfaToken);
-					expect(api.sendOtp.firstCall.args[2]).to.equal(fakeOtp);
-					expect(settings.override).to.have.property('callCount', 2);
-					expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
-					expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
+					expect(api.sendOtp.firstCall.args).to.eql([{ mfaToken: fakeMfaToken, otp: fakeOtp }]);
+					expectSuccessfulLoginPersisted({ settings, fakeToken, username });
 				});
 		}));
 
@@ -242,11 +219,29 @@ describe('Cloud Commands', () => {
 		sandbox.stub(cloud.ui, 'showBusySpinnerUntilResolved').callsFake((_, p) => p);
 		sandbox.stub(api, 'login');
 		sandbox.stub(api, 'sendOtp');
-		sandbox.stub(api, 'getUser');
+		sandbox.stub(api, 'getUserInfo');
+		sandbox.stub(cloud, '_particleApi').callsFake(() => ({ api, auth: settings.access_token }));
 		sandbox.stub(prompts, 'getCredentials');
 		sandbox.stub(prompts, 'getOtp');
-		sandbox.stub(settings, 'override');
+		// `cloud.js`'s `settings.override` (proxyquired stub) AND `api-call.js`'s
+		// `settings.override` (real module) both need to feed the same spy, since
+		// `setActiveAccessToken` goes through the real module and the username
+		// write goes through the proxyquired stub. We re-export both onto a
+		// single spy so call-count assertions work.
+		const overrideSpy = sandbox.stub();
+		settings.override = overrideSpy;
+		sandbox.stub(require('../../settings'), 'override').callsFake(overrideSpy);
 		return { cloud, api, prompts, settings };
+	}
+
+	// Assertion helper for the password / MFA login paths: `setActiveAccessToken`
+	// writes `access_token` + `access_token_expires_at`; the outer login chain
+	// then writes `username`. Three `settings.override` calls total.
+	function expectSuccessfulLoginPersisted({ settings, fakeToken, username }){
+		expect(settings.override).to.have.property('callCount', 3);
+		expect(settings.override).to.have.been.calledWith(null, 'access_token', fakeToken);
+		expect(settings.override).to.have.been.calledWith(null, 'access_token_expires_at', sinon.match.string);
+		expect(settings.override).to.have.been.calledWith(null, 'username', username);
 	}
 
 	// TODO (mirande): figure out a better approach. this allows us to verify

@@ -2,8 +2,7 @@
 // and vice versa. This acts as a bridge between the two modules.
 'use strict';
 const settings = require('../../settings');
-const ParticleApi = require('../cmd/api');
-const createApiCache = require('../lib/api-cache');
+const { createParticleApi } = require('./api-factory');
 const os = require('os');
 
 async function getProtectionStatus(device) {
@@ -12,7 +11,7 @@ async function getProtectionStatus(device) {
 }
 
 async function disableDeviceProtection(device) {
-	const { api, auth } = _particleApi();
+	const { api, auth } = createParticleApi();
 	const deviceId = device.id;
 
 	try {
@@ -39,18 +38,12 @@ async function disableDeviceProtection(device) {
 		if (error.message === 'Device public key was not found') {
 			throw new Error(`Server key mismatch while putting device in Service Mode. Check that device is accessible through ${settings.apiUrl || 'https://api.particle.io'}.${os.EOL}`);
 		}
+		throw error;
 	}
 }
 
 async function turnOffServiceMode(device) {
 	await device.unprotectDevice({ action: 'reset' });
-}
-
-function _particleApi() {
-	const auth = settings.access_token;
-	const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-	const apiCache = createApiCache(api);
-	return { api: apiCache, auth };
 }
 
 module.exports = {

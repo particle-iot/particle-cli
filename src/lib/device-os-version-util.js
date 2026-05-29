@@ -20,7 +20,7 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version = 'lat
 		// get platform by id from device-constants
 		const platform = Object.values(platforms).filter(p => p.public).find(p => p.id === platformId);
 		// get the device os versions
-		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
+		const deviceOsVersion = await api.getDeviceOsVersions({ platformId, version });
 		// omit user part application
 		deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
 		// ensure the version is the semver version

@@ -3,6 +3,8 @@ module.exports = ({ commandProcessor, root }) => {
 	const tachyon = commandProcessor.createCategory(root, 'tachyon', 'Setup Particle devices');
 
 	commandProcessor.createCommand(tachyon, 'setup', 'Setup a Tachyon device', {
+		tokenExpiryThresholdMs: 60 * 60 * 1000,
+		relogin: true,
 		options: {
 			skip_flashing_os: {
 				description: 'Skip flashing the Operating System',

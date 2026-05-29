@@ -6,13 +6,12 @@ const prompt = require('inquirer').prompt;
 
 const settings = require('../../settings');
 const deviceSpecs = require('../lib/device-specs');
-const ApiClient = require('../lib/api-client'); // TODO (mirande): remove in favor of `ParticleAPI`
-const { normalizedApiError } = require('../lib/api-client');
 const utilities = require('../lib/utilities');
 const ensureError = require('../lib/utilities').ensureError;
-const ParticleAPI = require('./api');
 const prompts = require('../lib/prompts');
 const CLICommandBase = require('./base');
+const { MfaRequiredError, AuthenticationError } = require('../lib/auth-errors');
+const { requireToken, setActiveAccessToken, clearActiveAccessToken, getCurrentUsername } = require('../lib/api-call');
 
 const fs = require('fs-extra');
 const path = require('path');
@@ -49,16 +48,16 @@ module.exports = class CloudCommand extends CLICommandBase {
 	}
 
 	claimDevice({ params: { deviceID } }){
-		const api = createAPI();
+		const { api } = this._particleApi();
 
 		this.ui.stdout.write(`Claiming device ${deviceID}${os.EOL}`);
 
-		return api.claimDevice(deviceID)
+		return api.claimDevice({ deviceId: deviceID })
 			.then(() => this.ui.stdout.write(`Successfully claimed device ${deviceID}${os.EOL}`))
 			.catch((err) => {
-				const error = formatAPIErrorMessage(err);
-
-				if (error.canRequestTransfer){
+				// The server message "That belongs to someone else." carries the
+				// transfer-request signal. Sniff for it on the typed error's message.
+				if (err && err.message && err.message.includes('That belongs to someone else.')){
 					const question = {
 						type: 'confirm',
 						name: 'transfer',
@@ -69,18 +68,14 @@ module.exports = class CloudCommand extends CLICommandBase {
 					return prompt(question)
 						.then(({ transfer }) => {
 							if (transfer){
-								return api.claimDevice(deviceID, true)
+								return api.claimDevice({ deviceId: deviceID, requestTransfer: true })
 									.then(() => this.ui.stdout.write(`Transfer requested. You will receive an email if your transfer is approved or denied.${os.EOL}`));
 							}
 							throw new Error('You cannot claim a device owned by someone else');
 						});
 				}
 
-				throw error;
-			})
-			.catch((error) => {
-				const message = 'Failed to claim device';
-				throw createAPIErrorResult({ error, message });
+				throw err;
 			});
 	}
 
@@ -103,30 +98,23 @@ module.exports = class CloudCommand extends CLICommandBase {
 					throw new Error('Not confirmed');
 				}
 				this.ui.stdout.write(`releasing device ${device}${os.EOL}`);
-				return createAPI().removeDevice(device);
+				const { api } = this._particleApi();
+				return api.removeDevice({ deviceId: device });
 			})
-			.then(() => this.ui.stdout.write(`Okay!${os.EOL}`))
-			.catch((error) => {
-				const message = 'Didn\'t remove the device';
-				throw createAPIErrorResult({ error, message });
-			});
+			.then(() => this.ui.stdout.write(`Okay!${os.EOL}`));
 	}
 
 	renameDevice({ params: { device, name } }){
 		this.ui.stdout.write(`Renaming device ${device}${os.EOL}`);
-		return Promise.resolve()
-			.then(() => createAPI().renameDevice(device, name))
+		const { api } = this._particleApi();
+		return api.renameDevice({ deviceId: device, name })
 			.catch(err => {
 				if (err.info && err.info.includes('I didn\'t recognize that device name or ID')){
 					throw new Error('Device not found');
 				}
 				throw err;
 			})
-			.then(() => this.ui.stdout.write(`Successfully renamed device ${device} to: ${name}${os.EOL}`))
-			.catch((error) => {
-				const message = `Failed to rename ${device}`;
-				throw createAPIErrorResult({ error, message });
-			});
+			.then(() => this.ui.stdout.write(`Successfully renamed device ${device} to: ${name}${os.EOL}`));
 	}
 
 	async flashDevice({ target, followSymlinks, product, params: { device, files } }){
@@ -157,7 +145,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			} else {
 				this.ui.stdout.write(`Compiling code for ${device}${os.EOL}`);
 
-				const attrs = await createAPI().getDeviceAttributes(device);
+				const { api } = this._particleApi();
+				const attrs = await api.getDeviceAttributes({ deviceId: device });
 				const platformId = attrs.platform_id;
 				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
 				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
@@ -170,38 +159,34 @@ module.exports = class CloudCommand extends CLICommandBase {
 			await this._doFlash({ product, deviceId: device, fileMapping });
 
 			this.ui.stdout.write(`Flash success!${os.EOL}`);
-		} catch (error) {
-			const message = `Failed to flash ${device}`;
-			throw createAPIErrorResult({ error, message });
+		} catch (e) {
+			throw new VError(e, `Failed to flash ${device}`);
 		}
 	}
 
 	async _doFlash({ product, deviceId, fileMapping, targetVersion }){
-		try {
-			if (product) {
-				this.ui.stdout.write(`Marking device ${deviceId} as a development device${os.EOL}`);
-				await createAPI().markAsDevelopmentDevice(deviceId, true, product);
-			}
+		const { api } = this._particleApi();
+		if (product) {
+			this.ui.stdout.write(`Marking device ${deviceId} as a development device${os.EOL}`);
+			await api.markAsDevelopmentDevice({ deviceId, development: true, product });
+		}
 
-			this.ui.logFirstTimeFlashWarning();
-			this.ui.stdout.write(`Flashing firmware to your device ${deviceId}${os.EOL}`);
+		this.ui.logFirstTimeFlashWarning();
+		this.ui.stdout.write(`Flashing firmware to your device ${deviceId}${os.EOL}`);
 
-			const resp = await createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
-			if (!resp.status && !resp.message) {
-				throw normalizedApiError(resp);
-			}
+		const resp = await api.flashDevice({ deviceId, files: fileMapping, targetVersion, product });
+		if (!resp.status && !resp.message) {
+			throw new Error(resp.error || resp.error_description || 'Flash failed');
+		}
 
-			if (product) {
-				[
-					`Device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
-					'To resume normal updates, please visit:',
-					// TODO (mirande): replace w/ instructions on how to unmark
-					// via the CLI once that command is available
-					`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
-				].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
-			}
-		} catch (err) {
-			throw normalizedApiError(err);
+		if (product) {
+			[
+				`Device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'To resume normal updates, please visit:',
+				// TODO (mirande): replace w/ instructions on how to unmark
+				// via the CLI once that command is available
+				`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
+			].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
 		}
 	}
 
@@ -210,7 +195,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
 
-		const attrs = await createAPI().getDeviceAttributes(deviceId);
+		const { api } = this._particleApi();
+		const attrs = await api.getDeviceAttributes({ deviceId });
 		const platformId = attrs.platform_id;
 
 		if (product || attrs.platform_id !== attrs.product_id){
@@ -260,7 +246,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 	}
 
-	// create a new function that handles errors from compileCode function
 	async compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
 		try {
 			if (files.length === 0) {
@@ -283,28 +268,23 @@ module.exports = class CloudCommand extends CLICommandBase {
 			const { filename, isBundle } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
 
 			this.ui.stdout.write(`Saved ${isBundle ? 'bundle' : 'firmware' } to: ${filename}${os.EOL}`);
-		} catch (error) {
-			const message = 'Compile failed';
-			throw createAPIErrorResult({ error, message });
+		} catch (e) {
+			throw new VError(e, 'Compile failed');
 		}
 	}
 
 	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files }) {
 		let targetVersion, assets, env;
 
-		ensureAPIToken();
+		requireToken();
+		const { api } = this._particleApi();
 
 		if (target) {
 			if (target === 'latest') {
 				return;
 			}
 
-			let data;
-			try {
-				data = await createAPI().listDeviceOsVersions(platformId);
-			} catch (error) {
-				throw normalizedApiError(error);
-			}
+			const data = await api.listDeviceOsVersions({ platformId });
 
 			const validTarget = data?.versions?.filter((t) => t.version === target);
 			if (!validTarget.length) {
@@ -361,21 +341,23 @@ module.exports = class CloudCommand extends CLICommandBase {
 	}
 
 	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, env, bundleFilename }){
-		let respSizeInfo, bundle, resp;
+		let respSizeInfo, bundle;
 
+		const { api } = this._particleApi();
+		let resp;
 		try {
-			resp = await createAPI().compileCode(fileMapping, platformId, targetVersion);
-		} catch (error) {
-			throw normalizedApiError(error?.error || error); // get first the wrapped error from the API client, if it exists, otherwise use the original error
+			resp = await api.compileCode({ files: fileMapping, platformId, targetVersion });
+		} catch (err) {
+			const body = (err && err.body) || {};
+			if (body.output === 'Compiler timed out or encountered an error') {
+				this.ui.stdout.write(`${os.EOL}${(body.errors && body.errors[0]) || ''}${os.EOL}`);
+				throw new Error('Compiler encountered an error');
+			}
+			throw err;
 		}
 
 		if (resp && resp.binary_url && resp.binary_id) {
-			let data;
-			try {
-				data = await createAPI().downloadFirmwareBinary(resp.binary_id);
-			} catch (error) {
-				throw normalizedApiError(error);
-			}
+			const data = await api.downloadFirmwareBinary({ binaryId: resp.binary_id });
 
 			await fs.writeFile(filename, data);
 			respSizeInfo = resp.sizeInfo;
@@ -383,7 +365,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			this.ui.stdout.write(`${os.EOL}${(resp && resp.errors && resp.errors[0])}${os.EOL}`);
 			throw new Error('Compiler encountered an error');
 		} else {
-			throw normalizedApiError(resp);
+			throw new Error((resp && (resp.error || resp.error_description)) || 'Compile failed');
 		}
 
 		let message = 'Compile succeeded.';
@@ -474,7 +456,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 			.then(credentials => {
 				const { token, username, password, sso } = credentials;
 				const msg = 'Sending login details...';
-				const api = new ApiClient(null, token);
 
 				this._usernameProvided = username;
 
@@ -490,25 +471,31 @@ module.exports = class CloudCommand extends CLICommandBase {
 				}
 
 				if (token){
-					return this.ui.showBusySpinnerUntilResolved(msg, api.getUser())
+					// `--token` flow: caller supplied the token; we don't know
+					// its expiry. Leave `access_token_expires_at` untouched
+					// (expiresIn omitted) and let `verifyFreshTokenMiddleware`
+					// discover it on the next auth-required command.
+					const { api } = this._particleApi({ accessToken: token });
+					return this.ui.showBusySpinnerUntilResolved(msg, api.getUserInfo())
 						.then(response => ({ token, username: response.username }));
 				}
-				const login = api.login(settings.clientId, username, password);
+				const { api } = this._particleApi();
+				const login = api.login(username, password);
 				return this.ui.showBusySpinnerUntilResolved(msg, login)
 					.catch((error) => {
-						if (error.error === 'mfa_required'){
+						if (error instanceof MfaRequiredError){
 							this.tries = 0;
-							return this.enterOtp({ otp, mfaToken: error.mfa_token, shouldRetry });
+							return this.enterOtp({ otp, mfaToken: error.mfaToken, shouldRetry });
 						}
 						throw error;
 					})
-					.then(body => ({ token: body.access_token, username }));
+					.then(body => ({ token: body.access_token, expiresIn: body.expires_in, username }));
 			})
 			.then(credentials => {
-				const { token, username } = credentials;
+				const { token, expiresIn, username } = credentials;
 
 				this.ui.stdout.write(`${arrow} Successfully completed login!${os.EOL}`);
-				settings.override(null, 'access_token', token);
+				setActiveAccessToken({ token, expiresIn });
 
 				if (username){
 					settings.override(null, 'username', username);
@@ -521,7 +508,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			})
 			.catch(error => {
 				this.ui.stdout.write(`${alert} There was an error logging you in! ${shouldRetry ? "Let's try again." : ''}${os.EOL}`);
-				this.ui.stderr.write(`${alert} ${error.message || error.error_description}${os.EOL}`);
+				this.ui.stderr.write(`${alert} ${error.message}${os.EOL}`);
 				this.tries = (this.tries || 0) + 1;
 
 				if (shouldRetry && this.tries < 3){
@@ -546,14 +533,14 @@ module.exports = class CloudCommand extends CLICommandBase {
 			})
 			.then(_otp => {
 				otp = _otp;
-				const api = new ApiClient();
+				const { api } = this._particleApi();
 				const msg = 'Sending login code...';
-				const sendOtp = api.sendOtp(settings.clientId, mfaToken, otp);
+				const sendOtp = api.sendOtp({ mfaToken, otp });
 				return this.ui.showBusySpinnerUntilResolved(msg, sendOtp);
 			})
 			.catch(error => {
 				this.ui.stdout.write(`${alert} This login code didn't work. ${shouldRetry ? "Let's try again." : ''}${os.EOL}`);
-				this.ui.stderr.write(`${alert} ${error.message || error.error_description}${os.EOL}`);
+				this.ui.stderr.write(`${alert} ${error.message}${os.EOL}`);
 				this.tries = (this.tries || 0) + 1;
 
 				if (shouldRetry && this.tries < 3){
@@ -569,21 +556,30 @@ module.exports = class CloudCommand extends CLICommandBase {
 			return;
 		}
 
+		const username = await getCurrentUsername();
+
 		try {
-			await createAPI().deleteCurrentAccessToken();
-			this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(settings.username)}${os.EOL}`);
-			settings.override(null, 'username', null);
-			settings.override(null, 'access_token', null);
+			const { api } = this._particleApi();
+			await api.deleteCurrentAccessToken();
 		} catch (err) {
-			throw new VError(ensureError(err), 'There was an error revoking the token');
+			// If the server already considers the token gone (revoked or
+			// expired), that's the desired end state — don't surface it as
+			// an error. Any other failure (network, 500, etc.) still throws.
+			if (!(err instanceof AuthenticationError)) {
+				throw new VError(ensureError(err), 'There was an error revoking the token');
+			}
 		}
+
+		this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(username)}${os.EOL}`);
+		settings.override(null, 'username', null);
+		clearActiveAccessToken();
 	}
 
 
 	getAllDeviceAttributes(filter) {
 		const { buildDeviceFilter } = utilities;
-		const api = new ApiClient();
-		api.ensureToken();
+		requireToken();
+		const { api } = this._particleApi();
 
 		const filterFunc = buildDeviceFilter(filter);
 
@@ -604,7 +600,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 						if (device.connected){
 							promises.push(
-								api.getAttributes(device.id)
+								api.getDeviceAttributes({ deviceId: device.id })
 									.then(attrs => extend(device, attrs))
 							);
 						} else {
@@ -621,8 +617,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 							return (a.name || '').localeCompare(b.name);
 						}));
 				}
-			}).catch(err => {
-				throw api.normalizedApiError(err);
 			});
 	}
 
@@ -633,7 +627,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			}
 		}
 
-		const api = createAPI();
+		const { api } = this._particleApi();
 
 		if (!onOff || (onOff === '') || (onOff === 'on')){
 			onOff = true;
@@ -641,34 +635,20 @@ module.exports = class CloudCommand extends CLICommandBase {
 			onOff = false;
 		}
 
-		return Promise.resolve()
-			.then(() => {
-				if (device){
-					return api.signalDevice(device, onOff, product);
-				} else {
-					return Promise.resolve()
-						.then(() => api.listDevices())
-						.then(devices => {
-							if (!devices || (devices.length === 0)){
-								this.ui.stdout.write(`No devices found.${os.EOL}`);
-								return;
-							} else {
-								const promises = [];
-								devices.forEach((device) => {
-									if (!device.connected){
-										promises.push(Promise.resolve(device));
-										return;
-									}
-									promises.push(api.signalDevice(device.id, onOff, product));
-								});
-								return Promise.all(promises);
-							}
-						});
+		if (device){
+			return api.signalDevice({ deviceId: device, signal: onOff, product });
+		}
+
+		return api.listDevices()
+			.then(devices => {
+				if (!devices || (devices.length === 0)){
+					this.ui.stdout.write(`No devices found.${os.EOL}`);
+					return;
 				}
-			})
-			.catch((error) => {
-				const message = 'Signaling failed';
-				throw createAPIErrorResult({ error, message });
+				const promises = devices.map(d =>
+					d.connected ? api.signalDevice({ deviceId: d.id, signal: onOff, product }) : Promise.resolve(d)
+				);
+				return Promise.all(promises);
 			});
 	}
 
@@ -711,7 +691,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		try {
 			return await fs.readJSON(envPath);
 		} catch (error) {
-			throw new Error(`Env vars in file ${envPath} cannot be processed: ${ error.message }`);
+			throw new VError(error, `Env vars in file ${envPath} cannot be processed`);
 		}
 
 	}
@@ -871,44 +851,3 @@ module.exports = class CloudCommand extends CLICommandBase {
 };
 
 
-// UTILS //////////////////////////////////////////////////////////////////////
-function createAPI(){
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}
-
-function createAPIErrorResult({ error: e, message, json }){
-	const error = new VError(formatAPIErrorMessage(e), message);
-	error.asJSON = json;
-	return error;
-}
-
-// TODO (mirande): reconcile this w/ `normalizedApiError()` and `ensureError()`
-// utilities and pull the result into cmd/api.js
-function formatAPIErrorMessage(error){
-	error = normalizedApiError(error);
-
-	if (error.body){
-		if (typeof error.body.error === 'string'){
-			error.message = error.body.error;
-		} else if (Array.isArray(error.body.errors)){
-			if (error.body.errors.length === 1){
-				error.message = error.body.errors[0];
-			}
-		}
-	}
-
-	if (error.message.includes('That belongs to someone else.')){
-		error.canRequestTransfer = true;
-	}
-
-	return error;
-}
-
-// TODO (mirande): refactor cmd/api.js to do this check by default when appropriate
-function ensureAPIToken(){
-	if (!settings.access_token){
-		throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle login')} before using this command`);
-	}
-}

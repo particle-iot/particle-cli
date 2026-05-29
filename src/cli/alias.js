@@ -3,7 +3,9 @@ module.exports = ({ commandProcessor, root }) => {
 	function alias(category, aliasName, path) {
 		const cmd = root.find(path);
 		if (cmd) {
-			commandProcessor.createCommand(category, aliasName, cmd.description, cmd.options);
+			const tokenExpiryThresholdMs = cmd._resolveTokenExpiryThresholdMs();
+			const options = { ...cmd.options, tokenExpiryThresholdMs };
+			commandProcessor.createCommand(category, aliasName, cmd.description, options);
 		}
 	}
 
