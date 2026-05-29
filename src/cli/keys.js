@@ -1,6 +1,6 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
-	const keys = commandProcessor.createCategory(root, 'keys', "Manage your device's key pair and server public key", { verifyTokenFreshness: false });
+	const keys = commandProcessor.createCategory(root, 'keys', "Manage your device's key pair and server public key");
 
 	commandProcessor.createCommand(keys, 'new', 'Generate a new set of keys for your device', {
 		params: '[filename]',

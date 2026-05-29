@@ -18,7 +18,6 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(token, 'create', 'Create a new access token', {
-		verifyTokenFreshness: false,
 		options: {
 			'expires-in': {
 				description: 'Create a token valid for this many seconds. When omitted, the Particle API assigns a default expiration.',

@@ -24,7 +24,6 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(lib, 'create', 'Create a new library in the specified or current directory', {
-		verifyTokenFreshness: false,
 		options: {
 			'name': {
 				description: 'The name of the library to create.'
@@ -98,7 +97,6 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(lib, 'migrate', 'Migrate a local library from v1 to v2 format', {
-		verifyTokenFreshness: false,
 		options: {
 			test: {
 				alias: 'dryrun',

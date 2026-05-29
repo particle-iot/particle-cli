@@ -1,7 +1,6 @@
 'use strict';
 module.exports = ({ commandProcessor, root, app }) => {
 	commandProcessor.createCommand(root, 'help', false, {
-		verifyTokenFreshness: false,
 		params: '[command...]',
 		handler: (argv) => {
 			const cmd = argv.params.command;

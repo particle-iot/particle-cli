@@ -248,6 +248,56 @@ describe('api-call', () => {
 			expect(DEFAULT_FRESHNESS_THRESHOLD_MS).to.equal(5 * 60 * 1000);
 		});
 
+		describe('relogin flag', () => {
+			let loginStub;
+
+			beforeEach(() => {
+				const CloudCommands = require('../cmd/cloud');
+				loginStub = sandbox.stub(CloudCommands.prototype, 'login').resolves();
+			});
+
+			it('runs CloudCommands.login() instead of throwing when token is near expiry', async () => {
+				settings.access_token_expires_at = inFuture(60 * 1000);   // 1 minute out
+				await verifyFreshTokenMiddleware({ relogin: true });   // default 5-min threshold
+				expect(loginStub).to.have.property('callCount', 1);
+			});
+
+			it('runs CloudCommands.login() when no token is configured', async () => {
+				settings.access_token = '';
+				await verifyFreshTokenMiddleware({ relogin: true });
+				expect(loginStub).to.have.property('callCount', 1);
+			});
+
+			it('does not run login when token is fresh', async () => {
+				await verifyFreshTokenMiddleware({ relogin: true });   // 1 day out vs 5-min threshold
+				expect(loginStub).to.have.property('callCount', 0);
+			});
+
+			it('propagates errors thrown by login (e.g. user cancels prompt)', async () => {
+				settings.access_token_expires_at = inFuture(60 * 1000);
+				loginStub.rejects(new Error('login cancelled'));
+				let caught;
+				try {
+					await verifyFreshTokenMiddleware({ relogin: true });
+				} catch (err) {
+					caught = err;
+				}
+				expect(caught).to.have.property('message', 'login cancelled');
+			});
+
+			it('throws MissingTokenError when relogin is false and token is near expiry', async () => {
+				settings.access_token_expires_at = inFuture(60 * 1000);
+				let caught;
+				try {
+					await verifyFreshTokenMiddleware({ relogin: false });
+				} catch (err) {
+					caught = err;
+				}
+				expect(caught).to.be.instanceof(MissingTokenError);
+				expect(loginStub).to.have.property('callCount', 0);
+			});
+		});
+
 		describe('when access_token_expires_at is missing', () => {
 			beforeEach(() => {
 				settings.access_token_expires_at = undefined;

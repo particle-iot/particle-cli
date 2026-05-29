@@ -121,7 +121,6 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
-		verifyTokenFreshness: false,
 		options: {
 			u: {
 				description: 'your username',
@@ -156,7 +155,6 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(cloud, 'logout', 'Log out of your session and clear your saved access token', {
-		verifyTokenFreshness: false,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).logout();

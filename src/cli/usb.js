@@ -10,7 +10,7 @@ function usbCommand() {
 }
 
 module.exports = ({ commandProcessor, root }) => {
-	const usb = commandProcessor.createCategory(root, 'usb', 'Control USB devices', { verifyTokenFreshness: false });
+	const usb = commandProcessor.createCategory(root, 'usb', 'Control USB devices');
 
 	commandProcessor.createCommand(usb, 'list', 'List the devices connected to the host computer', {
 		params: '[filter]',

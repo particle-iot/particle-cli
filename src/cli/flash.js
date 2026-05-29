@@ -3,7 +3,7 @@ const unindent = require('../lib/unindent');
 
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'flash', 'Send firmware to your device', {
-		verifyTokenFreshness: false,
+		tokenExpiryThresholdMs: 15 * 60 * 1000,   // cloud OTA path can take several minutes
 		params: '[device|binary] [files...]',
 		options: {
 			'cloud': {

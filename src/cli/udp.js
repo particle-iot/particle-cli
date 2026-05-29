@@ -1,6 +1,6 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
-	const udp = commandProcessor.createCategory(root, 'udp', 'Talk UDP to repair devices, run patches, check Wi-Fi, and more!', { verifyTokenFreshness: false });
+	const udp = commandProcessor.createCategory(root, 'udp', 'Talk UDP to repair devices, run patches, check Wi-Fi, and more!');
 
 	commandProcessor.createCommand(udp, 'send', 'Sends a UDP packet to the specified host and port', {
 		params: '<host> <port> <message>',

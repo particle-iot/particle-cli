@@ -45,8 +45,11 @@ function findAuthenticationError(err) {
 
 async function runWithAuthMiddleware(options, argv){
 	try {
-		if (options.verifyTokenFreshness !== false) {
-			await verifyFreshTokenMiddleware({ thresholdMs: options.tokenExpiryThresholdMs });
+		if (options.tokenExpiryThresholdMs) {
+			await verifyFreshTokenMiddleware({
+				thresholdMs: options.tokenExpiryThresholdMs,
+				relogin: options.relogin
+			});
 		}
 		return await options.handler(argv);
 	} catch (err) {
@@ -297,8 +300,8 @@ class CLICommandItem {
 	 */
 	exec(argv){
 		if (this.options.handler){
-			const verifyTokenFreshness = this._resolveVerifyTokenFreshness();
-			const effectiveOptions = { ...this.options, verifyTokenFreshness };
+			const tokenExpiryThresholdMs = this._resolveTokenExpiryThresholdMs();
+			const effectiveOptions = { ...this.options, tokenExpiryThresholdMs };
 			return Promise.resolve().then(() => runWithAuthMiddleware(effectiveOptions, argv));
 		}
 		if (argv.version && this.version){
@@ -307,15 +310,15 @@ class CLICommandItem {
 		return this.showHelp();
 	}
 
-	_resolveVerifyTokenFreshness(){
+	_resolveTokenExpiryThresholdMs(){
 		let item = this;
 		while (item){
-			if (item.options && item.options.verifyTokenFreshness !== undefined){
-				return item.options.verifyTokenFreshness;
+			if (item.options && item.options.tokenExpiryThresholdMs !== undefined){
+				return item.options.tokenExpiryThresholdMs;
 			}
 			item = item.parent;
 		}
-		return true;
+		return undefined;
 	}
 
 	showHelp(){

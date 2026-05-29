@@ -61,29 +61,38 @@ async function getCurrentUsername() {
 	return 'unknown';
 }
 
-async function verifyFreshTokenMiddleware({ thresholdMs = DEFAULT_FRESHNESS_THRESHOLD_MS } = {}) {
-	requireToken();
+async function verifyFreshTokenMiddleware({ thresholdMs = DEFAULT_FRESHNESS_THRESHOLD_MS, relogin = false } = {}) {
+	try {
+		requireToken();
 
-	let expiresAtStr = settings.access_token_expires_at;
+		let expiresAtStr = settings.access_token_expires_at;
 
-	if (!expiresAtStr) {
-		const { api } = createParticleApi();
-		try {
-			const info = await api.getCurrentAccessToken();
-			expiresAtStr = info && info.expires_at ? info.expires_at : NEVER_EXPIRES_SENTINEL; // treat tokens without expiration as never expiring
-			settings.override(null, 'access_token_expires_at', expiresAtStr);
-		} catch (err) {
-			if (err instanceof AuthenticationError) {
-				clearActiveAccessToken();
-				throw new MissingTokenError();
+		if (!expiresAtStr) {
+			const { api } = createParticleApi();
+			try {
+				const info = await api.getCurrentAccessToken();
+				expiresAtStr = info && info.expires_at ? info.expires_at : NEVER_EXPIRES_SENTINEL; // treat tokens without expiration as never expiring
+				settings.override(null, 'access_token_expires_at', expiresAtStr);
+			} catch (err) {
+				if (err instanceof AuthenticationError) {
+					clearActiveAccessToken();
+					throw new MissingTokenError();
+				}
+				return;
 			}
+		}
+		const remaining = new Date(expiresAtStr).getTime() - Date.now();
+		if (remaining < thresholdMs) {
+			clearActiveAccessToken();
+			throw new MissingTokenError();
+		}
+	} catch (err) {
+		if (relogin && err instanceof MissingTokenError) {
+			const CloudCommands = require('../cmd/cloud');
+			await new CloudCommands().login();
 			return;
 		}
-	}
-	const remaining = new Date(expiresAtStr).getTime() - Date.now();
-	if (remaining < thresholdMs) {
-		clearActiveAccessToken();
-		throw new MissingTokenError();
+		throw err;
 	}
 }
 

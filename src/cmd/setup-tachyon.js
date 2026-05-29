@@ -4,10 +4,9 @@ const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const fs = require('fs-extra');
 const settings = require('../../settings');
-const { verifyFreshTokenMiddleware, getCurrentUsername } = require('../lib/api-call');
+const { getCurrentUsername } = require('../lib/api-call');
 const { AuthenticationError } = require('../lib/auth-errors');
 const os = require('os');
-const CloudCommand = require('./cloud');
 
 const DownloadManager = require('../lib/download-manager');
 const path = require('path');
@@ -71,7 +70,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			await this.ui.write(showWelcomeMessage(this.ui));
 			// step 1 login
 			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...");
-			await this._verifyLogin();
 			this.ui.write('');
 			this.ui.write(`...All set! You're logged in as ${this.ui.chalk.bold(await getCurrentUsername())} and ready to go!`);
 			// step 2 get device info
@@ -148,16 +146,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			usbWarning = this.ui.chalk.yellow(' (use a USB 3.0 port and USB-C cable for faster flashing)');
 		}
 		this.ui.write(` -  USB Version: ${this.device.usbVersion.major}.${this.device.usbVersion.minor}${usbWarning}`);
-	}
-
-	async _verifyLogin() {
-		try {
-			await verifyFreshTokenMiddleware({ thresholdMs: 60 * 60 * 1000 });
-		} catch {
-			const cloudCommand = new CloudCommand();
-			await cloudCommand.login();
-			this._setupApi();
-		}
 	}
 
 	_formatAndDisplaySteps(text, step) {

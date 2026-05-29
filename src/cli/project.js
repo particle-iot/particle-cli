@@ -1,6 +1,6 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
-	const project = commandProcessor.createCategory(root, 'project', 'Manage application projects', { verifyTokenFreshness: false });
+	const project = commandProcessor.createCategory(root, 'project', 'Manage application projects');
 
 	commandProcessor.createCommand(project, 'create', 'Create a new project in the current or specified directory', {
 		options: {
