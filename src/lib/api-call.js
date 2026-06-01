@@ -41,6 +41,16 @@ function clearActiveAccessToken() {
 	settings.override(null, 'access_token_expires_at', null);
 }
 
+async function refreshTokenExpiry(api) {
+	if (!api) {
+		({ api } = createParticleApi());
+	}
+	const info = await api.getCurrentAccessToken();
+	const expiresAt = info && info.expires_at ? info.expires_at : NEVER_EXPIRES_SENTINEL;
+	settings.override(null, 'access_token_expires_at', expiresAt);
+	return expiresAt;
+}
+
 async function getCurrentUsername() {
 	if (settings.username) {
 		return settings.username;
@@ -68,11 +78,8 @@ async function verifyFreshTokenMiddleware({ thresholdMs = DEFAULT_FRESHNESS_THRE
 		let expiresAtStr = settings.access_token_expires_at;
 
 		if (!expiresAtStr) {
-			const { api } = createParticleApi();
 			try {
-				const info = await api.getCurrentAccessToken();
-				expiresAtStr = info && info.expires_at ? info.expires_at : NEVER_EXPIRES_SENTINEL; // treat tokens without expiration as never expiring
-				settings.override(null, 'access_token_expires_at', expiresAtStr);
+				expiresAtStr = await refreshTokenExpiry();
 			} catch (err) {
 				if (err instanceof AuthenticationError) {
 					clearActiveAccessToken();
@@ -103,5 +110,6 @@ module.exports = {
 	setActiveAccessToken,
 	clearActiveAccessToken,
 	verifyFreshTokenMiddleware,
+	refreshTokenExpiry,
 	getCurrentUsername
 };

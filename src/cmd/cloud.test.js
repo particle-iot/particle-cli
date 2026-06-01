@@ -13,7 +13,8 @@ const stubs = {
 	api: {
 		login: () => {},
 		sendOtp: () => {},
-		getUserInfo: () => {}
+		getUserInfo: () => {},
+		getCurrentAccessToken: () => {}
 	},
 	utils: {},
 	prompts: {
@@ -56,21 +57,23 @@ describe('Cloud Commands', () => {
 		it('accepts token arg', withConsoleStubs(() => {
 			const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
 			const { username } = fakeCredentials;
+			const fakeExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 			api.getUserInfo.resolves(fakeUser);
+			api.getCurrentAccessToken.resolves({ expires_at: fakeExpiresAt });
 
 			return cloud.login({ token: fakeToken })
 				.then(t => {
 					expect(t).to.equal(fakeToken);
 					expect(api.login).to.have.property('callCount', 0);
 					expect(api.getUserInfo).to.have.property('callCount', 1);
-					// `--token` flow: expiry not known yet. setActiveAccessToken
-					// writes only `access_token` (leaves `access_token_expires_at`
-					// for the freshness middleware to discover later). Plus the
-					// `username` write = 2 total.
-					expect(settings.override).to.have.property('callCount', 2);
+					// `--token` flow: server doesn't return `expires_in`, so we call
+					// `getCurrentAccessToken` after setting the token to fetch + persist
+					// `access_token_expires_at`. Three overrides: token, expires_at, username.
+					expect(api.getCurrentAccessToken).to.have.property('callCount', 1);
+					expect(settings.override).to.have.property('callCount', 3);
 					expect(settings.override).to.have.been.calledWith(null, 'access_token', fakeToken);
+					expect(settings.override).to.have.been.calledWith(null, 'access_token_expires_at', fakeExpiresAt);
 					expect(settings.override).to.have.been.calledWith(null, 'username', username);
-					expect(settings.override).to.not.have.been.calledWith(null, 'access_token_expires_at', sinon.match.any);
 				});
 		}));
 
@@ -220,6 +223,7 @@ describe('Cloud Commands', () => {
 		sandbox.stub(api, 'login');
 		sandbox.stub(api, 'sendOtp');
 		sandbox.stub(api, 'getUserInfo');
+		sandbox.stub(api, 'getCurrentAccessToken');
 		sandbox.stub(cloud, '_particleApi').callsFake(() => ({ api, auth: settings.access_token }));
 		sandbox.stub(prompts, 'getCredentials');
 		sandbox.stub(prompts, 'getOtp');

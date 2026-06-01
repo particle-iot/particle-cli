@@ -6,7 +6,6 @@ const usbUtils = require('./usb-util');
 const VError = require('verror');
 const temp = require('temp').track();
 const utilities = require('../lib/utilities');
-const { requireToken } = require('../lib/api-call');
 const { keysDctOffsets } = require('../lib/keys-specs');
 const { platforms } = require('@particle/device-constants');
 const ensureError = require('../lib/utilities').ensureError;
@@ -181,8 +180,6 @@ module.exports = class KeysCommand extends CLICommandBase {
 				throw new VError("Couldn't find " + filename);
 			}
 		}
-
-		requireToken();
 
 		const pubKey = temp.path({ suffix: '.pub.pem' });
 		const inform = path.extname(filename).toLowerCase() === '.der' ? 'DER' : 'PEM';

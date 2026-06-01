@@ -11,7 +11,7 @@ const ensureError = require('../lib/utilities').ensureError;
 const prompts = require('../lib/prompts');
 const CLICommandBase = require('./base');
 const { MfaRequiredError, AuthenticationError } = require('../lib/auth-errors');
-const { requireToken, setActiveAccessToken, clearActiveAccessToken, getCurrentUsername } = require('../lib/api-call');
+const { requireToken, setActiveAccessToken, clearActiveAccessToken, getCurrentUsername, refreshTokenExpiry } = require('../lib/api-call');
 
 const fs = require('fs-extra');
 const path = require('path');
@@ -491,11 +491,22 @@ module.exports = class CloudCommand extends CLICommandBase {
 					})
 					.then(body => ({ token: body.access_token, expiresIn: body.expires_in, username }));
 			})
-			.then(credentials => {
+			.then(async credentials => {
 				const { token, expiresIn, username } = credentials;
 
 				this.ui.stdout.write(`${arrow} Successfully completed login!${os.EOL}`);
 				setActiveAccessToken({ token, expiresIn });
+
+				// SSO and `--token` login paths don't return an expiry. Fetch it from the
+				// server so the local-first freshness check has something to read later.
+				if (expiresIn === undefined && token) {
+					try {
+						const { api } = this._particleApi();
+						await refreshTokenExpiry(api);
+					} catch {
+						// Best-effort: login already succeeded; expiry can be fetched lazily later.
+					}
+				}
 
 				if (username){
 					settings.override(null, 'username', username);

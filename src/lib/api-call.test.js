@@ -9,6 +9,7 @@ const {
 	setActiveAccessToken,
 	clearActiveAccessToken,
 	verifyFreshTokenMiddleware,
+	refreshTokenExpiry,
 	DEFAULT_FRESHNESS_THRESHOLD_MS
 } = apiCall;
 const { AuthenticationError, InvalidTokenError, MissingTokenError } = require('./auth-errors');
@@ -176,6 +177,51 @@ describe('api-call', () => {
 			clearActiveAccessToken();
 			expect(overrideStub).to.have.been.calledWith(null, 'access_token', null);
 			expect(overrideStub).to.have.been.calledWith(null, 'access_token_expires_at', null);
+		});
+	});
+
+	describe('refreshTokenExpiry', () => {
+		let sandbox;
+		let overrideStub;
+		let getCurrentAccessTokenStub;
+
+		const inFuture = (ms) => new Date(Date.now() + ms).toISOString();
+
+		beforeEach(() => {
+			sandbox = sinon.createSandbox();
+			sandbox.stub(settings, 'access_token').value('a-real-token');
+			overrideStub = sandbox.stub(settings, 'override');
+			getCurrentAccessTokenStub = sandbox.stub(ParticleApi.prototype, 'getCurrentAccessToken');
+		});
+
+		afterEach(() => {
+			sandbox.restore();
+		});
+
+		it('persists the server-returned expires_at and returns it', async () => {
+			const exp = inFuture(60 * 60 * 1000);
+			getCurrentAccessTokenStub.resolves({ expires_at: exp });
+			const result = await refreshTokenExpiry();
+			expect(result).to.equal(exp);
+			expect(overrideStub).to.have.been.calledWith(null, 'access_token_expires_at', exp);
+		});
+
+		it('persists the never-expires sentinel when the server omits expires_at', async () => {
+			getCurrentAccessTokenStub.resolves({});
+			const result = await refreshTokenExpiry();
+			expect(result).to.match(/^9999-/);
+			expect(overrideStub).to.have.been.calledWith(null, 'access_token_expires_at', sinon.match(/^9999-/));
+		});
+
+		it('propagates AuthenticationError from the server (caller decides what to do)', async () => {
+			getCurrentAccessTokenStub.rejects(new InvalidTokenError('revoked'));
+			let caught;
+			try {
+				await refreshTokenExpiry();
+			} catch (err) {
+				caught = err;
+			}
+			expect(caught).to.be.instanceof(InvalidTokenError);
 		});
 	});
 
