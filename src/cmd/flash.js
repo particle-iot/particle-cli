@@ -14,6 +14,7 @@ const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
+const { verifyFreshTokenMiddleware } = require('../lib/api-call');
 const os = require('os');
 const semver = require('semver');
 const { handleFlashError } = require('../lib/tachyon-utils');
@@ -432,10 +433,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 	}
 
-	flashCloud({ device, files, target }) {
+	async flashCloud({ device, files, target }) {
 		// We don't check for Device Protection here
 		// because it will not matter for cloud flashing
 		// These are rejected for Protected Devices even if the device is in Service Mode
+		await verifyFreshTokenMiddleware({ thresholdMs: 15 * 60 * 1000 });
 		const CloudCommands = require('../cmd/cloud');
 		const args = { target, params: { device, files } };
 		return new CloudCommands().flashDevice(args);
