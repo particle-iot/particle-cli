@@ -465,10 +465,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 				}
 
 				if (token){
-					// `--token` flow: caller supplied the token; we don't know
-					// its expiry. Leave `access_token_expires_at` untouched
-					// (expiresIn omitted) and let `verifyFreshTokenMiddleware`
-					// discover it on the next auth-required command.
 					const { api } = this._particleApi({ accessToken: token });
 					return this.ui.showBusySpinnerUntilResolved(msg, api.getUserInfo())
 						.then(response => ({ token, username: response.username }));
@@ -491,14 +487,12 @@ module.exports = class CloudCommand extends CLICommandBase {
 				this.ui.stdout.write(`${arrow} Successfully completed login!${os.EOL}`);
 				setActiveAccessToken({ token, expiresIn });
 
-				// SSO and `--token` login paths don't return an expiry. Fetch it from the
-				// server so the local-first freshness check has something to read later.
 				if (expiresIn === undefined && token) {
 					try {
 						const { api } = this._particleApi();
 						await refreshTokenExpiry(api);
 					} catch {
-						// Best-effort: login already succeeded; expiry can be fetched lazily later.
+						// omit errors here since token is valid.
 					}
 				}
 
@@ -567,9 +561,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 			const { api } = this._particleApi();
 			await api.deleteCurrentAccessToken();
 		} catch (err) {
-			// If the server already considers the token gone (revoked or
-			// expired), that's the desired end state — don't surface it as
-			// an error. Any other failure (network, 500, etc.) still throws.
 			if (!(err instanceof AuthenticationError)) {
 				throw new VError(ensureError(err), 'There was an error revoking the token');
 			}
