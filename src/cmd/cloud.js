@@ -29,9 +29,14 @@ const alert = chalk.yellow('!');
 const PLATFORMS = utilities.knownPlatformIdsWithAliases();
 const PLATFORMS_ID_TO_NAME = _.invert(utilities.knownPlatformIds());
 
+function isClaimedByOtherUser(err) {
+	return err?.message?.includes('belongs to someone else');
+}
+
 module.exports = class CloudCommand extends CLICommandBase {
 	constructor(...args){
 		super(...args);
+		this.api = this._particleApi().api;
 	}
 
 	listDevices({ params: { filter } }){
@@ -48,16 +53,12 @@ module.exports = class CloudCommand extends CLICommandBase {
 	}
 
 	claimDevice({ params: { deviceID } }){
-		const { api } = this._particleApi();
-
 		this.ui.stdout.write(`Claiming device ${deviceID}${os.EOL}`);
 
-		return api.claimDevice({ deviceId: deviceID })
+		return this.api.claimDevice({ deviceId: deviceID })
 			.then(() => this.ui.stdout.write(`Successfully claimed device ${deviceID}${os.EOL}`))
 			.catch((err) => {
-				// The server message "That belongs to someone else." carries the
-				// transfer-request signal. Sniff for it on the typed error's message.
-				if (err && err.message && err.message.includes('That belongs to someone else.')){
+				if (isClaimedByOtherUser(err)){
 					const question = {
 						type: 'confirm',
 						name: 'transfer',
@@ -68,7 +69,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 					return prompt(question)
 						.then(({ transfer }) => {
 							if (transfer){
-								return api.claimDevice({ deviceId: deviceID, requestTransfer: true })
+								return this.api.claimDevice({ deviceId: deviceID, requestTransfer: true })
 									.then(() => this.ui.stdout.write(`Transfer requested. You will receive an email if your transfer is approved or denied.${os.EOL}`));
 							}
 							throw new Error('You cannot claim a device owned by someone else');
@@ -98,16 +99,14 @@ module.exports = class CloudCommand extends CLICommandBase {
 					throw new Error('Not confirmed');
 				}
 				this.ui.stdout.write(`releasing device ${device}${os.EOL}`);
-				const { api } = this._particleApi();
-				return api.removeDevice({ deviceId: device });
+				return this.api.removeDevice({ deviceId: device });
 			})
 			.then(() => this.ui.stdout.write(`Okay!${os.EOL}`));
 	}
 
 	renameDevice({ params: { device, name } }){
 		this.ui.stdout.write(`Renaming device ${device}${os.EOL}`);
-		const { api } = this._particleApi();
-		return api.renameDevice({ deviceId: device, name })
+		return this.api.renameDevice({ deviceId: device, name })
 			.catch(err => {
 				if (err.info && err.info.includes('I didn\'t recognize that device name or ID')){
 					throw new Error('Device not found');
@@ -145,8 +144,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			} else {
 				this.ui.stdout.write(`Compiling code for ${device}${os.EOL}`);
 
-				const { api } = this._particleApi();
-				const attrs = await api.getDeviceAttributes({ deviceId: device });
+				const attrs = await this.api.getDeviceAttributes({ deviceId: device });
 				const platformId = attrs.platform_id;
 				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
 				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
@@ -165,16 +163,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 	}
 
 	async _doFlash({ product, deviceId, fileMapping, targetVersion }){
-		const { api } = this._particleApi();
 		if (product) {
 			this.ui.stdout.write(`Marking device ${deviceId} as a development device${os.EOL}`);
-			await api.markAsDevelopmentDevice({ deviceId, development: true, product });
+			await this.api.markAsDevelopmentDevice({ deviceId, development: true, product });
 		}
 
 		this.ui.logFirstTimeFlashWarning();
 		this.ui.stdout.write(`Flashing firmware to your device ${deviceId}${os.EOL}`);
 
-		const resp = await api.flashDevice({ deviceId, files: fileMapping, targetVersion, product });
+		const resp = await this.api.flashDevice({ deviceId, files: fileMapping, targetVersion, product });
 		if (!resp.status && !resp.message) {
 			throw new Error(resp.error || resp.error_description || 'Flash failed');
 		}
@@ -195,8 +192,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
 
-		const { api } = this._particleApi();
-		const attrs = await api.getDeviceAttributes({ deviceId });
+		const attrs = await this.api.getDeviceAttributes({ deviceId });
 		const platformId = attrs.platform_id;
 
 		if (product || attrs.platform_id !== attrs.product_id){
@@ -277,14 +273,13 @@ module.exports = class CloudCommand extends CLICommandBase {
 		let targetVersion, assets, env;
 
 		requireToken();
-		const { api } = this._particleApi();
 
 		if (target) {
 			if (target === 'latest') {
 				return;
 			}
 
-			const data = await api.listDeviceOsVersions({ platformId });
+			const data = await this.api.listDeviceOsVersions({ platformId });
 
 			const validTarget = data?.versions?.filter((t) => t.version === target);
 			if (!validTarget.length) {
@@ -343,10 +338,9 @@ module.exports = class CloudCommand extends CLICommandBase {
 	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, env, bundleFilename }){
 		let respSizeInfo, bundle;
 
-		const { api } = this._particleApi();
 		let resp;
 		try {
-			resp = await api.compileCode({ files: fileMapping, platformId, targetVersion });
+			resp = await this.api.compileCode({ files: fileMapping, platformId, targetVersion });
 		} catch (err) {
 			const body = (err && err.body) || {};
 			if (body.output === 'Compiler timed out or encountered an error') {
@@ -357,7 +351,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		if (resp && resp.binary_url && resp.binary_id) {
-			const data = await api.downloadFirmwareBinary({ binaryId: resp.binary_id });
+			const data = await this.api.downloadFirmwareBinary({ binaryId: resp.binary_id });
 
 			await fs.writeFile(filename, data);
 			respSizeInfo = resp.sizeInfo;
@@ -590,12 +584,11 @@ module.exports = class CloudCommand extends CLICommandBase {
 	getAllDeviceAttributes(filter) {
 		const { buildDeviceFilter } = utilities;
 		requireToken();
-		const { api } = this._particleApi();
 
 		const filterFunc = buildDeviceFilter(filter);
 
 		return Promise.resolve()
-			.then(() => api.listDevices())
+			.then(() => this.api.listDevices())
 			.then(devices => {
 				if (!devices || (devices.length === 0) || (typeof devices === 'string')){
 					this.ui.stdout.write(`No devices found.${os.EOL}`);
@@ -611,7 +604,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 						if (device.connected){
 							promises.push(
-								api.getDeviceAttributes({ deviceId: device.id })
+								this.api.getDeviceAttributes({ deviceId: device.id })
 									.then(attrs => extend(device, attrs))
 							);
 						} else {
@@ -638,8 +631,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 			}
 		}
 
-		const { api } = this._particleApi();
-
 		if (!onOff || (onOff === '') || (onOff === 'on')){
 			onOff = true;
 		} else if (onOff === 'off'){
@@ -647,17 +638,17 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		if (device){
-			return api.signalDevice({ deviceId: device, signal: onOff, product });
+			return this.api.signalDevice({ deviceId: device, signal: onOff, product });
 		}
 
-		return api.listDevices()
+		return this.api.listDevices()
 			.then(devices => {
 				if (!devices || (devices.length === 0)){
 					this.ui.stdout.write(`No devices found.${os.EOL}`);
 					return;
 				}
 				const promises = devices.map(d =>
-					d.connected ? api.signalDevice({ deviceId: d.id, signal: onOff, product }) : Promise.resolve(d)
+					d.connected ? this.api.signalDevice({ deviceId: d.id, signal: onOff, product }) : Promise.resolve(d)
 				);
 				return Promise.all(promises);
 			});
