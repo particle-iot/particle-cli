@@ -52,7 +52,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			// We assume at least one trigger
 			this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
 			this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
-			this.ui.stdout.write(`	- ${item.triggers[0].type} based trigger ${os.EOL}`);
+			const hasTriggers = item?.triggers?.length > 0;
+			const triggerInfo = hasTriggers ? `${item.triggers[0].type} based trigger ${os.EOL}` : `No triggers defined ${os.EOL}`;
+			this.ui.stdout.write(`	- ${triggerInfo}`);
 		});
 		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
