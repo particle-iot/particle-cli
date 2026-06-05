@@ -106,6 +106,22 @@ describe('ParticleApi', () => {
 				expect(err.name).to.equal('Error');
 			}
 		});
+
+		it('extracts a `body.errors` array (claim endpoint) into the message', async () => {
+			const claimError = Object.assign(new Error('HTTP error 403 from https://api.particle.io/v1/devices'), {
+				statusCode: 403,
+				errorDescription: 'HTTP error 403 from https://api.particle.io/v1/devices',
+				body: { errors: ['That belongs to someone else.'] }
+			});
+			sandbox.stub(particleApi.api, 'claimDevice').rejects(claimError);
+
+			try {
+				await particleApi.claimDevice({ deviceId: 'abc' });
+				expect.fail('should have rejected');
+			} catch (err) {
+				expect(err.message).to.equal('That belongs to someone else.');
+			}
+		});
 	});
 
 	describe('createWebhookWithObj', () => {

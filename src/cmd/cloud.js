@@ -77,6 +77,11 @@ module.exports = class CloudCommand extends CLICommandBase {
 				}
 
 				throw err;
+			})
+			.catch((err) => {
+				// VError so the central handler can still walk to an underlying
+				// AuthenticationError cause for token classification.
+				throw new VError(err, 'Failed to claim device');
 			});
 	}
 

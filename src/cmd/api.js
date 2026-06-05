@@ -585,14 +585,10 @@ module.exports = class ParticleApi {
 					return Promise.reject(typed);
 				}
 				// Non-auth API error: replace the generic `particle-api-js` message
-				// (e.g. "HTTP error 400 from ...") with the server's `error_description`
-				// or `error` body so callers and the top-level renderer get a useful message.
+				// (e.g. "HTTP error 400 from ...") with the server's error body so
+				// callers and the top-level renderer get a useful message.
 				if (err && err instanceof Error) {
-					const body = err.body || {};
-					const extracted = err.shortErrorDescription
-						|| body.error_description
-						|| body.error
-						|| err.errorDescription;
+					const extracted = extractApiErrorMessage(err);
 					if (extracted) {
 						err.message = extracted;
 					}
@@ -658,6 +654,25 @@ module.exports = class ParticleApi {
 		}
 	}
 };
+
+function extractApiErrorMessage(err) {
+	const body = err.body || {};
+	return err.shortErrorDescription
+		|| body.error_description
+		|| body.error
+		|| extractErrorsArray(body.errors)
+		|| body.info
+		|| err.errorDescription;
+}
+
+function extractErrorsArray(errors) {
+	if (!Array.isArray(errors) || !errors.length) {
+		return undefined;
+	}
+	return errors
+		.map(e => (e && e.error ? (e.error.status || e.error) : e))
+		.join('\n');
+}
 
 function getEnvUri({ sandbox, org, productId, deviceId }) {
 	let uri;
