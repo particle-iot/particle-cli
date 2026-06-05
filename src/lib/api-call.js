@@ -51,8 +51,8 @@ async function refreshTokenExpiry(api) {
 	return expiresAt;
 }
 
-async function getCurrentUsername() {
-	if (settings.username) {
+async function getCurrentUsername(forceCheck = false) {
+	if (settings.username && !forceCheck) {
 		return settings.username;
 	}
 	try {

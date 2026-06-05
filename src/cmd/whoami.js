@@ -18,7 +18,7 @@ module.exports = class WhoAmICommand extends CLICommandBase {
 
 		this.newSpin('Checking...').start();
 		try {
-			const username = await getCurrentUsername();
+			const username = await getCurrentUsername(true);
 			console.log(arrow, username);
 			return username;
 		} finally {
