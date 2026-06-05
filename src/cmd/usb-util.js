@@ -53,9 +53,9 @@ async function _getDeviceInfo(device) {
 	}
 }
 
-async function _getDeviceName({ id, api, auth, ui }) {
+async function _getDeviceName({ id, api }) {
 	try {
-		const device = await getDevice({ id, api, auth, ui });
+		const device = await getDevice({ id, api });
 		return device && device.name ? device.name : '<no name>';
 	} catch (_err) {
 		return '<unknown>';
@@ -270,12 +270,11 @@ async function openUsbDeviceById(id, { displayName, dfuMode = false } = {}) {
  *
  * @param {String} idOrName Device ID or name.
  * @param {Object} api API client.
- * @param {String} auth Access token.
  * @param {Object} [options] Options.
  * @param {Boolean} [options.dfuMode] Set to `true` if the device can be in DFU mode.
  * @return {Promise}
  */
-async function openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode = false } = {}) {
+async function openUsbDeviceByIdOrName(idOrName, api, { dfuMode = false } = {}) {
 	let device;
 	if (isDeviceId(idOrName)) {
 		// Try to open the device straight away
@@ -290,7 +289,7 @@ async function openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode = false } 
 	}
 
 	if (!device) {
-		const deviceInfo = await getDevice({ id: idOrName, api, auth });
+		const deviceInfo = await getDevice({ id: idOrName, api });
 		try {
 			device = await openDeviceById(deviceInfo.id);
 		} catch (err) {
@@ -321,12 +320,12 @@ async function getUsbDevices({ dfuMode = false } = {}){
 	}
 }
 
-async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId }) {
+async function getOneUsbDevice({ idOrName, api, ui, flashMode, platformId }) {
 	let usbDevice;
 	const normalModes = ['NORMAL', 'LISTENING', ''];
 	const dfuModes = ['DFU'];
 	if (idOrName) {
-		const device = await openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true });
+		const device = await openUsbDeviceByIdOrName(idOrName, api, { dfuMode: true });
 		await checkFlashMode({ flashMode, device });
 		return device;
 	}
@@ -337,7 +336,7 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 	}
 	let devices = await Promise.all(usbDevices.map(async (d) => {
 		const { id, mode } = await _getDeviceInfo(d);
-		const name = await _getDeviceName({ id, api, auth, ui });
+		const name = await _getDeviceName({ id, api });
 		return {
 			id,
 			name: `${name} [${id}] (${(platformForId(d._info.id)).displayName}${mode ? ', ' + mode : '' })`,
@@ -503,7 +502,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 				return Promise.resolve()
 					.then(async () => {
 						await executeWithUsbDevice({
-							args: { idOrName : usbDevice.id, api: args.api, auth: args.auth },
+							args: { idOrName : usbDevice.id, api: args.api },
 							func,
 							dfuMode
 						});
@@ -553,7 +552,7 @@ async function openUsbDevices(args, { dfuMode = false } = {}){
 			}
 
 			return asyncMapSeries(deviceIds, (id) => {
-				return openUsbDeviceByIdOrName(id, args.api, args.auth, { dfuMode })
+				return openUsbDeviceByIdOrName(id, args.api, { dfuMode })
 					.then(usbDevice => usbDevice);
 			});
 		});

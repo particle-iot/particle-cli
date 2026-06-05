@@ -9,6 +9,7 @@ const filter = require('lodash/filter');
 const prompt = require('inquirer').prompt;
 const settings = require('../../settings');
 const CLICommandBase = require('./base');
+const { AuthenticationError } = require('../lib/auth-errors');
 
 
 module.exports = class VariableCommand extends CLICommandBase {
@@ -75,10 +76,17 @@ module.exports = class VariableCommand extends CLICommandBase {
 
 		const multipleCores = deviceId.length > 1;
 		// Catch per-device so a single failure doesn't reject the whole batch — the
-		// loop below renders `result.error` per row, matching the legacy UX.
+		// loop below renders `result.error` per row, matching the legacy UX. Auth
+		// errors are not per-device though: rethrow so the central handler shows the
+		// login CTA instead of degrading every row into "could not be read".
 		const getVariables = deviceId.map((id) =>
 			api.getVariable({ deviceId: id, name: variableName })
-				.catch(err => ({ error: err.message || String(err) }))
+				.catch(err => {
+					if (err instanceof AuthenticationError){
+						throw err;
+					}
+					return { error: err.message || String(err) };
+				})
 		);
 
 		return Promise.all(getVariables)

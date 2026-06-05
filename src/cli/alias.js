@@ -3,8 +3,12 @@ module.exports = ({ commandProcessor, root }) => {
 	function alias(category, aliasName, path) {
 		const cmd = root.find(path);
 		if (cmd) {
+			// Re-resolve inherited auth options on the target before copying, since the
+			// alias is reparented to a new node and would otherwise lose values the
+			// target inherited from its original category.
 			const tokenExpiryThresholdMs = cmd._resolveTokenExpiryThresholdMs();
-			const options = { ...cmd.options, tokenExpiryThresholdMs };
+			const relogin = cmd._resolveRelogin();
+			const options = { ...cmd.options, tokenExpiryThresholdMs, relogin };
 			commandProcessor.createCommand(category, aliasName, cmd.description, options);
 		}
 	}

@@ -560,7 +560,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 			return;
 		}
 
-		const username = await getCurrentUsername();
+		// Username is cosmetic here. If the token is already invalid and the name
+		// isn't cached, getCurrentUsername() would throw an auth error and block the
+		// logout — fall back to a generic label so the clear below always runs.
+		let username;
+		try {
+			username = await getCurrentUsername();
+		} catch {
+			username = 'your account';
+		}
 
 		try {
 			const { api } = this._particleApi();

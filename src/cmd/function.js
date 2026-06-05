@@ -11,17 +11,21 @@ module.exports = class FunctionCommand extends CLICommandBase {
 	listFunctions(){
 		const { api } = this._particleApi();
 
+		this.ui.stdout.write(`polling server to see what devices are online, and what functions are available${os.EOL}`);
+
 		return api.listDevices()
 			.then(devices => {
 				if (!devices || devices.length === 0){
-					throw new Error('No devices found');
+					// Match `device list` / `variable list`: a friendly message and a
+					// clean exit, not a thrown error.
+					this.ui.stdout.write(`No devices found.${os.EOL}`);
+					return null;
 				}
 				return Promise.all(devices.map(d =>
 					d.connected ? api.getDeviceAttributes({ deviceId: d.id }) : Promise.resolve(d)
-				));
-			})
-			.then(devices => devices.sort((a, b) => (a.name || '').localeCompare(b.name)))
-			.then(devices => this.ui.logDeviceDetail(devices, { fnsOnly: true }));
+				)).then(devices => devices.sort((a, b) => (a.name || '').localeCompare(b.name)))
+					.then(devices => this.ui.logDeviceDetail(devices, { fnsOnly: true }));
+			});
 	}
 
 	callFunction({ product, params: { device, function: fn, argument: arg } }){

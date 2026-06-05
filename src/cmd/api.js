@@ -5,7 +5,7 @@ const _ = require('lodash');
 const chalk = require('chalk');
 const Particle = require('particle-api-js');
 const ParticleCmds = require('particle-commands');
-const HttpsProxyAgent = require('https-proxy-agent');
+const { getProxyAgent } = require('../lib/http-proxy');
 const log = require('../lib/log');
 const settings = require('../../settings');
 const authErrors = require('../lib/auth-errors');
@@ -14,14 +14,14 @@ const { classifyAuthError, wrapClientErrors } = authErrors;
 
 module.exports = class ParticleApi {
 	constructor(baseUrl, options){
-		const proxyUrl = settings.proxyUrl || process.env.HTTPS_PROXY || process.env.https_proxy;
 		this.api = new Particle({
 			baseUrl: baseUrl,
 			clientId: options.clientId || 'particle-cli',
 			clientSecret: 'particle-cli',
 			tokenDuration: 7776000, // 90 days
 			debug: this._debug.bind(this),
-			httpAgent: proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined
+			// Honors settings.proxyUrl + HTTPS_PROXY/HTTP_PROXY/NO_PROXY env vars.
+			httpAgent: getProxyAgent(baseUrl, { proxyUrl: settings.proxyUrl })
 		});
 		this.accessToken = options.accessToken;
 	}
@@ -690,10 +690,6 @@ function getEnvUri({ sandbox, org, productId, deviceId }) {
 	return uri;
 }
 
-// Back-compat alias: existing `instanceof UnauthorizedError` checks in container.js
-// keep firing for both InvalidTokenError and MissingTokenError because they extend
-// AuthenticationError.
-module.exports.UnauthorizedError = authErrors.AuthenticationError;
 module.exports.AuthenticationError = authErrors.AuthenticationError;
 module.exports.MissingTokenError = authErrors.MissingTokenError;
 module.exports.InvalidTokenError = authErrors.InvalidTokenError;

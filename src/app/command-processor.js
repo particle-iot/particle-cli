@@ -301,7 +301,8 @@ class CLICommandItem {
 	exec(argv){
 		if (this.options.handler){
 			const tokenExpiryThresholdMs = this._resolveTokenExpiryThresholdMs();
-			const effectiveOptions = { ...this.options, tokenExpiryThresholdMs };
+			const relogin = this._resolveRelogin();
+			const effectiveOptions = { ...this.options, tokenExpiryThresholdMs, relogin };
 			return Promise.resolve().then(() => runWithAuthMiddleware(effectiveOptions, argv));
 		}
 		if (argv.version && this.version){
@@ -311,10 +312,20 @@ class CLICommandItem {
 	}
 
 	_resolveTokenExpiryThresholdMs(){
+		return this._resolveInheritedOption('tokenExpiryThresholdMs');
+	}
+
+	_resolveRelogin(){
+		return this._resolveInheritedOption('relogin');
+	}
+
+	// Walk up the command tree to find the nearest defined value for `key`.
+	// Used for auth options that a category can set once for all its subcommands.
+	_resolveInheritedOption(key){
 		let item = this;
 		while (item){
-			if (item.options && item.options.tokenExpiryThresholdMs !== undefined){
-				return item.options.tokenExpiryThresholdMs;
+			if (item.options && item.options[key] !== undefined){
+				return item.options[key];
 			}
 			item = item.parent;
 		}
@@ -811,6 +822,8 @@ module.exports = {
 		unknownParametersError
 	},
 	test: {
-		consoleErrorLogger
+		consoleErrorLogger,
+		runWithAuthMiddleware,
+		findAuthenticationError
 	}
 };
