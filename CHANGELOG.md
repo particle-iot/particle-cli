@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.48.0 - Jun 08 2026
+* Standardize error messages for cloud commands when not logged in
+* Fix: protected devices stall when restarting the device while in DFU mode
+
 # 3.47.3 - May 19 2026
 * Show compile errors when using `flash --local` command
 * Allow proxy usage on `container push` command
