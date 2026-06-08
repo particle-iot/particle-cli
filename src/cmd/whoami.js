@@ -1,45 +1,28 @@
 'use strict';
 const chalk = require('chalk');
-const VError = require('verror');
-const settings = require('../../settings');
-const ApiClient = require('../lib/api-client');
 const spinnerMixin = require('../lib/spinner-mixin');
+const CLICommandBase = require('./base');
+const { requireToken, getCurrentUsername } = require('../lib/api-call');
 
 const arrow = chalk.green('>');
 
 
-module.exports = class WhoAmICommand {
-	constructor() {
+module.exports = class WhoAmICommand extends CLICommandBase {
+	constructor(options = {}) {
+		super(options);
 		spinnerMixin(this);
 	}
 
-	getUsername(){
-		const api = new ApiClient();
+	async getUsername() {
+		requireToken();
 
-		return Promise.resolve()
-			.then(() => {
-				api.ensureToken();
-
-				this.newSpin('Checking...').start();
-
-				return api.getUser();
-			})
-			.then(user => {
-				const username = settings.username || user.username || 'unknown username';
-
-				this.stopSpin();
-
-				console.log(arrow, username);
-				return username;
-			})
-			.catch(error => {
-				this.stopSpin();
-
-				if (error instanceof VError){
-					throw error;
-				}
-				throw new VError('Failed to find username! Try: `particle login`');
-			});
+		this.newSpin('Checking...').start();
+		try {
+			const username = await getCurrentUsername(true);
+			console.log(arrow, username);
+			return username;
+		} finally {
+			this.stopSpin();
+		}
 	}
 };
-

@@ -2,8 +2,6 @@
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
-const ParticleAPI = require('./api');
-const settings = require('../../settings');
 const LogicFunction = require('../lib/logic-function');
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 const CLICommandBase = require('./base');
@@ -15,7 +13,7 @@ const CLICommandBase = require('./base');
 module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
-		this.api = createAPI();
+		this.api = this._particleApi().api;
 		this.logicFuncList = null;
 		this.org = null;
 	}
@@ -54,7 +52,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			// We assume at least one trigger
 			this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
 			this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
-			this.ui.stdout.write(`	- ${item.triggers[0].type} based trigger ${os.EOL}`);
+			const hasTriggers = item?.triggers?.length > 0;
+			const triggerInfo = hasTriggers ? `${item.triggers[0].type} based trigger ${os.EOL}` : `No triggers defined ${os.EOL}`;
+			this.ui.stdout.write(`	- ${triggerInfo}`);
 		});
 		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
@@ -558,15 +558,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 };
 
 // UTILS //////////////////////////////////////////////////////////////////////
-function createAPI() {
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}
-
 // get org name from org slug
 function getOrgName(org) {
 	return org || 'your Sandbox';
 }
-
-module.exports.createAPI = createAPI;

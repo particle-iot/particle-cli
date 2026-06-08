@@ -7,7 +7,7 @@ function api() {
 	if (!api._instance) {
 		api._instance = new ParticleApi(settings.apiUrl, {
 			accessToken: settings.access_token
-		}).api;
+		});
 	}
 	return api._instance;
 }

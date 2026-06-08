@@ -61,7 +61,7 @@ describe('LogicFunction', () => {
 			try {
 				await LogicFunction.listFromCloud({ org: 'my-org' });
 			} catch (error) {
-				expect(error.message).to.equal('Error listing Logic Functions: Internal Server Error');
+				expect(error.message).to.equal('Internal Server Error');
 			}
 		});
 	});
@@ -316,7 +316,7 @@ describe('LogicFunction', () => {
 				await lf1.execute(trigger);
 				expect.fail('Should have thrown an error');
 			} catch (error) {
-				expect(error.message).to.equal('Error executing Logic Function: Internal Server Error');
+				expect(error.message).to.equal('Internal Server Error');
 			}
 		});
 	});
@@ -354,7 +354,7 @@ describe('LogicFunction', () => {
 				await lf1.deploy();
 				expect.fail('Should have thrown an error');
 			} catch (error) {
-				expect(error.message).to.equal('Error deploying Logic Function: Internal Server Error');
+				expect(error.message).to.equal('Internal Server Error');
 			}
 		});
 		it('propagates errors when updating', async () => {
@@ -367,7 +367,7 @@ describe('LogicFunction', () => {
 				await lf1.deploy();
 				expect.fail('Should have thrown an error');
 			} catch (error) {
-				expect(error.message).to.equal('Error deploying Logic Function: Internal Server Error');
+				expect(error.message).to.equal('Internal Server Error');
 			}
 		});
 	});

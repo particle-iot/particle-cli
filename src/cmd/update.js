@@ -1,13 +1,10 @@
 'use strict';
-const ParticleApi = require('./api');
 const { platformForId } = require('../lib/platform');
-const settings = require('../../settings');
 const semver = require('semver');
 const usbUtils = require('./usb-util');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const CLICommandBase = require('./base');
 const { parseModulesToFlash, filterModulesToFlash, maintainDeviceProtection, createFlashSteps, flashFiles } = require('../lib/flash-helper');
-const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 
 module.exports = class UpdateCommand extends CLICommandBase {
@@ -55,10 +52,4 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		this.ui.write('Update success!');
 	}
 
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 };

@@ -203,7 +203,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID, 'LOLWUTNOPE'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('HTTP error 404');
+			expect(stdout.toLowerCase()).to.include('not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -218,7 +218,7 @@ describe('Product Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('HTTP error 404');
+			expect(json.error.message.toLowerCase()).to.include('not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -229,7 +229,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('Error listing product devices: The access token was not found');
+			expect(stdout).to.include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -246,7 +246,7 @@ describe('Product Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('Error listing product devices: The access token was not found');
+			expect(json.error.message).to.include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -257,7 +257,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('Error showing product device detail: The access token was not found');
+			expect(stdout).to.include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -274,7 +274,7 @@ describe('Product Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('Error showing product device detail: The access token was not found');
+			expect(json.error.message).to.include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -504,7 +504,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'remove', PRODUCT_01_ID, '000000000000000000000001'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('Error removing device from product: Device not found for this product');
+			expect(stdout).to.include('Device not found for this product');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});

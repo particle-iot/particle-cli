@@ -13,6 +13,7 @@ const path = require('path');
 const _ = require('lodash');
 const chalk = require('chalk');
 const ParticleCache = require('../lib/particle-cache');
+const VError = require('verror');
 
 const PROVISIONING_PROGRESS = 1;
 const PROVISIONING_SUCCESS = 2;
@@ -309,7 +310,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				console.log(`ICCID ${iccid} enabled successfully`);
 			}
 		} catch (error) {
-			console.error(`Failed to enable profiles: ${error.message}`);
+			throw new VError(error, 'Failed to enable profile');
 		}
 	}
 
@@ -333,7 +334,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 			console.log('Profile deleted successfully');
 		} catch (error) {
-			console.error(`Failed to delete profile: ${error.message}`);
+			throw new VError(error, 'Failed to delete profile');
 		} finally {
 			this._exitQlril();
 		}
@@ -356,7 +357,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				iccids.forEach(iccid => console.log(`\t- ${iccid}`));
 			}
 		} catch (error) {
-			console.error(`Failed to list profiles: ${error.message}`);
+			throw new VError(error, 'Failed to list profiles');
 		}
 	}
 
@@ -369,7 +370,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			try {
 				this.inputJsonData = JSON.parse(fs.readFileSync(this.inputJson));
 			} catch (error) {
-				throw new Error(`Invalid JSON in input file: ${error.message}`);
+				throw new VError(error, 'Invalid JSON in input file');
 			}
 		}
 
@@ -901,7 +902,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			// Write updated JSON back to the file with indentation
 			fs.writeFileSync(jsonFile, JSON.stringify(existingJson, null, 4));
 		} catch (error) {
-			console.error(`Failed to append data to JSON file: ${error.message}`);
+			throw new VError(error, 'Failed to append data to JSON file');
 		}
 	}
 

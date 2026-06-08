@@ -186,7 +186,7 @@ describe('Variable Commands [@device]', () => {
 			const { stdout, stderr, exitCode } = await cli.run(args);
 			const msg = [
 				'Error: Unknown Variable: NOPE',
-				'Error while reading value: Some variables could not be read'
+				'Some variables could not be read'
 			].join(os.EOL);
 
 			expect(stdout).to.include(msg);

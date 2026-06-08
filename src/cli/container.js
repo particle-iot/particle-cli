@@ -18,6 +18,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(container, 'push', 'Build and push a containerized application to a device', {
+		tokenExpiryThresholdMs: 15 * 60 * 1000,   // Docker build + push can take minutes before the final cloud call
 		options: {
 			'device': {
 				description: 'The device to push to'

@@ -539,7 +539,7 @@ async function readManifestFromLocalFile(path, targetFile = 'manifest.json') {
 	try {
 		return JSON.parse(content.toString('utf8'));
 	} catch (err) {
-		throw new Error(`Invalid JSON in ${targetFile}: ${err.message}`);
+		throw new VError(err, `Invalid JSON in ${targetFile}`);
 	}
 }
 

@@ -1,15 +1,14 @@
 'use strict';
 const CLICommandBase = require('./base');
-const ParticleAPI = require('./api');
-const settings = require('../../settings');
 const fs = require('node:fs/promises');
 const { displayEnv, displayRolloutInstructions } = require('../lib/env');
 const os = require('os');
+const VError = require('verror');
 
 module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
-		this.api = createAPI();
+		this.api = this._particleApi().api;
 	}
 
 	_validateScope({ sandbox, org, product, device }) {
@@ -140,7 +139,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 			});
 			return operations.ops;
 		} catch (error) {
-			throw new Error(`Unable to process the file ${filename}: ${ error.message }`);
+			throw new VError(error, `Unable to process the file ${filename}`);
 		}
 	}
 
@@ -157,8 +156,3 @@ module.exports = class EnvCommands extends CLICommandBase {
 	}
 };
 
-function createAPI() {
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}

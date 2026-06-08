@@ -2,20 +2,19 @@
 const { expect, sinon } = require('../../test/setup');
 const { withConsoleStubs } = require('../../test/lib/mocha-utils');
 const settings = require('../../settings');
-const ApiClient = require('../lib/api-client');
+const ParticleApi = require('./api');
 const WhoAmICommands = require('./whoami');
+const { MissingTokenError, InvalidTokenError } = require('../lib/auth-errors');
 const { default: stripAnsi } = require('strip-ansi');
 
 
 describe('Whoami Commands', () => {
 	const sandbox = sinon.createSandbox();
 
-	// We cannot mock the prototype since the spinner is from a mixin :cat-scream:
 	function whoAmICommands() {
 		const whoAmI = new WhoAmICommands();
 		sandbox.stub(whoAmI, 'newSpin').returns({ start: sandbox.stub() });
 		sandbox.stub(whoAmI, 'stopSpin');
-
 		return whoAmI;
 	}
 
@@ -27,83 +26,78 @@ describe('Whoami Commands', () => {
 		sandbox.restore();
 	});
 
-	it('fails when user is signed-out', () => {
-		sandbox.stub(ApiClient.prototype, '_access_token').get(() => null);
+	it('throws MissingTokenError when no token is configured', async () => {
+		settings.access_token = null;
 		const whoAmI = whoAmICommands();
 
-		return whoAmI.getUsername()
-			.then(() => {
-				throw new Error('expected promise to be rejected');
-			})
-			.catch(error => {
-				expect(stripAnsi(error.message)).to.eql('You\'re not logged in. Please login using particle login before using this command');
-			});
+		let caught;
+		try {
+			await whoAmI.getUsername();
+		} catch (err) {
+			caught = err;
+		}
+		expect(caught).to.be.instanceof(MissingTokenError);
 	});
 
-	it('fails when token is invalid', () => {
-		sandbox.stub(ApiClient.prototype, 'getUser').throws();
+	it('propagates InvalidTokenError when the API rejects with 401 (no VError rewrap)', async () => {
+		sandbox.stub(ParticleApi.prototype, 'getUserInfo').rejects(new InvalidTokenError('expired'));
 		const whoAmI = whoAmICommands();
 
-		return whoAmI.getUsername()
-			.then(() => {
-				throw new Error('expected promise to be rejected');
-			})
-			.catch(error => {
-				expect(error).to.have.property('message', 'Failed to find username! Try: `particle login`');
-			});
+		let caught;
+		try {
+			await whoAmI.getUsername();
+		} catch (err) {
+			caught = err;
+		}
+		expect(caught).to.be.instanceof(InvalidTokenError);
+		expect(stripAnsi(caught.message)).to.equal('expired');
 	});
 
-	it('returns username from the local settings when user is signed-in', withConsoleStubs(sandbox, () => {
-		sandbox.stub(settings, 'username').value('from-settings@example.com');
-		sandbox.spy(ApiClient.prototype, 'ensureToken');
-		sandbox.stub(ApiClient.prototype, 'getUser').resolves({ username: 'from-api@example.com' });
+	it('force-checks the API and refreshes a stale cached username', withConsoleStubs(sandbox, () => {
+		// whoami forces a server check (getCurrentUsername(true)): the API is the
+		// source of truth for the token's owner, and a stale settings.username is
+		// overwritten rather than returned.
+		sandbox.stub(settings, 'username').value('stale@example.com');
+		const overrideStub = sandbox.stub(settings, 'override');
+		sandbox.stub(ParticleApi.prototype, 'getUserInfo').resolves({ username: 'from-api@example.com' });
 		const whoAmI = whoAmICommands();
 
 		return whoAmI.getUsername()
 			.then((username) => {
-				expect(username).to.equal(settings.username);
-				expect(ApiClient.prototype.ensureToken).to.have.property('callCount', 1);
-				expect(ApiClient.prototype.getUser).to.have.property('callCount', 1);
-				validateStdoutContainsUsername(settings.username);
+				expect(username).to.equal('from-api@example.com');
+				expect(overrideStub).to.have.been.calledWith(null, 'username', 'from-api@example.com');
+				validateStdoutContainsUsername('from-api@example.com');
 			});
 	}));
 
 	it('returns username from the API when user is signed-in and username isn\'t saved locally', withConsoleStubs(sandbox, () => {
 		const apiUsername = 'from-api@example.com';
 		sandbox.stub(settings, 'username').value(null);
-		sandbox.spy(ApiClient.prototype, 'ensureToken');
-		sandbox.stub(ApiClient.prototype, 'getUser').resolves({ username: apiUsername });
+		sandbox.stub(ParticleApi.prototype, 'getUserInfo').resolves({ username: apiUsername });
 		const whoAmI = whoAmICommands();
 
 		return whoAmI.getUsername()
 			.then(username => {
 				expect(username).to.equal(apiUsername);
-				expect(ApiClient.prototype.ensureToken).to.have.property('callCount', 1);
-				expect(ApiClient.prototype.getUser).to.have.property('callCount', 1);
 				validateStdoutContainsUsername(apiUsername);
 			});
 	}));
 
 	it('returns fallback when user is signed-in but username is not saved locally or available in the API', withConsoleStubs(sandbox, () => {
 		sandbox.stub(settings, 'username').value(null);
-		sandbox.spy(ApiClient.prototype, 'ensureToken');
-		sandbox.stub(ApiClient.prototype, 'getUser').resolves({ username: '' });
+		sandbox.stub(ParticleApi.prototype, 'getUserInfo').resolves({ username: '' });
 		const whoAmI = whoAmICommands();
 
 		return whoAmI.getUsername()
 			.then(username => {
-				const fallback = 'unknown username';
-				expect(username).to.equal(fallback);
-				expect(ApiClient.prototype.ensureToken).to.have.property('callCount', 1);
-				expect(ApiClient.prototype.getUser).to.have.property('callCount', 1);
-				validateStdoutContainsUsername(fallback);
+				expect(username).to.equal('unknown');
+				validateStdoutContainsUsername('unknown');
 			});
 	}));
 
-	function validateStdoutContainsUsername(username){
+	function validateStdoutContainsUsername(username) {
 		expect(process.stdout.write).to.have.property('callCount', 1);
 		expect(process.stdout.write.firstCall.args[0])
 			.to.match(new RegExp(`${username}\\n$`));
 	}
 });
-

@@ -1,10 +1,6 @@
 'use strict';
 const os = require('os');
-const VError = require('verror');
-const settings = require('../../settings');
-const { normalizedApiError } = require('../lib/api-client');
 const CLICommandBase = require('./base');
-const ParticleAPI = require('./api');
 
 
 module.exports = class SubscribeCommand extends CLICommandBase {
@@ -63,17 +59,14 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 			this.ui.stdout.write(`This command will exit after receiving ${max} event(s)...${os.EOL}`);
 		}
 
-		const fetchStream = createAPI().getEventStream(device, event, product);
+		const { api } = this._particleApi();
+		const fetchStream = api.getEventStream({ deviceId: device, name: event, product });
 		return this.ui.showBusySpinnerUntilResolved('Fetching event stream...', fetchStream)
 			.then(stream => {
 				this.ui.stdout.write(os.EOL);
 				return stream;
 			})
-			.then(stream => stream.on('event', this.createEventHandler(until, max)))
-			.catch(error => {
-				const message = 'Error fetching event stream';
-				throw createAPIErrorResult({ error, message });
-			});
+			.then(stream => stream.on('event', this.createEventHandler(until, max)));
 	}
 
 	createEventHandler(until, max){
@@ -98,18 +91,3 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 		};
 	}
 };
-
-
-// UTILS //////////////////////////////////////////////////////////////////////
-function createAPI(){
-	return new ParticleAPI(settings.apiUrl, {
-		accessToken: settings.access_token
-	});
-}
-
-function createAPIErrorResult({ error: e, message, json }){
-	const error = new VError(normalizedApiError(e), message);
-	error.asJSON = json;
-	return error;
-}
-

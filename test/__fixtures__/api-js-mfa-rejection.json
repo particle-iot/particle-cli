@@ -1,0 +1,17 @@
+{
+	"_comment": "Rejection envelope produced by particle-api-js@12.0.0's Agent._promiseResponse when /oauth/token responds with an mfa_required body (HTTP 4xx). The thrown reason is an Error instance; this fixture captures its enumerable own properties so tests can reconstitute it via Object.assign(new Error(message), fixture). Source: node_modules/particle-api-js/lib/src/Agent.js lines 40-84.",
+	"message": "HTTP error 403 from https://api.particle.io/oauth/token - Multi-factor authentication required",
+	"statusCode": 403,
+	"errorDescription": "HTTP error 403 from https://api.particle.io/oauth/token - Multi-factor authentication required",
+	"shortErrorDescription": "Multi-factor authentication required",
+	"error": {
+		"error": "mfa_required",
+		"mfa_token": "mfa_token_fixture_abc123",
+		"error_description": "Multi-factor authentication required"
+	},
+	"body": {
+		"error": "mfa_required",
+		"mfa_token": "mfa_token_fixture_abc123",
+		"error_description": "Multi-factor authentication required"
+	}
+}

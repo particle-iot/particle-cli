@@ -6,10 +6,9 @@ const yaml = require('yaml');
 const execa = require('execa');
 const { v4: uuidv4 } = require('uuid');
 
+const VError = require('verror');
 const CLICommandBase = require('./base');
 const settings = require('../../settings');
-const ParticleApi = require('./api');
-const { UnauthorizedError } = require('./api');
 const Table = require('cli-table');
 const { platformForId } = require('../lib/platform');
 const pkg = require('../../package.json');
@@ -21,8 +20,7 @@ const PARTICLE_ENV_FILE = '.particle_env.yaml';
 module.exports = class ContainerCommands extends CLICommandBase {
 	constructor() {
 		super();
-		const auth = settings.access_token;
-		this.api = new ParticleApi(settings.apiUrl, { accessToken: auth });
+		this.api = this._particleApi().api;
 	}
 
 	async run({ blueprintDir = '.' }) {
@@ -61,7 +59,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			// Executing docker-compose up
 			await execa('docker', ['compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir, env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
-			throw new Error(`Failed to run Docker Compose: ${error.message}`);
+			throw new VError(error, 'Failed to run Docker Compose');
 		}
 	}
 
@@ -71,64 +69,57 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			await this._installDockerCredHelper();
 			this.ui.write('Docker is configured successfully.' + os.EOL);
 		} catch (error) {
-			throw new Error(`Failed to configure Docker: ${error.message}`);
+			throw new VError(error, 'Failed to configure Docker');
 		}
 	}
 
 	async push({ deviceId, instance, blueprintDir = '.', amd64 }) {
-		try {
-			const doc = await this._loadFromEnv(blueprintDir);
-			deviceId ||= doc.get('deviceId');
-			const device = await this._getDevice(deviceId);
-			deviceId = device.id;
-			instance ||= doc.get('instance') || Math.random().toString(36).substring(2, 8);
+		const doc = await this._loadFromEnv(blueprintDir);
+		deviceId ||= doc.get('deviceId');
+		const device = await this._getDevice(deviceId);
+		deviceId = device.id;
+		instance ||= doc.get('instance') || Math.random().toString(36).substring(2, 8);
 
-			await this.validateApplicationsHaveBeenMigrated(device);
+		await this.validateApplicationsHaveBeenMigrated(device);
 
-			const appName = await this._getAppName(blueprintDir);
-			const appInstance = `${appName}_${instance}`;
-			doc.set('deviceId', deviceId);
-			doc.set('instance', instance);
-			await this._saveToEnv(doc, blueprintDir);
+		const appName = await this._getAppName(blueprintDir);
+		const appInstance = `${appName}_${instance}`;
+		doc.set('deviceId', deviceId);
+		doc.set('instance', instance);
+		await this._saveToEnv(doc, blueprintDir);
 
-			this.ui.write(`Pushing application ${appInstance} to device ${deviceId}...${os.EOL}`);
+		this.ui.write(`Pushing application ${appInstance} to device ${deviceId}...${os.EOL}`);
 
-			this.ui.write('Building application...');
-			const composeDir = path.join(blueprintDir, appName);
-			const uuid = uuidv4();
+		this.ui.write('Building application...');
+		const composeDir = path.join(blueprintDir, appName);
+		const uuid = uuidv4();
 
-			await this._checkDockerVersion();
-			await this._installDockerCredHelper();
+		await this._checkDockerVersion();
+		await this._installDockerCredHelper();
 
-			// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
-			// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
-			// Then remove the build key from the docker-compose.yaml and replace it by the image key with the serviceTag
-			const dockerCompose = await this._getDockerCompose(composeDir);
+		// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
+		// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
+		// Then remove the build key from the docker-compose.yaml and replace it by the image key with the serviceTag
+		const dockerCompose = await this._getDockerCompose(composeDir);
 
-			const services = dockerCompose.get('services');
-			if (services) {
-				for (const { key: { value: service }, value: serviceConfig } of services.items) {
-					const buildDir = serviceConfig.get('build');
-					if (buildDir) {
-						const registryName = this._getRegistryName();
-						const serviceTag = `${registryName}/devices/${deviceId}/${service}:${uuid}`;
-						await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag, { amd64 });
-						this._updateDockerCompose(serviceConfig, serviceTag);
-					}
+		const services = dockerCompose.get('services');
+		if (services) {
+			for (const { key: { value: service }, value: serviceConfig } of services.items) {
+				const buildDir = serviceConfig.get('build');
+				if (buildDir) {
+					const registryName = this._getRegistryName();
+					const serviceTag = `${registryName}/devices/${deviceId}/${service}:${uuid}`;
+					await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag, { amd64 });
+					this._updateDockerCompose(serviceConfig, serviceTag);
 				}
 			}
-
-			this.ui.write(`${os.EOL}Successfully built ${appInstance}${os.EOL}`);
-
-			await this._pushApp(device, appInstance, dockerCompose.toString());
-
-			this.ui.write(`Successfully pushed ${appInstance} to device ${deviceId}${os.EOL}`);
-		} catch (error) {
-			if (error instanceof UnauthorizedError) {
-				throw new Error('You must be logged in to push an application to a device.');
-			}
-			throw error;
 		}
+
+		this.ui.write(`${os.EOL}Successfully built ${appInstance}${os.EOL}`);
+
+		await this._pushApp(device, appInstance, dockerCompose.toString());
+
+		this.ui.write(`Successfully pushed ${appInstance} to device ${deviceId}${os.EOL}`);
 	}
 
 	async _getAppName(blueprintDir) {
@@ -142,7 +133,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			const blueprintContent = await fs.readFile(blueprintPath, 'utf8');
 			doc = yaml.parseDocument(blueprintContent);
 		} catch (error) {
-			throw new Error(`Failed to parse blueprint.yaml: ${error.message}`);
+			throw new VError(error, 'Failed to parse blueprint.yaml');
 		}
 		const appName = doc.get('containers');
 		if (!appName || typeof appName !== 'string') {
@@ -160,7 +151,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			const composeData = await fs.readFile(dockerComposePath, 'utf8');
 			return yaml.parseDocument(composeData);
 		} catch (error) {
-			throw new Error(`Failed to read ${dockerComposePath}: ${error.message}`);
+			throw new VError(error, `Failed to read ${dockerComposePath}`);
 		}
 	}
 
@@ -230,7 +221,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				await fs.writeJson(configPath, config, { spaces: 2 });
 			}
 		} catch (error) {
-			throw new Error(`Failed to install Docker credential helper: ${error.message}`);
+			throw new VError(error, 'Failed to install Docker credential helper');
 		}
 	}
 
@@ -242,7 +233,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			}
 			await execa('docker', ['build', buildDir, '--platform', platforms.join(','), '--tag', serviceTag, '--push'], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
-			throw new Error(`Failed to build container ${serviceTag}. See the Docker output for details: ${error.message}`);
+			throw new VError(error, `Failed to build container ${serviceTag}. See the Docker output for details`);
 		}
 	}
 
@@ -273,7 +264,6 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			if (error.statusCode === 404) {
 				throw new Error(`Connect ${device.id} to the cloud before pushing an application. Run particle login and try again.`);
 			}
-			console.error('Error pushing application to the device:', error);
 			throw error;
 		}
 	}
@@ -330,13 +320,9 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				this.ui.write(table.toString() + os.EOL);
 			}
 		} catch (error) {
-			if (error instanceof UnauthorizedError) {
-				throw new Error('You must be logged in to list applications. Run particle login and try again.');
-			}
 			if (error.statusCode === 404) {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
-			console.error('Error getting application from the device:', error);
 			throw error;
 		}
 	}
@@ -374,14 +360,10 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				this.ui.write(`Application ${appInstance} not found on device ${deviceId}.${os.EOL}`);
 			}
 		} catch (error) {
-			if (error instanceof UnauthorizedError) {
-				throw new Error('You must be logged in to remove an application. Run particle login and try again.');
-			}
 			if (error.statusCode === 404) {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
 
-			console.error(`Error removing application ${appInstance} from device ${deviceId}:`, error);
 			throw error;
 		}
 	}
@@ -408,9 +390,9 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 	async _getDeviceAttributes(deviceId) {
 		try {
-			return await this.api.getDeviceAttributes(deviceId);
+			return await this.api.getDeviceAttributes({ deviceId });
 		} catch (error) {
-			throw new Error(`You do not have access to the ${deviceId}: ${error.message}`);
+			throw new VError(error, `You do not have access to the ${deviceId}`);
 		}
 	}
 
@@ -476,7 +458,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 	}
 
 	async _getProduct(orgSlug) {
-		const productsResp = await this.api.getProducts(orgSlug);
+		const productsResp = await this.api.getProducts({ org: orgSlug });
 		let products = productsResp?.products || [];
 
 		products = products.filter((product) => platformForId(product.platform_id)?.features?.includes('linux'));

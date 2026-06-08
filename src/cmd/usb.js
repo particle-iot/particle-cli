@@ -12,19 +12,20 @@ const {
 } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
-const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
+const { optionalApiCall } = require('../lib/api-call');
 const chalk = require('chalk');
 const { Result } = require('particle-usb');
 const Table = require('cli-table');
 
 module.exports = class UsbCommand extends CLICommandBase {
-	constructor(settings) {
+	constructor() {
 		super();
 		spinnerMixin(this);
-		this._auth = settings.access_token;
-		this._api = new ParticleApi(settings.apiUrl, { accessToken: this._auth }).api;
+		const { api, auth } = this._particleApi();
+		this._auth = auth;
+		this._api = api;
 	}
 
 	list(args) {
@@ -44,14 +45,16 @@ module.exports = class UsbCommand extends CLICommandBase {
 				return asyncMapSeries(usbDevices, (usbDevice) => {
 					return openUsbDevice(usbDevice, { dfuMode: true })
 						.then(() => {
-							if (!idsOnly) {
-								return getDevice({
-									id: usbDevice.id,
-									api: this._api,
-									auth: this._auth,
-									dontThrow: true
-								});
+							// Cloud lookup is cosmetic (device names + connected status). Skip it
+							// when there's no token, and degrade to a null entry if auth fails —
+							// `usb list` should still work on a logged-out machine.
+							if (idsOnly || !this._auth) {
+								return null;
 							}
+							return optionalApiCall(
+								() => getDevice({ id: usbDevice.id, api: this._api, dontThrow: true }),
+								null
+							);
 						})
 						.then(device => {
 							const info = [device, usbDevice.isInDfuMode];
@@ -73,7 +76,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 							return Promise.all(info);
 						})
 						.then(([device, isInDfuMode, mode]) => {
-							const { name, platform_id: platformID, connected } = device || {};
+							const { platform_id: platformID, connected } = device || {};
 							const platform = isKnownPlatformId(usbDevice.platformId) ? platformForId(usbDevice.platformId).displayName :
 								`Platform ${usbDevice.platformId}`;
 							const type = [platform];
@@ -86,9 +89,14 @@ module.exports = class UsbCommand extends CLICommandBase {
 								type.push(mode);
 							}
 
+							// `device === null` means the cloud lookup was skipped (no token) or
+							// failed (auth / 404). Distinguish "we don't know" from "device has
+							// no name set in the cloud".
+							const name = device === null ? '<unknown>' : (device.name || '<no name>');
+
 							return {
 								id: usbDevice.id,
-								name: name || '',
+								name,
 								type: `${type.join(', ')}`,
 								platform_id: platformID || usbDevice.platformId,
 								connected: !!connected

@@ -34,6 +34,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(keys, 'send', "Tell a server which key you'd like to use by sending your public key in PEM format", {
+		tokenExpiryThresholdMs: 60 * 1000,
 		params: '[deviceID] [filename]',
 		options: {
 			'product_id': {
@@ -48,6 +49,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(keys, 'doctor', 'Creates and assigns a new key to your device, and uploads it to the cloud', {
+		tokenExpiryThresholdMs: 60 * 1000,
 		params: '[deviceID]',
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');

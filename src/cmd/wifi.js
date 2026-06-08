@@ -6,9 +6,6 @@ const inquirer = require('inquirer');
 const RESCAN_LABEL = '[rescan networks]';
 const fs = require('fs-extra');
 const { deviceControlError } = require('../lib/device-error-handler');
-const ParticleApi = require('../cmd/api');
-const settings = require('../../settings');
-const createApiCache = require('../lib/api-cache');
 const utilities = require('../lib/utilities');
 const os = require('os');
 const { WifiSecurityEnum } = require('particle-usb');
@@ -569,10 +566,4 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		return new Error(`Unable to ${action}: ${error.message}${os.EOL}${helperString}`);
 	}
 
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 };

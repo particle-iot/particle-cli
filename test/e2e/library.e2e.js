@@ -158,8 +158,7 @@ describe('Library Commands', () => {
 			const args = ['library', 'search', 'dotstar'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('HTTP error 400');
-			expect(stdout).to.include('The access token was not found');
+			expect(stdout).to.include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -176,8 +175,7 @@ describe('Library Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('HTTP error 400');
-			expect(json.error.message).include('The access token was not found');
+			expect(json.error.message).include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -371,8 +369,7 @@ describe('Library Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('HTTP error 400');
-			expect(json.error.message).include('The access token was not found');
+			expect(json.error.message).include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -488,8 +485,7 @@ describe('Library Commands', () => {
 			const args = ['library', 'list'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('HTTP error 400');
-			expect(stdout).to.include('The access token was not found');
+			expect(stdout).to.include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -506,8 +502,7 @@ describe('Library Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('HTTP error 400');
-			expect(json.error.message).include('The access token was not found');
+			expect(json.error.message).include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -626,8 +621,7 @@ describe('Library Commands', () => {
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 
 			// TODO (mirande): this is a bug - we shouldn't show raw http errors
-			expect(stdout).to.include('HTTP error 400');
-			expect(stdout).to.include('The access token was not found');
+			expect(stdout).to.include("You're not logged in. Run `particle login` to authenticate.");
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});

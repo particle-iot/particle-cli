@@ -3,6 +3,7 @@ const os = require('os');
 const { expect, sinon } = require('../../test/setup');
 const { withConsoleStubs } = require('../../test/lib/mocha-utils');
 const VariableCommand = require('./variable');
+const { MissingTokenError } = require('../lib/auth-errors');
 
 
 describe('Variable Command', () => {
@@ -79,8 +80,46 @@ describe('Variable Command', () => {
 			}
 
 			expect(error).to.an.instanceof(Error);
-			expect(error).to.have.property('message', 'Error while monitoring variable: whoops!');
+			expect(error).to.have.property('message', 'whoops!');
 		});
+	});
+
+	describe('_getValue', () => {
+		it('rethrows auth errors instead of degrading them into per-row output', withConsoleStubs(sandbox, async () => {
+			const cmd = new VariableCommand();
+			const api = { getVariable: sandbox.stub().rejects(new MissingTokenError()) };
+			sandbox.stub(cmd, '_particleApi').returns({ api });
+
+			let error;
+			try {
+				await cmd._getValue('000000000000000xdeadbeef', 'test', {});
+			} catch (e){
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(MissingTokenError);
+			// Should NOT have written a degraded "Error: ..." row.
+			const out = process.stdout.write.args.map(a => a[0]).join('');
+			expect(out).to.not.include('Error:');
+		}));
+
+		it('still degrades non-auth per-device failures into rows', withConsoleStubs(sandbox, async () => {
+			const cmd = new VariableCommand();
+			const api = { getVariable: sandbox.stub().rejects(new Error('Variable not found')) };
+			sandbox.stub(cmd, '_particleApi').returns({ api });
+
+			let error;
+			try {
+				await cmd._getValue('000000000000000xdeadbeef', 'test', {});
+			} catch (e){
+				error = e;
+			}
+
+			// Non-auth failure: one row rendered, batch rejects with the summary error.
+			const out = process.stdout.write.args.map(a => a[0]).join('');
+			expect(out).to.include('Error: Variable not found');
+			expect(error).to.have.property('message', 'Some variables could not be read');
+		}));
 	});
 });
 

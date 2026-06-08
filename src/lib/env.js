@@ -275,7 +275,7 @@ async function getConsoleEnvSaveUrl(scope, api) {
 		});
 
 		const product = await api.getProduct({
-			product: device.body?.product_id,
+			product: device?.product_id,
 			auth: api.accessToken
 		});
 

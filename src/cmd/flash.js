@@ -1,6 +1,5 @@
 'use strict';
 const fs = require('fs-extra');
-const ParticleApi = require('./api');
 const { ModuleInfo } = require('binary-version-reader');
 const { errors: { usageError } } = require('../app/command-processor');
 const usbUtils = require('./usb-util');
@@ -15,6 +14,7 @@ const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
+const { verifyFreshTokenMiddleware } = require('../lib/api-call');
 const os = require('os');
 const semver = require('semver');
 const { handleFlashError } = require('../lib/tachyon-utils');
@@ -27,7 +27,6 @@ const {
 	flashFiles,
 	getFileFlashInfo
 } = require('../lib/flash-helper');
-const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
 const QdlFlasher = require('../lib/qdl');
@@ -434,10 +433,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 	}
 
-	flashCloud({ device, files, target }) {
+	async flashCloud({ device, files, target }) {
 		// We don't check for Device Protection here
 		// because it will not matter for cloud flashing
 		// These are rejected for Protected Devices even if the device is in Service Mode
+		await verifyFreshTokenMiddleware({ thresholdMs: 15 * 60 * 1000 });
 		const CloudCommands = require('../cmd/cloud');
 		const args = { target, params: { device, files } };
 		return new CloudCommands().flashDevice(args);
@@ -558,13 +558,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	// Should be part fo CLICommandBase??
-	_particleApi() {
-		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		const apiCache = createApiCache(api);
-		return { api: apiCache, auth };
-	}
 
 	async _prepareFilesToFlash({ knownApp, parsedFiles, platformId, platformName, target }) {
 		if (knownApp) {
@@ -726,7 +719,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				const internalVersion = module.prefixInfo.depModuleVersion;
 				let applicationDeviceOsVersionData = { version: null };
 				try {
-					applicationDeviceOsVersionData = await api.getDeviceOsVersions(module.prefixInfo.platformID, internalVersion);
+					applicationDeviceOsVersionData = await api.getDeviceOsVersions({ platformId: module.prefixInfo.platformID, version: internalVersion });
 				} catch (_err) {
 					// ignore if Device OS version from the application cannot be identified
 				}

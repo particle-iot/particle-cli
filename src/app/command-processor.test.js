@@ -1,6 +1,14 @@
 'use strict';
+const VError = require('verror');
+const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/setup');
 const commandProcessor = require('./command-processor');
+const {
+	AuthenticationError,
+	InvalidTokenError,
+	MissingTokenError,
+	MfaRequiredError
+} = require('../lib/auth-errors');
 
 
 describe('command-line parsing', () => {
@@ -480,5 +488,174 @@ describe('command-line parsing', () => {
 		expect(actual.data).to.eql(expected.data);
 		expect(actual.item).to.eql(expected.item);
 	}
+});
+
+describe('consoleErrorLogger (auth-error rendering)', () => {
+	let fakeConsole;
+	let fakeYargs;
+	const { consoleErrorLogger } = commandProcessor.test;
+
+	beforeEach(() => {
+		fakeConsole = { log: sinon.stub() };
+		fakeYargs = { showHelp: sinon.stub() };
+	});
+
+	function output() {
+		return fakeConsole.log.getCalls().map(c => c.args.join(' ')).join('\n');
+	}
+
+	it('renders the "log in again" hint for InvalidTokenError', () => {
+		const err = new InvalidTokenError('Your token expired');
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.match(/Your token expired/);
+		expect(output()).to.match(/Run.*particle login.*log in again/);
+	});
+
+	it('relies on MissingTokenError.message for the call-to-action and does NOT add the secondary "log in again" hint', () => {
+		const err = new MissingTokenError();
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.match(/not logged in/);
+		expect(output()).to.match(/particle login.*to authenticate/);
+		// No duplicate hint line
+		expect(output()).to.not.match(/log in again/);
+	});
+
+	it('renders the "log in again" hint for any AuthenticationError subtype except MFA and MissingToken', () => {
+		const err = new AuthenticationError('whatever');
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.match(/Run.*particle login.*log in again/);
+	});
+
+	it('does NOT render any hint for MfaRequiredError (login handles it)', () => {
+		const err = new MfaRequiredError({ mfaToken: 'xyz' });
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.not.match(/log in again/);
+		expect(output()).to.not.match(/particle login/);
+	});
+
+	it('renders a generic message for non-auth errors', () => {
+		const err = new Error('Something else broke');
+		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
+		expect(output()).to.match(/Something else broke/);
+		expect(output()).to.not.match(/particle login/);
+	});
+});
+
+describe('findAuthenticationError', () => {
+	const { findAuthenticationError } = commandProcessor.test;
+
+	it('returns the error itself when it is an AuthenticationError', () => {
+		const err = new InvalidTokenError('nope');
+		expect(findAuthenticationError(err)).to.equal(err);
+	});
+
+	it('walks the VError cause chain to find a nested AuthenticationError', () => {
+		const auth = new InvalidTokenError('revoked');
+		const wrapped = new VError(new VError(auth, 'inner'), 'outer');
+		expect(findAuthenticationError(wrapped)).to.equal(auth);
+	});
+
+	it('returns null for a non-auth error', () => {
+		expect(findAuthenticationError(new Error('plain'))).to.equal(null);
+	});
+
+	it('returns null (does not throw) for a non-Error value', () => {
+		// convertApiError can reject with a plain object; VError.cause asserts
+		// instanceof Error, so the loop must guard with `instanceof Error`.
+		expect(findAuthenticationError({ message: 'plain object' })).to.equal(null);
+		expect(findAuthenticationError(null)).to.equal(null);
+		expect(findAuthenticationError(undefined)).to.equal(null);
+	});
+});
+
+describe('runWithAuthMiddleware', () => {
+	const sandbox = sinon.createSandbox();
+	let verifyFreshTokenMiddleware, clearActiveAccessToken, runWithAuthMiddleware;
+
+	beforeEach(() => {
+		verifyFreshTokenMiddleware = sandbox.stub().resolves();
+		clearActiveAccessToken = sandbox.stub();
+		const cp = proxyquire('./command-processor', {
+			'../lib/api-call': { verifyFreshTokenMiddleware, clearActiveAccessToken }
+		});
+		runWithAuthMiddleware = cp.test.runWithAuthMiddleware;
+	});
+
+	afterEach(() => {
+		sandbox.restore();
+	});
+
+	it('skips the freshness check when no threshold is set', async () => {
+		const handler = sandbox.stub().resolves('ok');
+		const result = await runWithAuthMiddleware({ handler }, {});
+		expect(result).to.equal('ok');
+		expect(verifyFreshTokenMiddleware).to.have.property('callCount', 0);
+	});
+
+	it('runs the freshness check with threshold + relogin when set', async () => {
+		const handler = sandbox.stub().resolves('ok');
+		await runWithAuthMiddleware({ handler, tokenExpiryThresholdMs: 1000, relogin: true }, {});
+		expect(verifyFreshTokenMiddleware).to.have.been.calledWithMatch({ thresholdMs: 1000, relogin: true });
+	});
+
+	it('converts a handler InvalidTokenError into MissingTokenError and clears local state', async () => {
+		const handler = sandbox.stub().rejects(new InvalidTokenError('revoked'));
+		let caught;
+		try {
+			await runWithAuthMiddleware({ handler }, {});
+		} catch (e){
+			caught = e;
+		}
+		expect(caught).to.be.instanceof(MissingTokenError);
+		expect(clearActiveAccessToken).to.have.property('callCount', 1);
+	});
+
+	it('converts a VError-wrapped InvalidTokenError too', async () => {
+		const handler = sandbox.stub().rejects(new VError(new InvalidTokenError('revoked'), 'flash failed'));
+		let caught;
+		try {
+			await runWithAuthMiddleware({ handler }, {});
+		} catch (e){
+			caught = e;
+		}
+		expect(caught).to.be.instanceof(MissingTokenError);
+		expect(clearActiveAccessToken).to.have.property('callCount', 1);
+	});
+
+	it('rethrows a non-InvalidToken AuthenticationError as-is without clearing', async () => {
+		const mfa = new MfaRequiredError({ mfaToken: 'x' });
+		const handler = sandbox.stub().rejects(mfa);
+		let caught;
+		try {
+			await runWithAuthMiddleware({ handler }, {});
+		} catch (e){
+			caught = e;
+		}
+		expect(caught).to.equal(mfa);
+		expect(clearActiveAccessToken).to.have.property('callCount', 0);
+	});
+
+	it('passes non-auth errors through unchanged', async () => {
+		const err = new Error('boom');
+		const handler = sandbox.stub().rejects(err);
+		let caught;
+		try {
+			await runWithAuthMiddleware({ handler }, {});
+		} catch (e){
+			caught = e;
+		}
+		expect(caught).to.equal(err);
+	});
+
+	it('sets asJSON on the thrown error when argv.json is true', async () => {
+		const handler = sandbox.stub().rejects(new InvalidTokenError('revoked'));
+		let caught;
+		try {
+			await runWithAuthMiddleware({ handler }, { json: true });
+		} catch (e){
+			caught = e;
+		}
+		expect(caught).to.have.property('asJSON', true);
+	});
 });
 

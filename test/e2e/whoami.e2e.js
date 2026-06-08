@@ -54,7 +54,7 @@ describe('Whoami Commands', () => {
 		await cli.logout();
 		const { stdout, stderr, exitCode } = await cli.run('whoami');
 
-		expect(stripAnsi(stdout)).to.equal('You\'re not logged in. Please login using particle login before using this command');
+		expect(stripAnsi(stdout)).to.equal('! You\'re not logged in. Run `particle login` to authenticate.');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
