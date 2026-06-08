@@ -53,15 +53,20 @@ describe('Whoami Commands', () => {
 		expect(stripAnsi(caught.message)).to.equal('expired');
 	});
 
-	it('returns username from the local settings when user is signed-in', withConsoleStubs(sandbox, () => {
-		sandbox.stub(settings, 'username').value('from-settings@example.com');
+	it('force-checks the API and refreshes a stale cached username', withConsoleStubs(sandbox, () => {
+		// whoami forces a server check (getCurrentUsername(true)): the API is the
+		// source of truth for the token's owner, and a stale settings.username is
+		// overwritten rather than returned.
+		sandbox.stub(settings, 'username').value('stale@example.com');
+		const overrideStub = sandbox.stub(settings, 'override');
 		sandbox.stub(ParticleApi.prototype, 'getUserInfo').resolves({ username: 'from-api@example.com' });
 		const whoAmI = whoAmICommands();
 
 		return whoAmI.getUsername()
 			.then((username) => {
-				expect(username).to.equal('from-settings@example.com');
-				validateStdoutContainsUsername('from-settings@example.com');
+				expect(username).to.equal('from-api@example.com');
+				expect(overrideStub).to.have.been.calledWith(null, 'username', 'from-api@example.com');
+				validateStdoutContainsUsername('from-api@example.com');
 			});
 	}));
 
