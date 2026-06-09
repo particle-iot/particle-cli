@@ -77,26 +77,37 @@ module.exports = class ParticleApi {
 		return this._wrap(this.api.sendOtp({ mfaToken, otp }));
 	}
 
-	createWebhookWithObj(obj){
-		return this._wrap(this.api.request({
-			uri: '/v1/webhooks',
-			method: 'post',
-			auth: this.accessToken,
-			data: obj
-		}));
-	}
-
-	deleteWebhook({ hookId }){
-		return this._wrap(this.api.deleteWebhook({
-			hookId,
+	createWebhookWithObj(obj, { org, product } = {}){
+		return this._wrap(this.api.createIntegration({
+			event: obj.event,
+			settings: Object.assign({ integration_type: 'Webhook' }, obj),
+			org,
+			product,
 			auth: this.accessToken
 		}));
 	}
 
-	listWebhooks(){
-		return this._wrap(this.api.listWebhooks({
+	deleteWebhook({ hookId, org, product }){
+		return this._wrap(this.api.deleteIntegration({
+			integrationId: hookId,
+			org,
+			product,
 			auth: this.accessToken
 		}));
+	}
+
+	async listWebhooks({ org, product } = {}){
+		const body = await this._wrap(this.api.listIntegrations({
+			org,
+			product,
+			auth: this.accessToken
+		}));
+		const integrations = Array.isArray(body)
+			? body
+			: (body && (body.integrations || body.webhooks)) || [];
+		// The integrations endpoint returns every integration type; the webhook
+		// command only deals with Webhook-type integrations.
+		return integrations.filter((i) => i.integration_type === 'Webhook');
 	}
 
 	listDevices(options){

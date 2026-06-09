@@ -8,21 +8,24 @@ const { tryParse, getFilenameExt, asyncMapSeries } = require('../lib/utilities')
 
 
 module.exports = class WebhookCommand extends CLICommandBase {
-	createPOSTHook({ eventName, url, device }) {
-		return this._createHook({ eventName, url, deviceID: device, requestType: 'POST' });
+	constructor() {
+		super();
+		this.api = this._particleApi().api;
+	}
+	createPOSTHook({ eventName, url, device, org, product, products }) {
+		return this._createHook({ eventName, url, deviceID: device, requestType: 'POST', org, product, products });
 	}
 
-	createGETHook({ eventName, url, device }) {
-		return this._createHook({ eventName, url, deviceID: device, requestType: 'GET' });
+	createGETHook({ eventName, url, device, org, product, products }) {
+		return this._createHook({ eventName, url, deviceID: device, requestType: 'GET', org, product, products });
 	}
 
-	createHook({ eventName, url, device, requestType }) {
-		return this._createHook({ eventName, url, deviceID: device, requestType });
+	createHook({ eventName, url, device, requestType, org, product, products }) {
+		return this._createHook({ eventName, url, deviceID: device, requestType, org, product, products });
 	}
 
-	async _createHook({ eventName, url, deviceID, requestType }) {
+	async _createHook({ eventName, url, deviceID, requestType, org, product, products }) {
 		requireToken();
-		const { api } = this._particleApi();
 
 		// if they gave us one thing, and it happens to be a file, and we could parse it as json
 		let data = {};
@@ -65,17 +68,37 @@ module.exports = class WebhookCommand extends CLICommandBase {
 			requestType: requestType || data.requestType,
 		}, data);
 
-		const response = await api.createWebhookWithObj(webhookData);
-		if (!response || !response.ok) {
+		if (org && !products) {
+			throw new VError('Organization webhooks must specify at least one product using --products.');
+		}
+		if (products && !org) {
+			throw new VError('The --products option only applies to organization webhooks. Specify --org, or remove --products.');
+		}
+		if (products) {
+			const productIds = String(products)
+				.split(',')
+				.map((id) => id.trim())
+				.filter(Boolean)
+				.map(Number);
+			if (productIds.some((id) => Number.isNaN(id))) {
+				throw new VError('--products must be a comma-separated list of numeric product IDs.');
+			}
+			webhookData.product_ids = productIds;
+		}
+
+		const response = await this.api.createWebhookWithObj(webhookData, { org, product });
+		// The integrations endpoint returns the created integration (no `ok` flag);
+		// only treat an explicit error body as a failure.
+		if (!response || response.error) {
 			throw new VError((response && response.error) || 'Failed to create webhook');
 		}
-		console.log(`Successfully created webhook with ID ${response.id}`);
+		const id = response.id || (response.integration && response.integration.id);
+		console.log(`Successfully created webhook with ID ${id}`);
 		return response;
 	}
 
-	async deleteHook({ hookId }) {
+	async deleteHook({ hookId, org, product }) {
 		requireToken();
-		const { api } = this._particleApi();
 
 		if (hookId === 'all') {
 			const { deleteAll } = await inquirer.prompt([{
@@ -87,21 +110,20 @@ module.exports = class WebhookCommand extends CLICommandBase {
 			if (!deleteAll) {
 				return;
 			}
-			const hooks = await api.listWebhooks();
+			const hooks = await this.api.listWebhooks({ org, product });
 			console.log('Found ' + hooks.length + ' hooks registered\n');
 			return asyncMapSeries(hooks, (hook) => {
 				console.log('deleting ' + hook.id);
-				return api.deleteWebhook({ hookId: hook.id });
+				return this.api.deleteWebhook({ hookId: hook.id, org, product });
 			});
 		}
-		return api.deleteWebhook({ hookId });
+		return this.api.deleteWebhook({ hookId, org, product });
 	}
 
-	async listHooks() {
+	async listHooks({ org, product } = {}) {
 		requireToken();
-		const { api } = this._particleApi();
 
-		const hooks = await api.listWebhooks();
+		const hooks = await this.api.listWebhooks({ org, product });
 		console.log('Found ' + hooks.length + ' hooks registered\n');
 
 		for (let i = 0; i < hooks.length; i++) {

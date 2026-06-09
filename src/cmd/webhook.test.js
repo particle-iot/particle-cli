@@ -74,7 +74,7 @@ describe('WebhookCommand', () => {
 			const stub = sandbox.stub(ParticleApi.prototype, 'deleteWebhook').resolves({ ok: true });
 			const cmd = new WebhookCommand();
 			await cmd.deleteHook({ hookId: 'h42' });
-			expect(stub).to.have.been.calledWith({ hookId: 'h42' });
+			expect(stub).to.have.been.calledWith(sinon.match({ hookId: 'h42' }));
 		});
 
 		it('deletes all hooks when hookId is "all" and the user confirms', async () => {
@@ -89,8 +89,8 @@ describe('WebhookCommand', () => {
 			await cmd.deleteHook({ hookId: 'all' });
 
 			expect(deleteStub).to.have.been.calledTwice;
-			expect(deleteStub.firstCall).to.have.been.calledWith({ hookId: 'h1' });
-			expect(deleteStub.secondCall).to.have.been.calledWith({ hookId: 'h2' });
+			expect(deleteStub.firstCall).to.have.been.calledWith(sinon.match({ hookId: 'h1' }));
+			expect(deleteStub.secondCall).to.have.been.calledWith(sinon.match({ hookId: 'h2' }));
 		});
 
 		it('aborts the "all" path when the user declines', async () => {
@@ -121,6 +121,54 @@ describe('WebhookCommand', () => {
 				deviceid: 'abc',
 				requestType: 'POST'
 			}));
+		});
+
+		it('parses --products into a numeric product_ids array and forwards the scope', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'createWebhookWithObj').resolves({ id: 'new-hook' });
+
+			const cmd = new WebhookCommand();
+			await cmd.createHook({
+				eventName: 'temperature',
+				url: 'https://my.app',
+				requestType: 'POST',
+				org: 'my-org',
+				products: '10419, 9372'
+			});
+
+			expect(stub).to.have.been.calledWithMatch(
+				sinon.match({ event: 'temperature', product_ids: [10419, 9372] }),
+				{ org: 'my-org' }
+			);
+		});
+
+		it('rejects --products without --org', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'createWebhookWithObj').resolves({});
+
+			const cmd = new WebhookCommand();
+			let error;
+			try {
+				await cmd.createHook({ eventName: 'e', url: 'https://x', product: 'my-product', products: '10419' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.match(/only applies to organization webhooks/);
+			expect(stub).to.not.have.been.called;
+		});
+
+		it('rejects non-numeric --products values', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'createWebhookWithObj').resolves({});
+
+			const cmd = new WebhookCommand();
+			let error;
+			try {
+				await cmd.createHook({ eventName: 'e', url: 'https://x', org: 'my-org', products: '10419,nope' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.match(/numeric product IDs/);
+			expect(stub).to.not.have.been.called;
 		});
 	});
 });

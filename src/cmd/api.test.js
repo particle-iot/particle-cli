@@ -124,28 +124,45 @@ describe('ParticleApi', () => {
 		});
 	});
 
+	// A webhook is a Webhook-type integration, so the wrappers delegate to
+	// particle-api-js's generic, org/product-scoped integration methods.
 	describe('createWebhookWithObj', () => {
-		it('POSTs to /v1/webhooks with the freeform object body and auth', async () => {
-			const hookObj = { event: 'foo', url: 'https://x', deviceID: 'abc' };
-			const responseBody = { ok: true, id: 'hook-1' };
-			const stub = sandbox.stub(particleApi.api, 'request').resolves({ body: responseBody });
+		it('creates a Webhook-type integration carrying the freeform object and auth', async () => {
+			const hookObj = { event: 'foo', url: 'https://x', product_ids: [1, 2] };
+			const responseBody = { id: 'hook-1' };
+			const stub = sandbox.stub(particleApi.api, 'createIntegration').resolves({ body: responseBody });
 
 			const result = await particleApi.createWebhookWithObj(hookObj);
 
 			expect(stub).to.have.been.calledWithMatch({
-				uri: '/v1/webhooks',
-				method: 'post',
-				auth: 'test-token',
-				data: hookObj
+				event: 'foo',
+				settings: Object.assign({ integration_type: 'Webhook' }, hookObj),
+				auth: 'test-token'
 			});
 			expect(result).to.deep.equal(responseBody);
+		});
+
+		it('forwards a product scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'createIntegration').resolves({ body: {} });
+
+			await particleApi.createWebhookWithObj({ event: 'foo' }, { product: 'my-product' });
+
+			expect(stub).to.have.been.calledWithMatch({ product: 'my-product' });
+		});
+
+		it('forwards an org scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'createIntegration').resolves({ body: {} });
+
+			await particleApi.createWebhookWithObj({ event: 'foo' }, { org: 'my-org' });
+
+			expect(stub).to.have.been.calledWithMatch({ org: 'my-org' });
 		});
 
 		it('routes 401 through _checkToken', async () => {
 			const apiError = new Error('API Error');
 			apiError.statusCode = 401;
 			apiError.body = { error_description: 'Invalid token' };
-			sandbox.stub(particleApi.api, 'request').rejects(apiError);
+			sandbox.stub(particleApi.api, 'createIntegration').rejects(apiError);
 
 			try {
 				await particleApi.createWebhookWithObj({});
@@ -157,26 +174,75 @@ describe('ParticleApi', () => {
 	});
 
 	describe('deleteWebhook', () => {
-		it('forwards hookId and auth, returns the unwrapped body', async () => {
+		it('deletes the integration by id and returns the unwrapped body', async () => {
 			const responseBody = { ok: true };
-			const stub = sandbox.stub(particleApi.api, 'deleteWebhook').resolves({ body: responseBody });
+			const stub = sandbox.stub(particleApi.api, 'deleteIntegration').resolves({ body: responseBody });
 
 			const result = await particleApi.deleteWebhook({ hookId: 'hook-42' });
 
-			expect(stub).to.have.been.calledWithMatch({ hookId: 'hook-42', auth: 'test-token' });
+			expect(stub).to.have.been.calledWithMatch({
+				integrationId: 'hook-42',
+				auth: 'test-token'
+			});
 			expect(result).to.deep.equal(responseBody);
+		});
+
+		it('forwards a product scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'deleteIntegration').resolves({ body: {} });
+
+			await particleApi.deleteWebhook({ hookId: 'hook-42', product: 'my-product' });
+
+			expect(stub).to.have.been.calledWithMatch({ integrationId: 'hook-42', product: 'my-product' });
+		});
+
+		it('forwards an org scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'deleteIntegration').resolves({ body: {} });
+
+			await particleApi.deleteWebhook({ hookId: 'hook-42', org: 'my-org' });
+
+			expect(stub).to.have.been.calledWithMatch({ integrationId: 'hook-42', org: 'my-org' });
 		});
 	});
 
 	describe('listWebhooks', () => {
-		it('forwards auth, returns the unwrapped body', async () => {
-			const hooks = [{ id: 'h1' }, { id: 'h2' }];
-			const stub = sandbox.stub(particleApi.api, 'listWebhooks').resolves({ body: hooks });
+		it('lists integrations and returns only Webhook-type ones', async () => {
+			const integrations = [
+				{ id: 'h1', integration_type: 'Webhook' },
+				{ id: 'g1', integration_type: 'GoogleCloudPubSub' },
+				{ id: 'h2' } // untyped — excluded
+			];
+			const stub = sandbox.stub(particleApi.api, 'listIntegrations').resolves({ body: integrations });
 
 			const result = await particleApi.listWebhooks();
 
 			expect(stub).to.have.been.calledWithMatch({ auth: 'test-token' });
-			expect(result).to.deep.equal(hooks);
+			expect(result).to.deep.equal([{ id: 'h1', integration_type: 'Webhook' }]);
+		});
+
+		it('forwards a product scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'listIntegrations').resolves({ body: [] });
+
+			await particleApi.listWebhooks({ product: 'my-product' });
+
+			expect(stub).to.have.been.calledWithMatch({ product: 'my-product' });
+		});
+
+		it('forwards an org scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'listIntegrations').resolves({ body: [] });
+
+			await particleApi.listWebhooks({ org: 'my-org' });
+
+			expect(stub).to.have.been.calledWithMatch({ org: 'my-org' });
+		});
+
+		it('normalizes an { integrations: [...] } response envelope', async () => {
+			sandbox.stub(particleApi.api, 'listIntegrations').resolves({
+				body: { integrations: [{ id: 'h1', integration_type: 'Webhook' }] }
+			});
+
+			const result = await particleApi.listWebhooks();
+
+			expect(result).to.deep.equal([{ id: 'h1', integration_type: 'Webhook' }]);
 		});
 	});
 

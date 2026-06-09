@@ -2,13 +2,29 @@
 const unindent = require('../lib/unindent');
 
 module.exports = ({ commandProcessor, root }) => {
-	const webhook = commandProcessor.createCategory(root, 'webhook', 'Manage webhooks that react to device event streams');
+	const webhook = commandProcessor.createCategory(root, 'webhook', 'Manage webhooks that react to device event streams', {
+		inherited: {
+			options: {
+				'org': {
+					description: 'Specify the organization slug (e.g. my-org)'
+				},
+				'product': {
+					description: 'Specify the product id or slug'
+				}
+			}
+		}
+	});
 
 	commandProcessor.createCommand(webhook, 'create', 'Creates a postback to the given url when your event is sent', {
 		params: '<eventName|filename> [url] [device] [requestType]',
+		options: {
+			'products': {
+				description: 'Comma-separated product IDs the webhook applies to (organization webhooks)'
+			}
+		},
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand().createHook(args.params);
+			return new WebhookCommand().createHook({ ...args.params, org: args.org, product: args.product, products: args.products });
 		},
 		examples: {
 			'$0 $command temp https://xyz.com': 'Make POST requests to xyz.com every time a temp event is received',
@@ -36,9 +52,9 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(webhook, 'list', 'Show your current Webhooks', {
-		handler: () => {
+		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand().listHooks();
+			return new WebhookCommand().listHooks({ org: args.org, product: args.product });
 		}
 	});
 
@@ -46,7 +62,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<hookId>',
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand().deleteHook(args.params);
+			return new WebhookCommand().deleteHook({ ...args.params, org: args.org, product: args.product });
 		},
 		examples: {
 			'$0 $command 5a8ef38cb85f8720edce631a': 'Delete webhook with this ID. Find the ID from the list webhook command',
@@ -56,17 +72,27 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(webhook, 'POST', 'Create a new POST request hook', {
 		params: '<eventName> <url> [device]',
+		options: {
+			'products': {
+				description: 'Comma-separated product IDs the webhook applies to (organization webhooks)'
+			}
+		},
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand().createPOSTHook(args.params);
+			return new WebhookCommand().createPOSTHook({ ...args.params, org: args.org, product: args.product, products: args.products });
 		}
 	});
 
 	commandProcessor.createCommand(webhook, 'GET', 'Create a new GET request hook', {
 		params: '<eventName> <url> [device]',
+		options: {
+			'products': {
+				description: 'Comma-separated product IDs the webhook applies to (organization webhooks)'
+			}
+		},
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand().createGETHook(args.params);
+			return new WebhookCommand().createGETHook({ ...args.params, org: args.org, product: args.product, products: args.products });
 		}
 	});
 
