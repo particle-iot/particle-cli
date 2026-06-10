@@ -3,9 +3,14 @@ module.exports = ({ commandProcessor, root }) => {
 	const func = commandProcessor.createCategory(root, 'function', 'Call functions on your device');
 
 	commandProcessor.createCommand(func, 'list', 'Show functions provided by your device(s)', {
+		options: {
+			'product': {
+				description: 'Target devices within the given Product ID or Slug'
+			}
+		},
 		handler: (args) => {
 			const FunctionCommand = require('../cmd/function');
-			return new FunctionCommand(args).listFunctions();
+			return new FunctionCommand(args).listFunctions({ product: args.product });
 		}
 	});
 

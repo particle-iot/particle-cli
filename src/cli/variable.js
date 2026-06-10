@@ -10,9 +10,14 @@ module.exports = ({ commandProcessor, root }) => {
 	};
 
 	commandProcessor.createCommand(variable, 'list', 'Show variables provided by your device(s)', {
+		options: {
+			'product': {
+				description: 'Target devices within the given Product ID or Slug'
+			}
+		},
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
-			return new VariableCommand(args).listVariables();
+			return new VariableCommand(args).listVariables({ product: args.product });
 		}
 	});
 

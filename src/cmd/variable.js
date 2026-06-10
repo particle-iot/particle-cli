@@ -17,8 +17,8 @@ module.exports = class VariableCommand extends CLICommandBase {
 		super(...args);
 	}
 
-	listVariables(){
-		return this.getAllVariablesWithCache()
+	listVariables({ product } = {}){
+		return this.getAllVariablesWithCache({ product })
 			.then(devices => this.ui.logDeviceDetail(devices, { varsOnly: true }));
 	}
 
@@ -207,7 +207,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 		}
 	}
 
-	getAllVariablesWithCache(){
+	getAllVariablesWithCache({ product } = {}){
 		if (this._cachedVariableList){
 			return Promise.resolve(this._cachedVariableList);
 		}
@@ -216,15 +216,18 @@ module.exports = class VariableCommand extends CLICommandBase {
 
 		const { api } = this._particleApi();
 
-		return api.listDevices()
-			.then(devices => {
-				if (!devices || (devices.length === 0)){
+		return api.listDevices({ product })
+			.then(response => {
+				// Sandbox returns a bare array; the product endpoint returns a
+				// paginated `{ devices, meta }` object.
+				const devices = Array.isArray(response) ? response : (response && response.devices) || [];
+				if (devices.length === 0){
 					this.ui.stdout.write(`No devices found.${os.EOL}`);
 					this._cachedVariableList = null;
 					return null;
 				}
 				return Promise.all(devices.map(d =>
-					d.connected ? api.getDeviceAttributes({ deviceId: d.id }) : Promise.resolve(d)
+					d.connected ? api.getDeviceAttributes({ deviceId: d.id, product }) : Promise.resolve(d)
 				)).then((devices) => {
 					devices = devices.sort((a, b) => (a.name || '').localeCompare(b.name));
 					this._cachedVariableList = devices;

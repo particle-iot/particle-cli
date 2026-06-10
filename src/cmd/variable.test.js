@@ -121,5 +121,38 @@ describe('Variable Command', () => {
 			expect(error).to.have.property('message', 'Some variables could not be read');
 		}));
 	});
+
+	describe('listVariables', () => {
+		it('forwards --product and unwraps the paginated { devices } response', withConsoleStubs(sandbox, async () => {
+			const cmd = new VariableCommand();
+			const api = {
+				// The product endpoint returns a paginated object, not a bare array.
+				listDevices: sandbox.stub().resolves({ devices: [{ id: 'd1', connected: true }], meta: {} }),
+				getDeviceAttributes: sandbox.stub().resolves({ id: 'd1', variables: {} })
+			};
+			sandbox.stub(cmd, '_particleApi').returns({ api });
+			sandbox.stub(cmd.ui, 'logDeviceDetail');
+
+			await cmd.listVariables({ product: 'my-product' });
+
+			expect(api.listDevices.firstCall.args).to.eql([{ product: 'my-product' }]);
+			expect(api.getDeviceAttributes.firstCall.args).to.eql([{ deviceId: 'd1', product: 'my-product' }]);
+		}));
+
+		it('defaults to sandbox (undefined product) when none is given', withConsoleStubs(sandbox, async () => {
+			const cmd = new VariableCommand();
+			const api = {
+				listDevices: sandbox.stub().resolves([{ id: 'd1', connected: true }]),
+				getDeviceAttributes: sandbox.stub().resolves({ id: 'd1', variables: {} })
+			};
+			sandbox.stub(cmd, '_particleApi').returns({ api });
+			sandbox.stub(cmd.ui, 'logDeviceDetail');
+
+			await cmd.listVariables();
+
+			expect(api.listDevices.firstCall.args).to.eql([{ product: undefined }]);
+			expect(api.getDeviceAttributes.firstCall.args).to.eql([{ deviceId: 'd1', product: undefined }]);
+		}));
+	});
 });
 
