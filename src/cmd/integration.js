@@ -6,31 +6,35 @@ const CLICommandBase = require('./base');
 const { requireToken } = require('../lib/api-call');
 const { tryParse, getFilenameExt, asyncMapSeries } = require('../lib/utilities');
 
+// Webhooks are just the most common kind of integration, so unless the caller
+// asks for something else every integration created/listed defaults to this type.
+const DEFAULT_INTEGRATION_TYPE = 'Webhook';
 
-module.exports = class WebhookCommand extends CLICommandBase {
+module.exports = class IntegrationCommand extends CLICommandBase {
 	constructor() {
 		super();
 		this.api = this._particleApi().api;
 	}
-	createPOSTHook({ eventName, url, device, org, product, products }) {
-		return this._createHook({ eventName, url, deviceID: device, requestType: 'POST', org, product, products });
+
+	createPOSTHook({ eventName, url, device, org, product, integrationType }) {
+		return this._createHook({ eventName, url, deviceID: device, requestType: 'POST', org, product, integrationType });
 	}
 
-	createGETHook({ eventName, url, device, org, product, products }) {
-		return this._createHook({ eventName, url, deviceID: device, requestType: 'GET', org, product, products });
+	createGETHook({ eventName, url, device, org, product, integrationType }) {
+		return this._createHook({ eventName, url, deviceID: device, requestType: 'GET', org, product, integrationType });
 	}
 
-	createHook({ eventName, url, device, requestType, org, product, products }) {
-		return this._createHook({ eventName, url, deviceID: device, requestType, org, product, products });
+	createHook({ eventName, url, device, requestType, org, product, integrationType }) {
+		return this._createHook({ eventName, url, deviceID: device, requestType, org, product, integrationType });
 	}
 
-	async _createHook({ eventName, url, deviceID, requestType, org, product, products }) {
+	async _createHook({ eventName, url, deviceID, requestType, org, product, integrationType }) {
 		requireToken();
 
 		// if they gave us one thing, and it happens to be a file, and we could parse it as json
 		let data = {};
 
-		// particle webhook create xxx.json
+		// particle integration create xxx.json
 		if (eventName && !url && !deviceID) {
 			const filename = eventName;
 
@@ -61,32 +65,18 @@ module.exports = class WebhookCommand extends CLICommandBase {
 			throw new VError('Please specify a url');
 		}
 
-		const webhookData = Object.assign({
+		const integrationData = Object.assign({
 			event: eventName,
 			url: url,
 			deviceid: deviceID,
 			requestType: requestType || data.requestType,
 		}, data);
 
-		if (org && !products) {
-			throw new VError('Organization webhooks must specify at least one product using --products.');
-		}
-		if (products && !org) {
-			throw new VError('The --products option only applies to organization webhooks. Specify --org, or remove --products.');
-		}
-		if (products) {
-			const productIds = String(products)
-				.split(',')
-				.map((id) => id.trim())
-				.filter(Boolean)
-				.map(Number);
-			if (productIds.some((id) => Number.isNaN(id))) {
-				throw new VError('--products must be a comma-separated list of numeric product IDs.');
-			}
-			webhookData.product_ids = productIds;
-		}
-
-		const response = await this.api.createWebhookWithObj(webhookData, { org, product });
+		const response = await this.api.createIntegrationWithObj(integrationData, {
+			org,
+			product,
+			integrationType: integrationType || DEFAULT_INTEGRATION_TYPE
+		});
 		// The integrations endpoint returns the created integration (no `ok` flag);
 		// only treat an explicit error body as a failure.
 		if (!response || response.error) {
@@ -97,7 +87,7 @@ module.exports = class WebhookCommand extends CLICommandBase {
 		return response;
 	}
 
-	async deleteHook({ hookId, org, product }) {
+	async deleteHook({ hookId, org, product, integrationType }) {
 		requireToken();
 
 		if (hookId === 'all') {
@@ -110,20 +100,20 @@ module.exports = class WebhookCommand extends CLICommandBase {
 			if (!deleteAll) {
 				return;
 			}
-			const hooks = await this.api.listWebhooks({ org, product });
+			const hooks = await this.api.listIntegrations({ org, product, integrationType: integrationType || DEFAULT_INTEGRATION_TYPE });
 			console.log('Found ' + hooks.length + ' hooks registered\n');
 			return asyncMapSeries(hooks, (hook) => {
 				console.log('deleting ' + hook.id);
-				return this.api.deleteWebhook({ hookId: hook.id, org, product });
+				return this.api.deleteIntegration({ integrationId: hook.id, org, product });
 			});
 		}
-		return this.api.deleteWebhook({ hookId, org, product });
+		return this.api.deleteIntegration({ integrationId: hookId, org, product });
 	}
 
-	async listHooks({ org, product } = {}) {
+	async listHooks({ org, product, integrationType } = {}) {
 		requireToken();
 
-		const hooks = await this.api.listWebhooks({ org, product });
+		const hooks = await this.api.listIntegrations({ org, product, integrationType: integrationType || DEFAULT_INTEGRATION_TYPE });
 		console.log('Found ' + hooks.length + ' hooks registered\n');
 
 		for (let i = 0; i < hooks.length; i++) {

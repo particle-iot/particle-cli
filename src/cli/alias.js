@@ -1,4 +1,6 @@
 'use strict';
+const { scopeOptions } = require('./integration');
+
 module.exports = ({ commandProcessor, root }) => {
 	function alias(category, aliasName, path) {
 		const cmd = root.find(path);
@@ -30,4 +32,13 @@ module.exports = ({ commandProcessor, root }) => {
 	alias(device, 'remove', ['cloud', 'remove']);
 	alias(device, 'rename', ['cloud', 'name']);
 	alias(device, 'doctor', ['doctor']);
+
+	const webhook = commandProcessor.createCategory(root, 'webhook', 'Manage webhooks that react to device event streams', {
+		inherited: { options: scopeOptions() }
+	});
+	alias(webhook, 'create', ['integration', 'create']);
+	alias(webhook, 'list', ['integration', 'list']);
+	alias(webhook, 'delete', ['integration', 'delete']);
+	alias(webhook, 'POST', ['integration', 'POST']);
+	alias(webhook, 'GET', ['integration', 'GET']);
 };
