@@ -119,18 +119,22 @@ module.exports = class IntegrationCommand extends CLICommandBase {
 	async deleteHook({ hookId, org, product, integrationType }) {
 		requireToken();
 
+		// Normalize/validate up front so a bad --type fails fast on either path.
+		const type = normalizeIntegrationType(integrationType);
+
 		if (hookId === 'all') {
 			const { deleteAll } = await inquirer.prompt([{
 				type: 'confirm',
 				name: 'deleteAll',
-				message: 'Do you want to delete ALL your webhooks?',
+				message: `Do you want to delete ALL your ${type ? type + ' ' : ''}integrations?`,
 				default: false
 			}]);
 			if (!deleteAll) {
 				return;
 			}
-			const hooks = await this.api.listIntegrations({ org, product, integrationType: integrationType || DEFAULT_INTEGRATION_TYPE });
-			console.log('Found ' + hooks.length + ' hooks registered\n');
+			// No default type: an unscoped "all" means every integration type, not just webhooks.
+			const hooks = await this.api.listIntegrations({ org, product, integrationType: type });
+			console.log('Found ' + hooks.length + ' integrations registered\n');
 			return asyncMapSeries(hooks, (hook) => {
 				console.log('deleting ' + hook.id);
 				return this.api.deleteIntegration({ integrationId: hook.id, org, product });
@@ -142,21 +146,27 @@ module.exports = class IntegrationCommand extends CLICommandBase {
 	async listHooks({ org, product, integrationType } = {}) {
 		requireToken();
 
-		const hooks = await this.api.listIntegrations({ org, product, integrationType: integrationType || DEFAULT_INTEGRATION_TYPE });
-		console.log('Found ' + hooks.length + ' hooks registered\n');
+		// No default type: when the caller doesn't pin one, list every integration
+		// type. A given type is normalized/validated so `--type googlemaps` works.
+		const type = normalizeIntegrationType(integrationType);
+		const hooks = await this.api.listIntegrations({ org, product, integrationType: type });
+		console.log('Found ' + hooks.length + ' integrations registered\n');
 
 		for (let i = 0; i < hooks.length; i++) {
 			const hook = hooks[i];
 			const line = [
 				'    ', (i + 1),
-				'.) Hook ID ' + hook.id + ' is watching for ',
+				'.) Integration ID ' + hook.id + ' is watching for ',
 				'"' + hook.event + '"',
 
-				'\n       ', ' and sending to: ' + hook.url,
+				'\n        type: ' + hook.integration_type,
 
-				(hook.deviceID) ? '\n       ' + ' for device ' + hook.deviceID : '',
+				// Only webhooks have a url; other types are driven by their own settings.
+				hook.url ? '\n        and sending to: ' + hook.url : '',
 
-				'\n       ', ' created at ' + hook.created_at,
+				(hook.deviceID) ? '\n        for device ' + hook.deviceID : '',
+
+				'\n        created at ' + hook.created_at,
 				'\n'
 			].join('');
 

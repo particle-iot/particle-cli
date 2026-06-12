@@ -37,8 +37,26 @@ module.exports = ({ commandProcessor, root }) => {
 		inherited: { options: scopeOptions() }
 	});
 	alias(webhook, 'create', ['integration', 'create']);
-	alias(webhook, 'list', ['integration', 'list']);
-	alias(webhook, 'delete', ['integration', 'delete']);
+	// `webhook list` is scoped to Webhook-type integrations (the integration list
+	// shows every type), so it gets a dedicated handler that pins the filter.
+	commandProcessor.createCommand(webhook, 'list', 'Show your current webhooks', {
+		handler: (args) => {
+			const IntegrationCommand = require('../cmd/integration');
+			return new IntegrationCommand().listHooks({ integrationType: 'Webhook', org: args.org, product: args.product });
+		}
+	});
+	// `webhook delete all` is scoped to Webhook-type integrations, mirroring `webhook list`.
+	commandProcessor.createCommand(webhook, 'delete', 'Deletes a webhook', {
+		params: '<hookId>',
+		handler: (args) => {
+			const IntegrationCommand = require('../cmd/integration');
+			return new IntegrationCommand().deleteHook({ ...args.params, integrationType: 'Webhook', org: args.org, product: args.product });
+		},
+		examples: {
+			'$0 $command 5a8ef38cb85f8720edce631a': 'Delete webhook with this ID. Find the ID from the list command',
+			'$0 $command all': 'Delete all my webhooks',
+		}
+	});
 	alias(webhook, 'POST', ['integration', 'POST']);
 	alias(webhook, 'GET', ['integration', 'GET']);
 };

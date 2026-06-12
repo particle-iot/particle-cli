@@ -57,21 +57,36 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(integration, 'list', 'Show your current integrations', {
+		options: {
+			'type': {
+				description: `Only show integrations of this type. One of: ${INTEGRATION_TYPES.join(', ')}`
+			}
+		},
 		handler: (args) => {
 			const IntegrationCommand = require('../cmd/integration');
-			return new IntegrationCommand().listHooks({ org: args.org, product: args.product });
+			return new IntegrationCommand().listHooks({ integrationType: args.type, org: args.org, product: args.product });
+		},
+		examples: {
+			'$0 $command': 'List every integration',
+			'$0 $command --type GoogleMaps': 'List only Google Maps integrations',
 		}
 	});
 
 	commandProcessor.createCommand(integration, 'delete', 'Deletes an integration', {
 		params: '<hookId>',
+		options: {
+			'type': {
+				description: `When deleting all, only delete integrations of this type. One of: ${INTEGRATION_TYPES.join(', ')}`
+			}
+		},
 		handler: (args) => {
 			const IntegrationCommand = require('../cmd/integration');
-			return new IntegrationCommand().deleteHook({ ...args.params, org: args.org, product: args.product });
+			return new IntegrationCommand().deleteHook({ ...args.params, integrationType: args.type, org: args.org, product: args.product });
 		},
 		examples: {
 			'$0 $command 5a8ef38cb85f8720edce631a': 'Delete integration with this ID. Find the ID from the list command',
 			'$0 $command all': 'Delete all my integrations',
+			'$0 $command all --type GoogleMaps': 'Delete all my Google Maps integrations',
 		}
 	});
 

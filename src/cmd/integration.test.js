@@ -44,18 +44,53 @@ describe('IntegrationCommand', () => {
 	});
 
 	describe('listHooks', () => {
-		it('lists Webhook-type integrations and logs each hook', async () => {
+		it('lists every integration type by default (no type filter) and logs each one', async () => {
 			const hooks = [
-				{ id: 'h1', event: 'e1', url: 'https://x', created_at: 't1' },
-				{ id: 'h2', event: 'e2', url: 'https://y', deviceID: 'd2', created_at: 't2' }
+				{ id: 'h1', event: 'e1', url: 'https://x', integration_type: 'Webhook', created_at: 't1' },
+				{ id: 'g1', event: 'e2', integration_type: 'GoogleMaps', created_at: 't2' }
 			];
 			const stub = sandbox.stub(ParticleApi.prototype, 'listIntegrations').resolves(hooks);
 
 			const cmd = new IntegrationCommand();
 			await cmd.listHooks();
 
+			expect(stub).to.have.been.calledWithMatch({ integrationType: undefined });
+			expect(console.log).to.have.been.calledWithMatch(/Found 2 integrations/);
+			// The GoogleMaps entry has no url, so the "sending to" line is omitted.
+			expect(console.log).to.have.been.calledWithMatch(/GoogleMaps/);
+		});
+
+		it('scopes to a single type when one is given', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'listIntegrations').resolves([]);
+
+			const cmd = new IntegrationCommand();
+			await cmd.listHooks({ integrationType: 'Webhook' });
+
 			expect(stub).to.have.been.calledWithMatch({ integrationType: 'Webhook' });
-			expect(console.log).to.have.been.calledWithMatch(/Found 2 hooks/);
+		});
+
+		it('normalizes the --type filter casing', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'listIntegrations').resolves([]);
+
+			const cmd = new IntegrationCommand();
+			await cmd.listHooks({ integrationType: 'googlemaps' });
+
+			expect(stub).to.have.been.calledWithMatch({ integrationType: 'GoogleMaps' });
+		});
+
+		it('rejects an unknown --type filter before calling the API', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'listIntegrations').resolves([]);
+
+			const cmd = new IntegrationCommand();
+			let error;
+			try {
+				await cmd.listHooks({ integrationType: 'Nope' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.match(/Invalid integration type/);
+			expect(stub).to.not.have.been.called;
 		});
 
 		it('forwards the org/product scope to the API', async () => {
@@ -64,7 +99,7 @@ describe('IntegrationCommand', () => {
 			const cmd = new IntegrationCommand();
 			await cmd.listHooks({ org: 'my-org' });
 
-			expect(stub).to.have.been.calledWithMatch({ org: 'my-org', integrationType: 'Webhook' });
+			expect(stub).to.have.been.calledWithMatch({ org: 'my-org' });
 		});
 
 		it('propagates InvalidTokenError without rewrapping', async () => {
@@ -94,21 +129,51 @@ describe('IntegrationCommand', () => {
 			expect(stub).to.have.been.calledWith(sinon.match({ integrationId: 'h42', product: 'my-product' }));
 		});
 
-		it('deletes all Webhook-type hooks when hookId is "all" and the user confirms', async () => {
+		it('deletes integrations of every type when hookId is "all" and the user confirms', async () => {
 			sandbox.stub(inquirer, 'prompt').resolves({ deleteAll: true });
 			const listStub = sandbox.stub(ParticleApi.prototype, 'listIntegrations').resolves([
-				{ id: 'h1' },
-				{ id: 'h2' }
+				{ id: 'h1', integration_type: 'Webhook' },
+				{ id: 'g1', integration_type: 'GoogleMaps' }
 			]);
 			const deleteStub = sandbox.stub(ParticleApi.prototype, 'deleteIntegration').resolves({ ok: true });
 
 			const cmd = new IntegrationCommand();
 			await cmd.deleteHook({ hookId: 'all' });
 
-			expect(listStub).to.have.been.calledWithMatch({ integrationType: 'Webhook' });
+			expect(listStub).to.have.been.calledWithMatch({ integrationType: undefined });
 			expect(deleteStub).to.have.been.calledTwice;
 			expect(deleteStub.firstCall).to.have.been.calledWith(sinon.match({ integrationId: 'h1' }));
-			expect(deleteStub.secondCall).to.have.been.calledWith(sinon.match({ integrationId: 'h2' }));
+			expect(deleteStub.secondCall).to.have.been.calledWith(sinon.match({ integrationId: 'g1' }));
+		});
+
+		it('scopes "delete all" to a single (normalized) type when --type is given', async () => {
+			sandbox.stub(inquirer, 'prompt').resolves({ deleteAll: true });
+			const listStub = sandbox.stub(ParticleApi.prototype, 'listIntegrations').resolves([{ id: 'g1', integration_type: 'GoogleMaps' }]);
+			const deleteStub = sandbox.stub(ParticleApi.prototype, 'deleteIntegration').resolves({ ok: true });
+
+			const cmd = new IntegrationCommand();
+			await cmd.deleteHook({ hookId: 'all', integrationType: 'googlemaps' });
+
+			expect(listStub).to.have.been.calledWithMatch({ integrationType: 'GoogleMaps' });
+			expect(deleteStub).to.have.been.calledOnce;
+			expect(deleteStub).to.have.been.calledWith(sinon.match({ integrationId: 'g1' }));
+		});
+
+		it('rejects an unknown --type before prompting or calling the API', async () => {
+			const promptStub = sandbox.stub(inquirer, 'prompt');
+			const listStub = sandbox.stub(ParticleApi.prototype, 'listIntegrations');
+
+			const cmd = new IntegrationCommand();
+			let error;
+			try {
+				await cmd.deleteHook({ hookId: 'all', integrationType: 'Nope' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.match(/Invalid integration type/);
+			expect(promptStub).to.not.have.been.called;
+			expect(listStub).to.not.have.been.called;
 		});
 
 		it('aborts the "all" path when the user declines', async () => {
