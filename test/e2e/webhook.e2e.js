@@ -15,8 +15,8 @@ describe('Webhook Commands', () => {
 		'',
 		'Commands:',
 		'  create  Creates an integration triggered when your event is sent',
-		'  list    Show your current integrations',
-		'  delete  Deletes an integration',
+		'  list    Show your current webhooks',
+		'  delete  Deletes a webhook',
 		'  POST    Create a new POST request hook',
 		'  GET     Create a new GET request hook',
 		'',
@@ -32,7 +32,7 @@ describe('Webhook Commands', () => {
 	after(async () => {
 		// TODO (mirande): work-around for broke `delete all` shortcut
 		const { stdout } = await cli.run(['webhook', 'list']);
-		const hookIDs = matches(stdout, /Hook ID (.*) is watching for "test-event"/g);
+		const hookIDs = matches(stdout, /Integration ID (.*) is watching for "test-event"/g);
 		await hookIDs.reduce((promise, id) => {
 			return promise.then(() => cli.run(['webhook', 'delete', id]));
 		}, Promise.resolve());
@@ -80,7 +80,7 @@ describe('Webhook Commands', () => {
 			await cli.run(['webhook', 'create', event, url]);
 
 			const { stdout, stderr, exitCode } = await cli.run(['webhook', 'list']);
-			const hookIDs = matches(stdout, /Hook ID (.*) is watching for "test-event"/g);
+			const hookIDs = matches(stdout, /Integration ID (.*) is watching for "test-event"/g);
 
 			expect(hookIDs).to.have.lengthOf.at.least(1);
 			expect(stderr).to.equal('');
@@ -105,7 +105,7 @@ describe('Webhook Commands', () => {
 			expect(exitCode).to.equal(0);
 
 			const { stdout: list } = await cli.run(['webhook', 'list']);
-			const hookIDs = matches(list, /Hook ID (.*) is watching for "test-event"/g);
+			const hookIDs = matches(list, /Integration ID (.*) is watching for "test-event"/g);
 
 			expect(hookIDs).to.not.include(id);
 		});
@@ -130,7 +130,7 @@ describe('Webhook Commands', () => {
 
 			const { stdout: list } = await cli.run(['webhook', 'list']);
 
-			expect(list).to.include('Found 0 hooks registered');
+			expect(list).to.include('Found 0 integrations registered');
 		});
 	});
 });
