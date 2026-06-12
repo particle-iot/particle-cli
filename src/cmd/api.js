@@ -78,9 +78,15 @@ module.exports = class ParticleApi {
 	}
 
 	createIntegrationWithObj(obj, { org, product, integrationType } = {}){
+		// Precedence for the type sent to the backend: explicit `integrationType`
+		// (e.g. the --type flag) > `integration_type` in the object > Webhook.
+		// Set it last so it can't be clobbered by a stale value carried on `obj`.
+		const settings = Object.assign({}, obj, {
+			integration_type: integrationType || obj.integration_type || 'Webhook'
+		});
 		return this._wrap(this.api.createIntegration({
 			event: obj.event,
-			settings: Object.assign({ integration_type: integrationType || 'Webhook' }, obj),
+			settings,
 			org,
 			product,
 			auth: this.accessToken

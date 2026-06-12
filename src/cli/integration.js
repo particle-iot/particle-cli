@@ -1,5 +1,6 @@
 'use strict';
 const unindent = require('../lib/unindent');
+const { INTEGRATION_TYPES, DEFAULT_INTEGRATION_TYPE } = require('../cmd/integration');
 
 // `--org` / `--product` scope every integration subcommand. Exposed as a factory
 // so the `webhook` alias category can inherit the same options without sharing
@@ -20,13 +21,19 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(integration, 'create', 'Creates an integration triggered when your event is sent', {
 		params: '<eventName|filename> [url] [device] [requestType]',
+		options: {
+			'type': {
+				description: `The integration type to create (default ${DEFAULT_INTEGRATION_TYPE}). One of: ${INTEGRATION_TYPES.join(', ')}`
+			}
+		},
 		handler: (args) => {
 			const IntegrationCommand = require('../cmd/integration');
-			return new IntegrationCommand().createHook({ ...args.params, org: args.org, product: args.product });
+			return new IntegrationCommand().createHook({ ...args.params, integrationType: args.type, org: args.org, product: args.product });
 		},
 		examples: {
 			'$0 $command temp https://xyz.com': 'Make POST requests to xyz.com every time a temp event is received',
 			'$0 $command hook.json': 'Create an integration according to the template in hook.json',
+			'$0 $command gmaps.json --type GoogleMaps': 'Create a Google Maps integration from gmaps.json',
 		},
 		epilogue: unindent(`
 			To customize the integration parameters use a JSON template. See https://docs.particle.io/reference/webhooks/ for details

@@ -1,4 +1,5 @@
 'use strict';
+const fs = require('fs');
 const { expect, sinon } = require('../../test/setup');
 const settings = require('../../settings');
 const ParticleApi = require('./api');
@@ -192,6 +193,87 @@ describe('IntegrationCommand', () => {
 
 			expect(error.message).to.match(/specify a url/);
 			expect(stub).to.not.have.been.called;
+		});
+
+		it('does not require a url for non-webhook integration types', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'createIntegrationWithObj').resolves({ id: 'gmap-1', ok: true });
+
+			const cmd = new IntegrationCommand();
+			await cmd._createHook({ eventName: 'deviceLocator', integrationType: 'GoogleMaps' });
+
+			expect(stub).to.have.been.calledWithMatch(
+				sinon.match.any,
+				{ integrationType: 'GoogleMaps' }
+			);
+		});
+
+		it('normalizes the integration type casing to what the backend expects', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'createIntegrationWithObj').resolves({ id: 'gmap-3', ok: true });
+
+			const cmd = new IntegrationCommand();
+			await cmd._createHook({ eventName: 'deviceLocator', integrationType: 'googlemaps' });
+
+			expect(stub).to.have.been.calledWithMatch(
+				sinon.match.any,
+				{ integrationType: 'GoogleMaps' }
+			);
+		});
+
+		it('rejects an unknown integration type before calling the API', async () => {
+			const stub = sandbox.stub(ParticleApi.prototype, 'createIntegrationWithObj').resolves({});
+
+			const cmd = new IntegrationCommand();
+			let error;
+			try {
+				await cmd._createHook({ eventName: 'e', url: 'https://x', integrationType: 'NotARealType' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.match(/Invalid integration type/);
+			expect(error.message).to.match(/Webhook, GoogleMaps, GoogleCloudPubSub, AzureIotHub/);
+			expect(stub).to.not.have.been.called;
+		});
+
+		it('lets the --type flag win over integration_type in the file', async () => {
+			sandbox.stub(fs, 'existsSync').returns(true);
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify({
+				event: 'deviceLocator',
+				integration_type: 'Webhook',
+				url: ''
+			}));
+			const stub = sandbox.stub(ParticleApi.prototype, 'createIntegrationWithObj').resolves({ id: 'gmap-4', ok: true });
+
+			const cmd = new IntegrationCommand();
+			await cmd.createHook({ eventName: 'gmaps.json', integrationType: 'GoogleMaps' });
+
+			expect(stub).to.have.been.calledWithMatch(
+				sinon.match.any,
+				{ integrationType: 'GoogleMaps' }
+			);
+		});
+
+		it('honors integration_type from a .json file when deciding to require a url', async () => {
+			// A real GoogleMaps integration has an empty url; the type lives in the file.
+			const payload = {
+				name: 'google-map-test',
+				event: 'deviceLocator',
+				template: 'google-maps',
+				url: '',
+				api_key: 'AIzaSyDUMMYKEY1234567890ABCDEFGHIJKLMNO',
+				integration_type: 'GoogleMaps'
+			};
+			sandbox.stub(fs, 'existsSync').returns(true);
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(payload));
+			const stub = sandbox.stub(ParticleApi.prototype, 'createIntegrationWithObj').resolves({ id: 'gmap-2', ok: true });
+
+			const cmd = new IntegrationCommand();
+			await cmd.createHook({ eventName: 'google-map-test.json' });
+
+			expect(stub).to.have.been.calledWithMatch(
+				sinon.match({ event: 'deviceLocator', integration_type: 'GoogleMaps' }),
+				{ integrationType: 'GoogleMaps' }
+			);
 		});
 	});
 });

@@ -10,6 +10,29 @@ const { tryParse, getFilenameExt, asyncMapSeries } = require('../lib/utilities')
 // asks for something else every integration created/listed defaults to this type.
 const DEFAULT_INTEGRATION_TYPE = 'Webhook';
 
+// The integration types the backend exposes as products. Casing must match the
+// `integration_type` discriminator on the backend exactly. Lake/Logic are
+// deliberately excluded — they aren't integrations in the product sense.
+const INTEGRATION_TYPES = ['Webhook', 'GoogleMaps', 'GoogleCloudPubSub', 'AzureIotHub'];
+
+// Accept `--type googlemaps`, `--type GoogleMaps`, etc. and map back to the
+// canonical casing the backend expects.
+const INTEGRATION_TYPE_BY_LOWER = INTEGRATION_TYPES.reduce((map, type) => {
+	map[type.toLowerCase()] = type;
+	return map;
+}, {});
+
+function normalizeIntegrationType(type) {
+	if (!type) {
+		return undefined;
+	}
+	const canonical = INTEGRATION_TYPE_BY_LOWER[String(type).toLowerCase()];
+	if (!canonical) {
+		throw new VError(`Invalid integration type "${type}". Valid types are: ${INTEGRATION_TYPES.join(', ')}`);
+	}
+	return canonical;
+}
+
 module.exports = class IntegrationCommand extends CLICommandBase {
 	constructor() {
 		super();
@@ -61,7 +84,13 @@ module.exports = class IntegrationCommand extends CLICommandBase {
 			throw new VError('Please specify an event name');
 		}
 
-		if (!url) {
+		// The effective type can come from the --type flag (validated/normalized) or
+		// from the JSON file itself; the flag wins when both are present.
+		const effectiveType = normalizeIntegrationType(integrationType) || data.integration_type || DEFAULT_INTEGRATION_TYPE;
+
+		// Only webhooks POST to a url; types like GoogleMaps are driven by their
+		// own settings (e.g. api_key) and legitimately have no url.
+		if (effectiveType === DEFAULT_INTEGRATION_TYPE && !url) {
 			throw new VError('Please specify a url');
 		}
 
@@ -75,7 +104,7 @@ module.exports = class IntegrationCommand extends CLICommandBase {
 		const response = await this.api.createIntegrationWithObj(integrationData, {
 			org,
 			product,
-			integrationType: integrationType || DEFAULT_INTEGRATION_TYPE
+			integrationType: effectiveType
 		});
 		// The integrations endpoint returns the created integration (no `ok` flag);
 		// only treat an explicit error body as a failure.
@@ -135,3 +164,6 @@ module.exports = class IntegrationCommand extends CLICommandBase {
 		}
 	}
 };
+
+module.exports.INTEGRATION_TYPES = INTEGRATION_TYPES;
+module.exports.DEFAULT_INTEGRATION_TYPE = DEFAULT_INTEGRATION_TYPE;
