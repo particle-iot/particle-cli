@@ -5,18 +5,18 @@ const matches = require('../lib/capture-matches');
 const cli = require('../lib/cli');
 
 
-describe('Webhook Commands', () => {
+describe('Integration Commands', () => {
 	const event = 'test-event';
 	const url = 'https://example.com/hook';
 	const help = [
-		'Manage webhooks that react to device event streams',
-		'Usage: particle webhook <command>',
-		'Help:  particle help webhook <command>',
+		'Manage integrations that react to device event streams',
+		'Usage: particle integration <command>',
+		'Help:  particle help integration <command>',
 		'',
 		'Commands:',
 		'  create  Creates an integration triggered when your event is sent',
-		'  list    Show your current webhooks',
-		'  delete  Deletes a webhook',
+		'  list    Show your current integrations',
+		'  delete  Deletes an integration',
 		'  POST    Create a new POST request hook',
 		'  GET     Create a new GET request hook',
 		'',
@@ -31,17 +31,17 @@ describe('Webhook Commands', () => {
 
 	after(async () => {
 		// TODO (mirande): work-around for broke `delete all` shortcut
-		const { stdout } = await cli.run(['webhook', 'list']);
+		const { stdout } = await cli.run(['integration', 'list']);
 		const hookIDs = matches(stdout, /Integration ID (.*) is watching for "test-event"/g);
 		await hookIDs.reduce((promise, id) => {
-			return promise.then(() => cli.run(['webhook', 'delete', id]));
+			return promise.then(() => cli.run(['integration', 'delete', id]));
 		}, Promise.resolve());
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
 
 	it('Shows `help` content', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['help', 'webhook']);
+		const { stdout, stderr, exitCode } = await cli.run(['help', 'integration']);
 
 		expect(stdout).to.equal('');
 		expect(stderr.split('\n')).to.include.members(help);
@@ -49,7 +49,7 @@ describe('Webhook Commands', () => {
 	});
 
 	it('Shows `help` content when run without arguments', async () => {
-		const { stdout, stderr, exitCode } = await cli.run('webhook');
+		const { stdout, stderr, exitCode } = await cli.run('integration');
 
 		expect(stdout).to.equal('');
 		expect(stderr.split('\n')).to.include.members(help);
@@ -57,16 +57,16 @@ describe('Webhook Commands', () => {
 	});
 
 	it('Shows `help` content when run with `--help` flag', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['webhook', '--help']);
+		const { stdout, stderr, exitCode } = await cli.run(['integration', '--help']);
 
 		expect(stdout).to.equal('');
 		expect(stderr.split('\n')).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
-	describe('Webhook Create Subcommand', () => {
-		it('Creates a webhook', async () => {
-			const args = ['webhook', 'create', event, url];
+	describe('Integration Create Subcommand', () => {
+		it('Creates an integration', async () => {
+			const args = ['integration', 'create', event, url];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout).to.include('Successfully created webhook with ID');
@@ -75,11 +75,11 @@ describe('Webhook Commands', () => {
 		});
 	});
 
-	describe('Webhook List Subcommand', () => {
-		it('Lists all webhooks', async () => {
-			await cli.run(['webhook', 'create', event, url]);
+	describe('Integration List Subcommand', () => {
+		it('Lists all integrations', async () => {
+			await cli.run(['integration', 'create', event, url]);
 
-			const { stdout, stderr, exitCode } = await cli.run(['webhook', 'list']);
+			const { stdout, stderr, exitCode } = await cli.run(['integration', 'list']);
 			const hookIDs = matches(stdout, /Integration ID (.*) is watching for "test-event"/g);
 
 			expect(hookIDs).to.have.lengthOf.at.least(1);
@@ -88,9 +88,9 @@ describe('Webhook Commands', () => {
 		});
 	});
 
-	describe('Webhook Delete Subcommand', () => {
-		it('Deletes a webhook by ID', async () => {
-			const args = ['webhook', 'create', event, url];
+	describe('Integration Delete Subcommand', () => {
+		it('Deletes an integration by ID', async () => {
+			const args = ['integration', 'create', event, url];
 			await cli.run(args);
 			const { stdout: log } = await cli.run(args);
 			const id = matches(log, /Successfully created webhook with ID (.*)$/g)[0];
@@ -98,25 +98,25 @@ describe('Webhook Commands', () => {
 
 			expect(id).to.be.a('string').with.lengthOf.above(10);
 
-			const { stdout, stderr, exitCode } = await cli.run(['webhook', 'delete', id]);
+			const { stdout, stderr, exitCode } = await cli.run(['integration', 'delete', id]);
 
 			expect(stdout).to.equal('');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 
-			const { stdout: list } = await cli.run(['webhook', 'list']);
+			const { stdout: list } = await cli.run(['integration', 'list']);
 			const hookIDs = matches(list, /Integration ID (.*) is watching for "test-event"/g);
 
 			expect(hookIDs).to.not.include(id);
 		});
 
 		// TODO (mirande): only deletes one hook at a time - fix!
-		it.skip('BUG: Deletes all webhooks', async () => {
-			const { stdout: log } = await cli.run(['webhook', 'create', event, url]);
+		it.skip('BUG: Deletes all integrations', async () => {
+			const { stdout: log } = await cli.run(['integration', 'create', event, url]);
 
 			expect(log).to.include('Successfully created webhook with ID');
 
-			const subprocess = cli.run(['webhook', 'delete', 'all']);
+			const subprocess = cli.run(['integration', 'delete', 'all']);
 
 			await delay(1000);
 			subprocess.stdin.write('y');
@@ -128,10 +128,9 @@ describe('Webhook Commands', () => {
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 
-			const { stdout: list } = await cli.run(['webhook', 'list']);
+			const { stdout: list } = await cli.run(['integration', 'list']);
 
 			expect(list).to.include('Found 0 integrations registered');
 		});
 	});
 });
-

@@ -46,11 +46,14 @@ describe('Variable Command-Line Interface', () => {
 		});
 
 		it('Includes help', () => {
-			commandProcessor.parse(root, ['variable', 'list', '--help']);
+			commandProcessor.parse(root, ['variable', 'list', '--help'], termWidth);
 			commandProcessor.showHelp((helpText) => {
 				expect(helpText).to.equal([
 					'Show variables provided by your device(s)',
 					'Usage: particle variable list [options]',
+					'',
+					'Options:',
+					'  --product  Target devices within the given Product ID or Slug  [string]',
 					''
 				].join('\n'));
 			});

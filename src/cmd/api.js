@@ -77,26 +77,60 @@ module.exports = class ParticleApi {
 		return this._wrap(this.api.sendOtp({ mfaToken, otp }));
 	}
 
-	createWebhookWithObj(obj){
-		return this._wrap(this.api.request({
-			uri: '/v1/webhooks',
-			method: 'post',
-			auth: this.accessToken,
-			data: obj
-		}));
-	}
-
-	deleteWebhook({ hookId }){
-		return this._wrap(this.api.deleteWebhook({
-			hookId,
+	createIntegrationWithObj(obj, { org, product, integrationType } = {}){
+		// Precedence for the type sent to the backend: explicit `integrationType`
+		// (e.g. the --type flag) > `integration_type` in the object > Webhook.
+		// Set it last so it can't be clobbered by a stale value carried on `obj`.
+		const settings = Object.assign({}, obj, {
+			integration_type: integrationType || obj.integration_type || 'Webhook'
+		});
+		return this._wrap(this.api.createIntegration({
+			event: obj.event,
+			settings,
+			org,
+			product,
 			auth: this.accessToken
 		}));
 	}
 
-	listWebhooks(){
-		return this._wrap(this.api.listWebhooks({
+	deleteIntegration({ integrationId, org, product }){
+		return this._wrap(this.api.deleteIntegration({
+			integrationId,
+			org,
+			product,
 			auth: this.accessToken
 		}));
+	}
+
+	async listIntegrations({ org, product, integrationType } = {}){
+		const body = await this._wrap(this.api.listIntegrations({
+			org,
+			product,
+			auth: this.accessToken
+		}));
+		const integrations = Array.isArray(body)
+			? body
+			: (body && (body.integrations || body.webhooks)) || [];
+		// The integrations endpoint returns every integration type; only filter
+		// when the caller asks for a specific type (e.g. the webhook alias).
+		if (integrationType) {
+			return integrations.filter((i) => i.integration_type === integrationType);
+		}
+		return integrations;
+	}
+
+	// A webhook is a `Webhook`-type integration, so these wrappers simply pin the
+	// integration type and reuse the generic integration plumbing above.
+	createWebhookWithObj(obj, { org, product } = {}){
+		return this.createIntegrationWithObj(obj, { org, product, integrationType: 'Webhook' });
+	}
+
+	deleteWebhook({ hookId, org, product }){
+		return this.deleteIntegration({ integrationId: hookId, org, product });
+	}
+
+	listWebhooks({ org, product } = {}){
+		return this.listIntegrations({ org, product, integrationType: 'Webhook' });
 	}
 
 	listDevices(options){

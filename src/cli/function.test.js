@@ -45,11 +45,14 @@ describe('Function Command-Line Interface', () => {
 		});
 
 		it('Includes help', () => {
-			commandProcessor.parse(root, ['function', 'list', '--help']);
+			commandProcessor.parse(root, ['function', 'list', '--help'], termWidth);
 			commandProcessor.showHelp((helpText) => {
 				expect(helpText).to.equal([
 					'Show functions provided by your device(s)',
 					'Usage: particle function list [options]',
+					'',
+					'Options:',
+					'  --product  Target devices within the given Product ID or Slug  [string]',
 					''
 				].join('\n'));
 			});

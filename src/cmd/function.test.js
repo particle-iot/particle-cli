@@ -81,5 +81,31 @@ describe('Function Command', () => {
 				});
 		});
 	});
+
+	describe('listFunctions', () => {
+		beforeEach(() => {
+			sandbox.stub(ParticleAPI.prototype, 'listDevices').resolves([{ id: 'd1', connected: true }]);
+			sandbox.stub(ParticleAPI.prototype, 'getDeviceAttributes').resolves({ id: 'd1', functions: [] });
+			sandbox.stub(command.ui, 'logDeviceDetail');
+		});
+
+		it('lists sandbox devices when no product is given', () => {
+			return command.listFunctions().then(() => {
+				expect(ParticleAPI.prototype.listDevices.firstCall.args).to.eql([{ product: undefined }]);
+				expect(ParticleAPI.prototype.getDeviceAttributes.firstCall.args)
+					.to.eql([{ deviceId: 'd1', product: undefined }]);
+			});
+		});
+
+		it('forwards --product and unwraps the paginated { devices } response', () => {
+			// The product endpoint returns a paginated object, not a bare array.
+			ParticleAPI.prototype.listDevices.resolves({ devices: [{ id: 'd1', connected: true }], meta: {} });
+			return command.listFunctions({ product: 'my-product' }).then(() => {
+				expect(ParticleAPI.prototype.listDevices.firstCall.args).to.eql([{ product: 'my-product' }]);
+				expect(ParticleAPI.prototype.getDeviceAttributes.firstCall.args)
+					.to.eql([{ deviceId: 'd1', product: 'my-product' }]);
+			});
+		});
+	});
 });
 

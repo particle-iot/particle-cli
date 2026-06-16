@@ -8,21 +8,24 @@ module.exports = class FunctionCommand extends CLICommandBase {
 		super(...args);
 	}
 
-	listFunctions(){
+	listFunctions({ product } = {}){
 		const { api } = this._particleApi();
 
 		this.ui.stdout.write(`polling server to see what devices are online, and what functions are available${os.EOL}`);
 
-		return api.listDevices()
-			.then(devices => {
-				if (!devices || devices.length === 0){
+		return api.listDevices({ product })
+			.then(response => {
+				// Sandbox returns a bare array; the product endpoint returns a
+				// paginated `{ devices, meta }` object.
+				const devices = Array.isArray(response) ? response : (response && response.devices) || [];
+				if (devices.length === 0){
 					// Match `device list` / `variable list`: a friendly message and a
 					// clean exit, not a thrown error.
 					this.ui.stdout.write(`No devices found.${os.EOL}`);
 					return null;
 				}
 				return Promise.all(devices.map(d =>
-					d.connected ? api.getDeviceAttributes({ deviceId: d.id }) : Promise.resolve(d)
+					d.connected ? api.getDeviceAttributes({ deviceId: d.id, product }) : Promise.resolve(d)
 				)).then(devices => devices.sort((a, b) => (a.name || '').localeCompare(b.name)))
 					.then(devices => this.ui.logDeviceDetail(devices, { fnsOnly: true }));
 			});
