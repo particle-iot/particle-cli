@@ -90,13 +90,19 @@ mkdir -p "$DEST_PATH"
 TMP_FILE=$(mktemp)
 
 echo ":::: Downloading CLI version $VERSION"
-curl "$BINARY_URL" | gunzip > "$TMP_FILE"
+TMP_GZ="$TMP_FILE.gz"
+curl "$BINARY_URL" -o "$TMP_GZ"
 
-echo "$BINARY_SHA256  $TMP_FILE" | shasum a 256 -c > /dev/null 2>&1
-if [ $? -eq 1 ]; then
+# The manifest sha256 is computed over the gzipped binary, so verify before unzipping
+echo "$BINARY_SHA256  $TMP_GZ" | shasum -a 256 -c > /dev/null 2>&1
+if [ $? -ne 0 ]; then
    echo ':::: Checksum check failed! Aborting installation'
+   rm -f "$TMP_GZ" "$TMP_FILE"
    exit 1
 fi
+
+gunzip -c "$TMP_GZ" > "$TMP_FILE"
+rm -f "$TMP_GZ"
 
 mv -f "$TMP_FILE" "$DEST"
 chmod +x "$DEST"
