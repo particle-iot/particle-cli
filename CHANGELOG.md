@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.49.0 - Jun 16 2026
+* Add integrations command for create, list, update and delete.
+* Fix unix intaller cli shasum verification check.
+
 # 3.48.0 - Jun 08 2026
 * Standardize error messages for cloud commands when not logged in
 * Fix: protected devices stall when restarting the device while in DFU mode
