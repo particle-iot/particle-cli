@@ -196,6 +196,11 @@ module.exports = ({ commandProcessor, root }) => {
 			'no-verify': {
 				boolean: true,
 				description: 'Skip the manifest signature check (dev only)'
+			},
+			'factory-blank': {
+				boolean: true,
+				hidden: true,
+				description: 'With --mode full, also blank modem NV (factory-fresh wipe; destroys calibration/IMEI)'
 			}
 		},
 		handler: (args) => {

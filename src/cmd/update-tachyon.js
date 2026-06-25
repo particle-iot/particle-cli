@@ -2,8 +2,10 @@
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
+const temp = require('temp').track();
 const CLICommandBase = require('./base');
-const { getEDLDevice } = require('../lib/tachyon-utils');
+const QdlFlasher = require('../lib/qdl');
+const { getEDLDevice, initFiles, addLogHeaders, addLogFooter } = require('../lib/tachyon-utils');
 
 const PUBKEY_PATH = path.join(__dirname, '../../assets/keys/particle-tachyon-ota-pub-1.key');
 
@@ -26,6 +28,12 @@ function planUpdate(manifest, { mode = 'slot', slot, deviceHashes = {} } = {}) {
 	const write = [];
 	const skipped = [];
 	for (const p of candidates) {
+		// A partition with no ops is declared but never written (e.g. NV preserved
+		// under factory mode, or a GPT-defined userdata with no payload).
+		if (!p.ops || p.ops.length === 0) {
+			skipped.push({ label: p.label, reason: 'preserved (no-op)' });
+			continue;
+		}
 		if (mode === 'delta') {
 			const prog = (p.ops || []).find((o) => o.op === 'program');
 			const want = prog && prog.payload_sha256;
@@ -45,7 +53,7 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 		this.ui = ui || this.ui;
 	}
 
-	async run({ params = {}, slot, mode = 'slot', toggle = false, 'dry-run': dryRun = false, 'no-verify': noVerify = false } = {}) {
+	async run({ params = {}, slot, mode = 'slot', toggle = false, 'dry-run': dryRun = false, 'no-verify': noVerify = false, 'factory-blank': factoryBlank = false } = {}) {
 		const image = params.image;
 		if (!image) {
 			throw new Error('usage: particle tachyon update <image.zip> [--slot a|b] [--mode full|slot|delta] [--toggle] [--dry-run]');
@@ -69,9 +77,12 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 			throw new Error(`--mode ${mode} needs --slot a|b (image carries slots: ${manifest.format.slots_present.join(', ')})`);
 		}
 
-		// expand to the right view when not doing a full factory write
-		let view = manifest;
-		if (mode !== 'full') {
+		// expand to the right view. `full` is a whole-image write: `factory`
+		// preserves NV (modem calibration / IMEI), `factory_blank` blanks it.
+		let view;
+		if (mode === 'full') {
+			view = lib.expand(manifest, { kind: factoryBlank ? 'factory_blank' : 'factory' });
+		} else {
 			view = lib.expand(manifest, { kind: 'ota-image', slot: targetSlot });
 		}
 
@@ -108,12 +119,50 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 		}
 	}
 
-	// eslint-disable-next-line no-unused-vars
 	async _applyPlan({ image, plan, manifest, device }) {
-		// Hardware-deferred: build a rawprogram from the manifest ops + stream
-		// payloads from the zip via QdlFlasher --zip, writing only plan.write
-		// partitions. Implemented during hardware bring-up.
-		throw new Error('device write is not yet hardware-validated; re-run with --dry-run to preview the plan');
+		const lib = require('@particle/tachyon-image');
+
+		// Rebuild a faithful rawprogram (+ patch) XML from the manifest ops for the
+		// partitions we are writing. The manifest is geometry-complete, so no device
+		// GPT read is needed — and that is also correct when the layout changes.
+		const view = { ...manifest, partitions: plan.write };
+		const { program, patch } = lib.toRawProgram(view);
+
+		const tmp = await temp.mkdir('tachyon-ota');
+		const rawprogramPath = path.join(tmp, 'rawprogram_ota.xml');
+		await fs.writeFile(rawprogramPath, program);
+		const files = [];
+
+		// Firehose programmer (bundled asset, copied to a temp dir).
+		const { firehosePath } = await initFiles();
+		files.push(firehosePath, rawprogramPath);
+
+		// Only include the patch XML if it actually carries <patch> entries.
+		if (/<patch\b/.test(patch)) {
+			const patchPath = path.join(tmp, 'patch_ota.xml');
+			await fs.writeFile(patchPath, patch);
+			files.push(patchPath);
+		}
+
+		const outputLog = path.join(os.tmpdir(), `tachyon_${device.id}_ota_${Date.now()}.log`);
+		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
+		const startTime = new Date();
+		addLogHeaders({ outputLog, startTime, deviceId: device.id, commandName: 'Tachyon OTA update' });
+
+		// qdl resolves each payload (op.source: rootfs.ext4, efi.img, gpt_main0.bin …)
+		// from the image zip via --zip, so the 9GB+ archive is never extracted.
+		const qdl = new QdlFlasher({
+			files,
+			updateFolder: path.dirname(path.resolve(image)),
+			zip: path.basename(image),
+			ui: this.ui,
+			outputLogFile: outputLog,
+			skipReset: true,
+			currTask: 'OTA',
+			serialNumber: device.serialNumber,
+		});
+		await qdl.run();
+		addLogFooter({ outputLog, startTime, endTime: new Date() });
 	}
 };
 

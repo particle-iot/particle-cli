@@ -27,6 +27,16 @@ describe('planUpdate', () => {
 		expect(plan.write).to.have.lengthOf(4);
 	});
 
+	it('skips no-op partitions (e.g. NV preserved by factory expand)', () => {
+		const m = manifest();
+		// after expand({kind:factory}), NVM partitions arrive with their ops stripped
+		m.partitions.push({ label: 'modemst1', lun: 5, slot: 'none', group: 'NVM', ops: [] });
+		const plan = planUpdate(m, { mode: 'full' });
+		expect(plan.write.map((p) => p.label)).to.not.include('modemst1');
+		expect(plan.skipped.map((s) => s.label)).to.include('modemst1');
+		expect(plan.skipped.find((s) => s.label === 'modemst1').reason).to.match(/preserved/);
+	});
+
 	it('delta mode skips partitions whose device hash matches', () => {
 		const plan = planUpdate(manifest(), {
 			mode: 'delta',
