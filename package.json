@@ -83,7 +83,7 @@
     "xtend": "^4.0.2",
     "yaml": "^2.7.0",
     "yargs": "^5.0.0",
-    "@particle/tachyon-image": "file:../../tachyon/particle-tachyon-image"
+    "@particle/tachyon-image": "github:particle-iot/particle-tachyon-image#v0.0.1"
   },
   "devDependencies": {
     "@types/cli-table": "^0.3.1",
