@@ -124,9 +124,6 @@ const ubuntu24 = Object.freeze({
 		distributionVersion: '24.04',
 		distributionVariant: 'ubuntu'
 	},
-	overrideDefaults:{
-		version: 'latest',
-	},
 	variants: [
 		{
 			name: 'Desktop (GUI)',
