@@ -11,7 +11,7 @@
       "dependencies": {
         "@particle/device-constants": "^4.1.0",
         "@particle/softap-setup": "^4.1.2",
-        "@particle/tachyon-image": "github:particle-iot/particle-tachyon-image#v0.0.1",
+        "@particle/tachyon-image": "git+https://github.com/particle-iot/particle-tachyon-image.git#v0.0.1",
         "archiver": "^7.0.1",
         "binary-version-reader": "^4.0.2",
         "chalk": "^2.4.2",
