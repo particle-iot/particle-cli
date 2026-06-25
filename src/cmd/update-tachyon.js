@@ -5,7 +5,7 @@ const fs = require('fs-extra');
 const CLICommandBase = require('./base');
 const { getEDLDevice } = require('../lib/tachyon-utils');
 
-const PUBKEY_PATH = path.join(__dirname, '../../assets/keys/particle-ota-pub.pem');
+const PUBKEY_PATH = path.join(__dirname, '../../assets/keys/particle-tachyon-ota-pub-1.key');
 
 /**
  * Pure planner for an OTA update. Given a parsed/expanded particle_image_v1
