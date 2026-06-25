@@ -49,6 +49,41 @@ describe('tachyon-slots (GPT A/B attribute bits)', () => {
 		expect(attr & 0b111n).to.equal(base);
 	});
 
+	describe('planSlotSwitch', () => {
+		const slotParts = () => {
+			const aActive = slots.makeActivePending(0n);
+			const bFallback = slots.makeInactiveFallback(slots.makeActivePending(0n));
+			return [
+				{ label: 'system_a', lun: 0, slot: 'a', attr: aActive },
+				{ label: 'system_b', lun: 0, slot: 'b', attr: bFallback },
+				{ label: 'xbl_a', lun: 1, slot: 'a', attr: aActive },
+				{ label: 'xbl_b', lun: 1, slot: 'b', attr: bFallback },
+			];
+		};
+
+		it('plans switching from active a to b across all slot partitions', () => {
+			const plan = slots.planSlotSwitch(slotParts(), 'b');
+			expect(plan.current).to.equal('a');
+			expect(plan.target).to.equal('b');
+			// every partition changes (a -> fallback, b -> active)
+			expect(plan.changes.map((c) => c.label).sort()).to.deep.equal(['system_a', 'system_b', 'xbl_a', 'xbl_b']);
+			const b = plan.changes.find((c) => c.label === 'system_b');
+			expect(slots.getSlotState(b.toAttr).active).to.equal(true);
+			const a = plan.changes.find((c) => c.label === 'system_a');
+			expect(slots.getSlotState(a.toAttr).active).to.equal(false);
+		});
+
+		it('is a no-op when target is already active', () => {
+			const plan = slots.planSlotSwitch(slotParts(), 'a');
+			expect(plan.current).to.equal('a');
+			expect(plan.changes).to.have.lengthOf(0);
+		});
+
+		it('rejects an invalid target', () => {
+			expect(() => slots.planSlotSwitch(slotParts(), 'c')).to.throw(/must be/);
+		});
+	});
+
 	describe('activeSlot resolution', () => {
 		it('picks the slot with the active bit', () => {
 			const a = slots.makeActivePending(0n);

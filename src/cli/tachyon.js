@@ -176,6 +176,28 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(tachyon, 'slot', 'Show or switch the active A/B boot slot', {
+		params: '[target]',
+		options: {
+			'dry-run': {
+				boolean: true,
+				description: 'Show the planned slot change without writing the device'
+			},
+			'log-dir': {
+				description: 'Directory to save the log file'
+			}
+		},
+		handler: (args) => {
+			const SlotTachyonCommand = require('../cmd/slot-tachyon');
+			return new SlotTachyonCommand().run(args);
+		},
+		examples: {
+			'$0 $command': 'Show the current A/B slot state',
+			'$0 $command b': 'Make slot B the active boot slot',
+			'$0 $command a --dry-run': 'Preview switching to slot A without writing'
+		}
+	});
+
 	return tachyon;
 };
 
