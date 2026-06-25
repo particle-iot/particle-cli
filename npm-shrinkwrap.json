@@ -11,7 +11,7 @@
       "dependencies": {
         "@particle/device-constants": "^4.1.0",
         "@particle/softap-setup": "^4.1.2",
-        "@particle/tachyon-image": "git+https://github.com/particle-iot/particle-tachyon-image.git#v0.0.1",
+        "@particle/tachyon-image": "^0.1.0",
         "archiver": "^7.0.1",
         "binary-version-reader": "^4.0.2",
         "chalk": "^2.4.2",
@@ -706,8 +706,9 @@
       }
     },
     "node_modules/@particle/tachyon-image": {
-      "version": "0.0.1",
-      "resolved": "git+https://github.com/particle-iot/particle-tachyon-image.git#1d252895edfed54d9116b7ad677922028d8e226d",
+      "version": "0.1.0",
+      "resolved": "https://registry.npmjs.org/@particle/tachyon-image/-/tachyon-image-0.1.0.tgz",
+      "integrity": "sha512-nJGl+ERpFAlg2f2WMfV5aWr3xZzs1ajZvqlVI7AITDszyQHJffVQ+hZQ/r0kFcCPrjYZuCPzwnYnvEkACqZO4A==",
       "license": "UNLICENSED",
       "dependencies": {
         "fast-xml-parser": "^4.5.0",
