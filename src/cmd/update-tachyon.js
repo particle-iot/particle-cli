@@ -119,10 +119,13 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 	_printPlan({ image, plan, toggle }) {
 		this.ui.stdout.write(`Update plan for ${path.basename(image)} (mode=${plan.mode}, slot=${plan.targetSlot || 'all'}):${os.EOL}`);
 		for (const p of plan.write) {
-			this.ui.stdout.write(`  write  ${p.label}${os.EOL}`);
+			// distinguish a destructive erase (e.g. the inactive slot) from a program
+			const acts = (p.ops || []).filter((o) => ACTIONABLE_OPS.has(o.op));
+			const action = acts.length && acts.every((o) => o.op === 'erase') ? 'erase ' : 'program';
+			this.ui.stdout.write(`  ${action} ${p.label}${os.EOL}`);
 		}
 		for (const s of plan.skipped) {
-			this.ui.stdout.write(`  skip   ${s.label} (${s.reason})${os.EOL}`);
+			this.ui.stdout.write(`  skip    ${s.label} (${s.reason})${os.EOL}`);
 		}
 		if (toggle) {
 			this.ui.stdout.write(`  then   switch active slot -> ${plan.targetSlot}${os.EOL}`);
