@@ -183,7 +183,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Target slot: a | b (default: the image\'s slot, or the inactive slot)'
 			},
 			mode: {
-				description: 'full | slot | delta | erase (default: slot)'
+				description: 'factory | slot | delta | erase (default: slot)'
 			},
 			toggle: {
 				boolean: true,
@@ -200,7 +200,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'factory-blank': {
 				boolean: true,
 				hidden: true,
-				description: 'With --mode full, also blank modem NV (factory-fresh wipe; destroys calibration/IMEI)'
+				description: 'With --mode factory, also blank modem NV (factory-fresh wipe; destroys calibration/IMEI)'
 			}
 		},
 		handler: (args) => {
@@ -211,6 +211,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command image.zip --dry-run': 'Preview the OTA update plan',
 			'$0 $command image.zip --slot b --toggle': 'Write slot B and make it active',
 			'$0 $command image.zip --mode delta --slot b': 'Write only the changed partitions',
+			'$0 $command image.zip --mode factory': 'Re-provision LUNs + full flash, preserving modem NV',
 			'$0 $command image.zip --mode erase --slot b': 'Blank slot B (OS + boot + firmware)'
 		}
 	});

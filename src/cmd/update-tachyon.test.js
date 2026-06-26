@@ -22,8 +22,8 @@ describe('planUpdate', () => {
 		expect(plan.write.map((p) => p.label).sort()).to.deep.equal(['efi_b', 'system_b']);
 	});
 
-	it('full mode writes everything', () => {
-		const plan = planUpdate(manifest(), { mode: 'full' });
+	it('factory mode writes everything', () => {
+		const plan = planUpdate(manifest(), { mode: 'factory' });
 		expect(plan.write).to.have.lengthOf(4);
 	});
 
@@ -31,7 +31,7 @@ describe('planUpdate', () => {
 		const m = manifest();
 		// after expand({kind:factory}), NVM partitions arrive with their ops stripped
 		m.partitions.push({ label: 'modemst1', lun: 5, slot: 'none', group: 'NVM', ops: [] });
-		const plan = planUpdate(m, { mode: 'full' });
+		const plan = planUpdate(m, { mode: 'factory' });
 		expect(plan.write.map((p) => p.label)).to.not.include('modemst1');
 		expect(plan.skipped.map((s) => s.label)).to.include('modemst1');
 		expect(plan.skipped.find((s) => s.label === 'modemst1').reason).to.match(/preserved/);
@@ -40,7 +40,7 @@ describe('planUpdate', () => {
 	it('treats a reserve-only partition as a skip (qdl does nothing for it)', () => {
 		const m = manifest();
 		m.partitions.push({ label: 'fsg', lun: 5, slot: 'none', group: 'NVM', ops: [{ op: 'reserve', start_sector: 2054, num_partition_sectors: 1024 }] });
-		const plan = planUpdate(m, { mode: 'full' });
+		const plan = planUpdate(m, { mode: 'factory' });
 		expect(plan.write.map((p) => p.label)).to.not.include('fsg');
 		expect(plan.skipped.map((s) => s.label)).to.include('fsg');
 	});

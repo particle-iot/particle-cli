@@ -3,9 +3,22 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const temp = require('temp').track();
+const unzipper = require('unzipper');
 const CLICommandBase = require('./base');
 const QdlFlasher = require('../lib/qdl');
 const { getEDLDevice, initFiles, addLogHeaders, addLogFooter } = require('../lib/tachyon-utils');
+
+/** Extract a single entry from a zip to destPath (used to pull the provisioning XML out of the image). */
+async function extractZipEntry(zipPath, entryName, destPath) {
+	const dir = await unzipper.Open.file(zipPath);
+	const entry = dir.files.find((f) => f.path === entryName);
+	if (!entry) {
+		throw new Error(`provisioning file "${entryName}" not found in ${path.basename(zipPath)}`);
+	}
+	await new Promise((resolve, reject) =>
+		entry.stream().pipe(fs.createWriteStream(destPath)).on('finish', resolve).on('error', reject));
+	return destPath;
+}
 
 const PUBKEY_PATH = path.join(__dirname, '../../assets/keys/particle-tachyon-ota-pub-1.key');
 
@@ -61,7 +74,7 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 	async run({ params = {}, slot, mode = 'slot', toggle = false, 'dry-run': dryRun = false, 'no-verify': noVerify = false, 'factory-blank': factoryBlank = false } = {}) {
 		const image = params.image;
 		if (!image) {
-			throw new Error('usage: particle tachyon update <image.zip> [--slot a|b] [--mode full|slot|delta|erase] [--toggle] [--dry-run]');
+			throw new Error('usage: particle tachyon update <image.zip> [--slot a|b] [--mode factory|slot|delta|erase] [--toggle] [--dry-run]');
 		}
 		// Lazy-require the shared library so the rest of the CLI loads without it.
 		const lib = require('@particle/tachyon-image');
@@ -83,12 +96,13 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 		}
 
 		// expand to the right view.
-		//  - full  : whole-image write. `factory` preserves NV (modem calibration /
-		//            IMEI) and erases slot B; `factory_blank` also blanks NV.
-		//  - erase : blank just the target slot (its OS/boot/firmware), nothing else.
+		//  - factory : whole-image write. Preserves NV (modem calibration / IMEI) and
+		//              erases slot B; re-provisions the UFS LUN geometry first (see
+		//              _applyPlan). `--factory-blank` also blanks NV.
+		//  - erase   : blank just the target slot (its OS/boot/firmware), nothing else.
 		//  - slot/delta : the target slot's OS only.
 		let view;
-		if (mode === 'full') {
+		if (mode === 'factory') {
 			view = lib.expand(manifest, { kind: factoryBlank ? 'factory_blank' : 'factory' });
 		} else if (mode === 'erase') {
 			view = lib.eraseSlotView(manifest, targetSlot);
@@ -108,7 +122,9 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 		// then optionally toggle. Pending hardware validation — see slot-tachyon.js.
 		const device = await getEDLDevice({ ui: this.ui });
 		this.ui.stdout.write(`Flashing ${plan.write.length} partitions to device ${device.id} (slot ${targetSlot || 'all'})...${os.EOL}`);
-		await this._applyPlan({ image, plan, manifest, device });
+		// A factory flash re-provisions the UFS LUN geometry (the A/B layout changed it)
+		// and preserves modem NV across that reset; OTA modes leave provisioning alone.
+		await this._applyPlan({ image, plan, manifest, device, provision: mode === 'factory' });
 		if (toggle && targetSlot) {
 			const SlotTachyonCommand = require('./slot-tachyon');
 			await new SlotTachyonCommand({ ui: this.ui }).run({ params: { target: targetSlot } });
@@ -132,8 +148,42 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 		}
 	}
 
-	async _applyPlan({ image, plan, manifest, device }) {
+	async _applyPlan({ image, plan, manifest, device, provision = false }) {
 		const lib = require('@particle/tachyon-image');
+		const { firehosePath } = await initFiles();
+
+		// Factory provisioning: the A/B layout changed the UFS LUN geometry (LUN count
+		// and sizes), which a plain program flash cannot change — so a `factory` flash
+		// must re-provision first or large writes (e.g. the NON-HLOS modem) run off the
+		// device's old LUN boundary and the firehose wedges. Provisioning recreates the
+		// LUNs (including LUN5 / NV), so to keep modem calibration we do:
+		//   backup NV -> provision -> flash -> restore NV.
+		let nvBackupZip;
+		if (provision && manifest.provision) {
+			const BackupRestoreTachyonCommand = require('./backup-restore-tachyon');
+			const nvDir = await temp.mkdir('tachyon-nv');
+			this.ui.stdout.write(`Backing up NV (modem calibration) before provisioning...${os.EOL}`);
+			await new BackupRestoreTachyonCommand({ ui: this.ui }).backup({ 'output-dir': nvDir });
+			nvBackupZip = path.join(nvDir, `manufacturing_backup_${device.id}.zip`);
+
+			const provDir = await temp.mkdir('tachyon-prov');
+			const provPath = path.join(provDir, path.basename(manifest.provision));
+			await extractZipEntry(path.resolve(image), manifest.provision, provPath);
+			this.ui.stdout.write(`Provisioning UFS LUN geometry (${manifest.provision})...${os.EOL}`);
+			// One qdl session: qdl detects the <ufs> tags, provisions, and exits. No
+			// --finalize-provisioning (that is only for an irreversible bConfigDescrLock=1
+			// OTP lock; our XML keeps it re-provisionable).
+			const provLog = path.join(os.tmpdir(), `tachyon_${device.id}_provision_${Date.now()}.log`);
+			await new QdlFlasher({
+				files: [firehosePath, provPath],
+				includeDir: provDir,
+				ui: this.ui,
+				outputLogFile: provLog,
+				skipReset: true,
+				currTask: 'PROVISION',
+				serialNumber: device.serialNumber,
+			}).run();
+		}
 
 		// Rebuild faithful rawprogram (+ patch) XML from the manifest ops for the
 		// partitions we are writing. The manifest is geometry-complete, so no device
@@ -147,7 +197,6 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 		const perLun = lib.toRawProgramPerLun(view);
 
 		const tmp = await temp.mkdir('tachyon-ota');
-		const { firehosePath } = await initFiles();
 		const programFiles = [];
 		const patchFiles = [];
 		for (const { lun, program, patch } of perLun) {
@@ -182,6 +231,14 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 		});
 		await qdl.run();
 		addLogFooter({ outputLog, startTime, endTime: new Date() });
+
+		// Restore the modem NV we saved before provisioning, onto the freshly-laid-down
+		// LUN5 of the new layout — so a factory reflash keeps calibration / IMEI.
+		if (nvBackupZip) {
+			const BackupRestoreTachyonCommand = require('./backup-restore-tachyon');
+			this.ui.stdout.write(`Restoring NV (modem calibration)...${os.EOL}`);
+			await new BackupRestoreTachyonCommand({ ui: this.ui }).restore({ filepath: nvBackupZip });
+		}
 	}
 };
 
