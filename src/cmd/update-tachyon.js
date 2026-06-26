@@ -135,27 +135,33 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 	async _applyPlan({ image, plan, manifest, device }) {
 		const lib = require('@particle/tachyon-image');
 
-		// Rebuild a faithful rawprogram (+ patch) XML from the manifest ops for the
+		// Rebuild faithful rawprogram (+ patch) XML from the manifest ops for the
 		// partitions we are writing. The manifest is geometry-complete, so no device
 		// GPT read is needed — and that is also correct when the layout changes.
+		//
+		// Emit one rawprogram/patch PER LUN, in LUN order, with each LUN's data
+		// written before its GPT — matching the stock factory layout. A single
+		// combined rawprogram (GPTs rewritten mid-stream, LUN switches churned)
+		// wedged the firehose on the NON-HLOS modem write.
 		const view = { ...manifest, partitions: plan.write };
-		const { program, patch } = lib.toRawProgram(view);
+		const perLun = lib.toRawProgramPerLun(view);
 
 		const tmp = await temp.mkdir('tachyon-ota');
-		const rawprogramPath = path.join(tmp, 'rawprogram_ota.xml');
-		await fs.writeFile(rawprogramPath, program);
-		const files = [];
-
-		// Firehose programmer (bundled asset, copied to a temp dir).
 		const { firehosePath } = await initFiles();
-		files.push(firehosePath, rawprogramPath);
-
-		// Only include the patch XML if it actually carries <patch> entries.
-		if (/<patch\b/.test(patch)) {
-			const patchPath = path.join(tmp, 'patch_ota.xml');
-			await fs.writeFile(patchPath, patch);
-			files.push(patchPath);
+		const programFiles = [];
+		const patchFiles = [];
+		for (const { lun, program, patch } of perLun) {
+			const rp = path.join(tmp, `rawprogram${lun}.xml`);
+			await fs.writeFile(rp, program);
+			programFiles.push(rp);
+			if (/<patch\b/.test(patch)) {
+				const pp = path.join(tmp, `patch${lun}.xml`);
+				await fs.writeFile(pp, patch);
+				patchFiles.push(pp);
+			}
 		}
+		// firehose, then all rawprograms (LUN order), then all patches — like flashTachyon.
+		const files = [firehosePath, ...programFiles, ...patchFiles];
 
 		const outputLog = path.join(os.tmpdir(), `tachyon_${device.id}_ota_${Date.now()}.log`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
