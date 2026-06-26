@@ -183,7 +183,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Target slot: a | b (default: the image\'s slot, or the inactive slot)'
 			},
 			mode: {
-				description: 'full | slot | delta (default: slot)'
+				description: 'full | slot | delta | erase (default: slot)'
 			},
 			toggle: {
 				boolean: true,
@@ -210,7 +210,8 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command image.zip --dry-run': 'Preview the OTA update plan',
 			'$0 $command image.zip --slot b --toggle': 'Write slot B and make it active',
-			'$0 $command image.zip --mode delta --slot b': 'Write only the changed partitions'
+			'$0 $command image.zip --mode delta --slot b': 'Write only the changed partitions',
+			'$0 $command image.zip --mode erase --slot b': 'Blank slot B (OS + boot + firmware)'
 		}
 	});
 

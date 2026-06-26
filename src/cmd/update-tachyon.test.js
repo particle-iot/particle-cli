@@ -37,6 +37,27 @@ describe('planUpdate', () => {
 		expect(plan.skipped.find((s) => s.label === 'modemst1').reason).to.match(/preserved/);
 	});
 
+	it('treats a reserve-only partition as a skip (qdl does nothing for it)', () => {
+		const m = manifest();
+		m.partitions.push({ label: 'fsg', lun: 5, slot: 'none', group: 'NVM', ops: [{ op: 'reserve', start_sector: 2054, num_partition_sectors: 1024 }] });
+		const plan = planUpdate(m, { mode: 'full' });
+		expect(plan.write.map((p) => p.label)).to.not.include('fsg');
+		expect(plan.skipped.map((s) => s.label)).to.include('fsg');
+	});
+
+	it('erase view (slot-only, all erase ops) writes every partition', () => {
+		// mimics lib.eraseSlotView output: slot-b partitions with erase ops
+		const view = {
+			format: { slots_present: ['b'] },
+			partitions: [
+				{ label: 'system_b', lun: 0, slot: 'b', group: 'B', ops: [{ op: 'erase', start_sector: 10, num_partition_sectors: 20 }] },
+				{ label: 'xbl_b', lun: 1, slot: 'b', group: 'BOOT', ops: [{ op: 'erase', start_sector: 5, num_partition_sectors: 6 }] },
+			],
+		};
+		const plan = planUpdate(view, { mode: 'erase', slot: 'b' });
+		expect(plan.write.map((p) => p.label).sort()).to.deep.equal(['system_b', 'xbl_b']);
+	});
+
 	it('delta mode skips partitions whose device hash matches', () => {
 		const plan = planUpdate(manifest(), {
 			mode: 'delta',

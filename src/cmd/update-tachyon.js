@@ -9,6 +9,9 @@ const { getEDLDevice, initFiles, addLogHeaders, addLogFooter } = require('../lib
 
 const PUBKEY_PATH = path.join(__dirname, '../../assets/keys/particle-tachyon-ota-pub-1.key');
 
+// ops qdl actually acts on; a `reserve` op (filename="") is inert and skipped.
+const ACTIONABLE_OPS = new Set(['program', 'erase', 'zero', 'gpt', 'patch']);
+
 /**
  * Pure planner for an OTA update. Given a parsed/expanded particle_image_v1
  * manifest and the requested mode/slot, decide which partitions get written.
@@ -28,9 +31,11 @@ function planUpdate(manifest, { mode = 'slot', slot, deviceHashes = {} } = {}) {
 	const write = [];
 	const skipped = [];
 	for (const p of candidates) {
-		// A partition with no ops is declared but never written (e.g. NV preserved
-		// under factory mode, or a GPT-defined userdata with no payload).
-		if (!p.ops || p.ops.length === 0) {
+		// A partition with no op that qdl acts on is declared but never written
+		// (e.g. NV preserved under factory mode = reserve-only, or a GPT-defined
+		// userdata with no payload). `reserve` is inert; qdl skips filename="".
+		const actionable = (p.ops || []).filter((o) => ACTIONABLE_OPS.has(o.op));
+		if (actionable.length === 0) {
 			skipped.push({ label: p.label, reason: 'preserved (no-op)' });
 			continue;
 		}
@@ -56,7 +61,7 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 	async run({ params = {}, slot, mode = 'slot', toggle = false, 'dry-run': dryRun = false, 'no-verify': noVerify = false, 'factory-blank': factoryBlank = false } = {}) {
 		const image = params.image;
 		if (!image) {
-			throw new Error('usage: particle tachyon update <image.zip> [--slot a|b] [--mode full|slot|delta] [--toggle] [--dry-run]');
+			throw new Error('usage: particle tachyon update <image.zip> [--slot a|b] [--mode full|slot|delta|erase] [--toggle] [--dry-run]');
 		}
 		// Lazy-require the shared library so the rest of the CLI loads without it.
 		const lib = require('@particle/tachyon-image');
@@ -73,15 +78,20 @@ module.exports = class UpdateTachyonCommand extends CLICommandBase {
 
 		// resolve target slot: explicit, else the image's single present slot, else 'a'
 		const targetSlot = slot || (manifest.format.slots_present.length === 1 ? manifest.format.slots_present[0] : undefined);
-		if ((mode === 'slot' || mode === 'delta') && !targetSlot) {
+		if ((mode === 'slot' || mode === 'delta' || mode === 'erase') && !targetSlot) {
 			throw new Error(`--mode ${mode} needs --slot a|b (image carries slots: ${manifest.format.slots_present.join(', ')})`);
 		}
 
-		// expand to the right view. `full` is a whole-image write: `factory`
-		// preserves NV (modem calibration / IMEI), `factory_blank` blanks it.
+		// expand to the right view.
+		//  - full  : whole-image write. `factory` preserves NV (modem calibration /
+		//            IMEI) and erases slot B; `factory_blank` also blanks NV.
+		//  - erase : blank just the target slot (its OS/boot/firmware), nothing else.
+		//  - slot/delta : the target slot's OS only.
 		let view;
 		if (mode === 'full') {
 			view = lib.expand(manifest, { kind: factoryBlank ? 'factory_blank' : 'factory' });
+		} else if (mode === 'erase') {
+			view = lib.eraseSlotView(manifest, targetSlot);
 		} else {
 			view = lib.expand(manifest, { kind: 'ota-image', slot: targetSlot });
 		}
