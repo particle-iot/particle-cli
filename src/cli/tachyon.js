@@ -176,6 +176,68 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(tachyon, 'update', 'OTA-update a Tachyon from a Particle image (A/B)', {
+		params: '<image>',
+		options: {
+			slot: {
+				description: 'Target slot: a | b (default: the image\'s slot, or the inactive slot)'
+			},
+			mode: {
+				description: 'factory | slot | delta | erase (default: slot)'
+			},
+			toggle: {
+				boolean: true,
+				description: 'Switch the active slot to the target after a successful write'
+			},
+			'dry-run': {
+				boolean: true,
+				description: 'Show the update plan without writing the device'
+			},
+			'no-verify': {
+				boolean: true,
+				description: 'Skip the manifest signature check (dev only)'
+			},
+			'factory-blank': {
+				boolean: true,
+				hidden: true,
+				description: 'With --mode factory, also blank modem NV (factory-fresh wipe; destroys calibration/IMEI)'
+			}
+		},
+		handler: (args) => {
+			const UpdateTachyonCommand = require('../cmd/update-tachyon');
+			return new UpdateTachyonCommand().run(args);
+		},
+		examples: {
+			'$0 $command image.zip --dry-run': 'Preview the OTA update plan',
+			'$0 $command image.zip --slot b --toggle': 'Write slot B and make it active',
+			'$0 $command image.zip --mode delta --slot b': 'Write only the changed partitions',
+			'$0 $command image.zip --mode factory': 'Re-provision LUNs + full flash, preserving modem NV',
+			'$0 $command image.zip --mode erase --slot b': 'Blank slot B (OS + boot + firmware)'
+		}
+	});
+
+	commandProcessor.createCommand(tachyon, 'slot', 'Show or switch the active A/B boot slot', {
+		params: '[target]',
+		options: {
+			'dry-run': {
+				boolean: true,
+				description: 'Show the planned slot change without writing the device'
+			},
+			'log-dir': {
+				description: 'Directory to save the log file'
+			}
+		},
+		handler: (args) => {
+			const SlotTachyonCommand = require('../cmd/slot-tachyon');
+			return new SlotTachyonCommand().run(args);
+		},
+		examples: {
+			'$0 $command': 'Show the current A/B slot state',
+			'$0 $command b': 'Make slot B the active boot slot',
+			'$0 $command a --dry-run': 'Preview switching to slot A without writing'
+		}
+	});
+
 	return tachyon;
 };
 

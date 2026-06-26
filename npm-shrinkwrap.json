@@ -11,6 +11,7 @@
       "dependencies": {
         "@particle/device-constants": "^4.1.0",
         "@particle/softap-setup": "^4.1.2",
+        "@particle/tachyon-image": "^0.1.0",
         "archiver": "^7.0.1",
         "binary-version-reader": "^4.0.2",
         "chalk": "^2.4.2",
@@ -702,6 +703,23 @@
       },
       "engines": {
         "node": ">=22"
+      }
+    },
+    "node_modules/@particle/tachyon-image": {
+      "version": "0.1.0",
+      "resolved": "https://registry.npmjs.org/@particle/tachyon-image/-/tachyon-image-0.1.0.tgz",
+      "integrity": "sha512-nJGl+ERpFAlg2f2WMfV5aWr3xZzs1ajZvqlVI7AITDszyQHJffVQ+hZQ/r0kFcCPrjYZuCPzwnYnvEkACqZO4A==",
+      "license": "UNLICENSED",
+      "dependencies": {
+        "fast-xml-parser": "^4.5.0",
+        "yauzl": "^3.2.0",
+        "yazl": "^3.3.1"
+      },
+      "bin": {
+        "particle-image": "dist/bin/particle-image.js"
+      },
+      "engines": {
+        "node": ">=18"
       }
     },
     "node_modules/@pkgjs/parseargs": {
@@ -4596,6 +4614,24 @@
       "resolved": "https://registry.npmjs.org/fast-safe-stringify/-/fast-safe-stringify-2.1.1.tgz",
       "integrity": "sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==",
       "license": "MIT"
+    },
+    "node_modules/fast-xml-parser": {
+      "version": "4.5.6",
+      "resolved": "https://registry.npmjs.org/fast-xml-parser/-/fast-xml-parser-4.5.6.tgz",
+      "integrity": "sha512-Yd4vkROfJf8AuJrDIVMVmYfULKmIJszVsMv7Vo71aocsKgFxpdlpSHXSaInvyYfgw2PRuObQSW2GFpVMUjxu9A==",
+      "funding": [
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/NaturalIntelligence"
+        }
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "strnum": "^1.0.5"
+      },
+      "bin": {
+        "fxparser": "src/cli/cli.js"
+      }
     },
     "node_modules/fastq": {
       "version": "1.19.1",
@@ -8721,6 +8757,12 @@
         "through2": "^2.0.3"
       }
     },
+    "node_modules/pend": {
+      "version": "1.2.0",
+      "resolved": "https://registry.npmjs.org/pend/-/pend-1.2.0.tgz",
+      "integrity": "sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==",
+      "license": "MIT"
+    },
     "node_modules/performance-now": {
       "version": "2.1.0",
       "resolved": "https://registry.npmjs.org/performance-now/-/performance-now-2.1.0.tgz",
@@ -10939,6 +10981,18 @@
         "url": "https://github.com/sponsors/sindresorhus"
       }
     },
+    "node_modules/strnum": {
+      "version": "1.1.2",
+      "resolved": "https://registry.npmjs.org/strnum/-/strnum-1.1.2.tgz",
+      "integrity": "sha512-vrN+B7DBIoTTZjnPNewwhx6cBA/H+IS7rfW68n7XxC1y7uoiGQBxaKzqucGUgavX15dJgiGztLJ8vxuEzwqBdA==",
+      "funding": [
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/NaturalIntelligence"
+        }
+      ],
+      "license": "MIT"
+    },
     "node_modules/structured-source": {
       "version": "3.0.2",
       "resolved": "https://registry.npmjs.org/structured-source/-/structured-source-3.0.2.tgz",
@@ -12832,6 +12886,27 @@
       "dependencies": {
         "camelcase": "^3.0.0",
         "lodash.assign": "^4.1.0"
+      }
+    },
+    "node_modules/yauzl": {
+      "version": "3.4.0",
+      "resolved": "https://registry.npmjs.org/yauzl/-/yauzl-3.4.0.tgz",
+      "integrity": "sha512-jIH9yLR9wqr0wOS0TpBvo/g/2UgZH5qePVbjgRliiF0BYvOZyaBknKsF+x9Iht0O6sqgnB93rCICdOZFecJuDw==",
+      "license": "MIT",
+      "dependencies": {
+        "pend": "~1.2.0"
+      },
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/yazl": {
+      "version": "3.3.1",
+      "resolved": "https://registry.npmjs.org/yazl/-/yazl-3.3.1.tgz",
+      "integrity": "sha512-BbETDVWG+VcMUle37k5Fqp//7SDOK2/1+T7X8TD96M3D9G8jK5VLUdQVdVjGi8im7FGkazX7kk5hkU8X4L5Bng==",
+      "license": "MIT",
+      "dependencies": {
+        "buffer-crc32": "^1.0.0"
       }
     },
     "node_modules/yocto-queue": {
