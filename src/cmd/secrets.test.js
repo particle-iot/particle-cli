@@ -144,7 +144,7 @@ describe('SecretsCommand', () => {
 			};
 			secretsStub.get.resolves(mockSecret);
 
-			await secretsCommand.get({ params: { key: 'MY_SECRET' }, sandbox: true });
+			await secretsCommand.get({ params: { name: 'MY_SECRET' }, sandbox: true });
 
 			expect(secretsStub.get).to.have.been.calledWith({
 				api: secretsCommand.api,
@@ -166,7 +166,7 @@ describe('SecretsCommand', () => {
 			};
 			secretsStub.get.resolves(mockSecret);
 
-			await secretsCommand.get({ params: { key: 'ORG_SECRET' }, org: 'my-org' });
+			await secretsCommand.get({ params: { name: 'ORG_SECRET' }, org: 'my-org' });
 
 			expect(secretsStub.get).to.have.been.calledWith({
 				api: secretsCommand.api,
