@@ -338,15 +338,20 @@ describe('SecretsCommand', () => {
 				createdAt: '2024-01-01',
 				updatedAt: '2024-01-02',
 				lastAccessedAt: null,
-				logicFunctions: ['func1', 'func2'],
+				logicFunctions: [
+					{ id: 'func1', name: 'Func One' },
+					{ id: 'func2', name: 'Func Two' }
+				],
 				integrations: []
 			};
 
 			secretsCommand._printSecret(secret);
 
 			expect(secretsCommand.ui.write).to.have.been.calledWith('    Logic Functions:');
-			expect(secretsCommand.ui.chalk.dim).to.have.been.calledWith(sinon.match(/func1/));
-			expect(secretsCommand.ui.chalk.dim).to.have.been.calledWith(sinon.match(/func2/));
+			expect(secretsCommand.ui.write).to.have.been.calledWith(sinon.match(/Func One/));
+			expect(secretsCommand.ui.write).to.have.been.calledWith(sinon.match(/Func Two/));
+			expect(secretsCommand.ui.chalk.dim).to.have.been.calledWith(sinon.match(/logic\/functions\/func1\/details/));
+			expect(secretsCommand.ui.chalk.dim).to.have.been.calledWith(sinon.match(/logic\/functions\/func2\/details/));
 		});
 
 		it('prints secret with no logic functions', () => {
@@ -373,14 +378,16 @@ describe('SecretsCommand', () => {
 				lastAccessedAt: null,
 				logicFunctions: [],
 				integrations: [
-					{ id: 'int1', product_slug: null },
-					{ id: 'int2', product_slug: 'my-product' }
+					{ id: 'int1', name: 'Integration One', product_slug: null },
+					{ id: 'int2', name: 'Integration Two', product_slug: 'my-product' }
 				]
 			};
 
 			secretsCommand._printSecret(secret);
 
 			expect(secretsCommand.ui.write).to.have.been.calledWith('    Integrations:');
+			expect(secretsCommand.ui.write).to.have.been.calledWith(sinon.match(/Integration One/));
+			expect(secretsCommand.ui.write).to.have.been.calledWith(sinon.match(/Integration Two/));
 			expect(secretsCommand.ui.chalk.dim).to.have.been.calledWith(sinon.match(/int1/));
 			expect(secretsCommand.ui.chalk.dim).to.have.been.calledWith(sinon.match(/int2/));
 		});
@@ -433,7 +440,7 @@ describe('SecretsCommand', () => {
 				createdAt: '2024-01-01',
 				updatedAt: '2024-01-02',
 				lastAccessedAt: null,
-				logicFunctions: ['func1'],
+				logicFunctions: [{ id: 'func1', name: 'Func One' }],
 				integrations: []
 			};
 

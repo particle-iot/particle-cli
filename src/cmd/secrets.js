@@ -105,8 +105,8 @@ module.exports = class SecretsCommand extends CLICommandBase {
 			if (secret.logicFunctions.length > 0) {
 				this.ui.write('    Logic Functions:');
 				secret.logicFunctions.forEach(logicFunction => {
-					const logicUrl = `${this.consoleBaseUrl}/logic/functions/${logicFunction}/details`;
-					this.ui.write(this.ui.chalk.dim(`     - ${logicUrl}`));
+					const logicUrl = `${this.consoleBaseUrl}/logic/functions/${logicFunction.id}/details`;
+					this.ui.write(`     - ${logicFunction.name}: ${this.ui.chalk.dim(logicUrl)}`);
 				});
 			} else {
 				this.ui.write(`    Logic Functions: ${this.ui.chalk.dim('(none)')}`);
@@ -126,7 +126,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 					} else {
 						integrationRoute = `${this.consoleBaseUrl}/integrations/${integration.id}`;
 					}
-					this.ui.write(this.ui.chalk.dim(`     - ${integrationRoute}`));
+					this.ui.write(`     - ${integration.name}: ${this.ui.chalk.dim(integrationRoute)}`);
 				});
 			} else {
 				this.ui.write(`    Integrations: ${this.ui.chalk.dim('(none)')}`);
