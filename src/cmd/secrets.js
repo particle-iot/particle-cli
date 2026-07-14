@@ -47,7 +47,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 
 	async get({ params, org, sandbox }){
 		this._validateScope({ sandbox, org });
-		const name = params.key;
+		const name = params.name;
 		const secretData = await this.ui.showBusySpinnerUntilResolved(
 			'Retrieving secret',
 			secrets.get({ api: this.api, name, org, sandbox })
