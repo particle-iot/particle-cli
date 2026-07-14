@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.49.2 - Jul 14 2026
+* Fix bug with get secrets rendering logic function URLs incorrectly
+* Add names of logic functions and integrations that use a specific secret
+
 # 3.49.1 - Jul 14 2026
 * Fix config secrets get failing due to internal bug
 
