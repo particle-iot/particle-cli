@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.49.1 - Jul 14 2026
+* Fix config secrets get failing due to internal bug
+
 # 3.49.0 - Jun 16 2026
 * Add integrations command for create, list, update and delete.
 * Fix unix intaller cli shasum verification check.
