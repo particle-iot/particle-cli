@@ -23,11 +23,25 @@ module.exports = ({ commandProcessor, root }) => {
 			'follow': {
 				boolean: true,
 				description: 'Reopen the port after it closes, for example when the device resets'
+			},
+			'timestamp': {
+				boolean: true,
+				description: 'Prepend a timestamp to each line of output'
+			},
+			'utc': {
+				boolean: true,
+				description: 'Use UTC instead of local time for the timestamp'
 			}
 		}, portOption),
 		handler: (args) => {
 			const SerialCommands = require('../cmd/serial');
 			return new SerialCommands().monitorPort(args);
+		},
+		examples: {
+			'$0 $command': 'Display messages from a device',
+			'$0 $command --follow': 'Display messages from a device, reopening the port when the device resets',
+			'$0 $command --timestamp': 'Prepend the local time to each line of output',
+			'$0 $command --timestamp --utc': 'Prepend the UTC time to each line of output'
 		}
 	});
 
