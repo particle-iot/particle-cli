@@ -119,15 +119,17 @@ async function downloadBinary({ platformName, module, baseUrl, version }) {
  * @returns {Promise<unknown>} - a promise that resolves when the file is downloaded
  */
 async function downloadFile({ url, directory, filename }) {
-	let file;
+	filename = filename || url.match(/.*\/(.*)/)[1];
+	await fs.ensureDir(directory);
+	const filePath = path.join(directory, filename);
+	const file = fs.createWriteStream(filePath);
 	try {
-		filename = filename || url.match(/.*\/(.*)/)[1];
-		await fs.ensureDir(directory);
-		file = fs.createWriteStream(directory + '/' + filename);
 		await new Promise((resolve, reject) => {
 			file.on('error', (error) => {
 				reject(error);
 			});
+			// only resolve once the data has been flushed to disk. Resolving when the
+			// response ends leaves the file truncated for whoever reads it next
 			file.on('finish', () => {
 				resolve();
 			});
@@ -136,13 +138,13 @@ async function downloadFile({ url, directory, filename }) {
 				if (response.statusCode !== 200) {
 					req.abort();
 					reject(new Error('Failed to download file: ' + response.statusCode));
+					return;
 				}
 
-				response.pipe(file);
-				response.on('end', () => {
-					file.end();
-					resolve(filename);
+				response.on('error', (error) => {
+					reject(error);
 				});
+				response.pipe(file);
 			});
 
 			req.on('error', (err) => {
@@ -150,10 +152,10 @@ async function downloadFile({ url, directory, filename }) {
 			});
 		});
 		return filename;
-	} finally {
-		if (file) {
-			file.end();
-		}
+	} catch (error) {
+		file.destroy();
+		await fs.remove(filePath);
+		throw error;
 	}
 
 }
