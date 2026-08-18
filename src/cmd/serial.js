@@ -23,6 +23,7 @@ const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
 const semver = require('semver');
 const { getProtectionStatus, disableDeviceProtection } = require('../lib/device-protection-helper');
+const { createTimestampWriter } = require('../lib/serial-timestamp');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
@@ -131,11 +132,19 @@ module.exports = class SerialCommand extends CLICommandBase {
 			});
 	}
 
-	monitorPort({ port, follow }){
+	monitorPort({ port, follow, timestamp, utc }){
+		if (utc && !timestamp){
+			timestamp = true;
+		}
+
 		let cleaningUp = false;
 		let selectedDevice;
 		let serialPort;
 		const { api, auth } = this._particleApi();
+
+		const writeData = timestamp
+			? createTimestampWriter({ write: (text) => process.stdout.write(text), utc })
+			: (text) => process.stdout.write(text);
 
 		const displayError = (err) => {
 			if (err){
@@ -218,7 +227,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			serialPort = new SerialPort({ path: selectedDevice.port, ...SERIAL_PORT_DEFAULTS });
 			serialPort.on('close', handleClose);
 			serialPort.on('readable', () => {
-				process.stdout.write(serialPort.read().toString());
+				writeData(serialPort.read().toString());
 			});
 			serialPort.on('error', displayError);
 			serialPort.open((err) => {
