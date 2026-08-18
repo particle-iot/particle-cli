@@ -154,6 +154,7 @@ async function downloadFile({ url, directory, filename }) {
 		return filename;
 	} catch (error) {
 		file.destroy();
+		await new Promise((resolve) => file.once('close', resolve));
 		await fs.remove(filePath);
 		throw error;
 	}
