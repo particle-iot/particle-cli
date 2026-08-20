@@ -148,6 +148,7 @@ const ubuntu24 = Object.freeze({
 		steps.downloadOS,
 		steps.printOSInfo,
 		steps.registerDeviceStep,
+		steps.getESIMProfilesStep,
 		steps.createConfigBlobStep,
 		steps.flashOSAndConfigStep,
 		steps.setupCompletedStep
