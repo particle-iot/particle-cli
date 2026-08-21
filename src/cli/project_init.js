@@ -158,7 +158,13 @@ module.exports.command = (argv) => {
 	return site.dialog()
 		.then((ready) => {
 			if (ready){
-				return site.run(cmd);
+				return Promise.resolve(site.run(cmd))
+					.then(() => {
+						if (argv.ai){
+							const ProjectAICommand = require('../cmd/project-ai');
+							return new ProjectAICommand().addAIFiles({ dir: site.directory() });
+						}
+					});
 			}
 		});
 };

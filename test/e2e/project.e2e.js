@@ -21,6 +21,7 @@ describe('Project Commands', () => {
 		'',
 		'Commands:',
 		'  create  Create a new project in the current or specified directory',
+		'  ai      Add AI assistant instruction files (AGENTS.md, CLAUDE.md, copilot-instructions.md) to a project',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
@@ -144,6 +145,76 @@ describe('Project Commands', () => {
 				'src',
 				'src/test-proj.cpp'
 			]);
+		});
+
+		it('Creates a project with AI assistant instruction files using the `--ai` flag', async () => {
+			const args = ['project', 'create', '--name', projName, '--ai', PATH_TMP_DIR];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(await fs.exists(localProjPath)).to.equal(true);
+			expect(stdout).to.include(`Initializing project in directory ${localProjPath}...`);
+			expect(stdout).to.include(`A new project has been initialized in directory ${localProjPath}`);
+			expect(stdout).to.include('Created .github/copilot-instructions.md');
+			expect(stdout).to.include('Created AGENTS.md');
+			expect(stdout).to.include('Created CLAUDE.md');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			const contents = await fs.getDirectoryContents(localProjPath, { maxDepth: 2 });
+			const stripRoot = (x) => x.replace(localProjPath + path.sep, '');
+
+			expect(contents.map(stripRoot)).to.eql([
+				'.github',
+				'.github/copilot-instructions.md',
+				'.github/workflows',
+				'.github/workflows/main.yaml',
+				'.gitignore',
+				'AGENTS.md',
+				'CLAUDE.md',
+				'README.md',
+				'project.properties',
+				'src',
+				'src/test-proj.cpp'
+			]);
+		});
+	});
+
+	describe('Project AI Subcommand', () => {
+		beforeEach(async () => {
+			await cli.run(['project', 'create', '--name', projName, PATH_TMP_DIR], { reject: true });
+		});
+
+		it('Adds AI assistant instruction files to a project', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['project', 'ai', localProjPath]);
+
+			expect(stdout).to.include('Created .github/copilot-instructions.md');
+			expect(stdout).to.include('Created AGENTS.md');
+			expect(stdout).to.include('Created CLAUDE.md');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+			expect(await fs.exists(path.join(localProjPath, 'AGENTS.md'))).to.equal(true);
+			expect(await fs.exists(path.join(localProjPath, 'CLAUDE.md'))).to.equal(true);
+			expect(await fs.exists(path.join(localProjPath, '.github', 'copilot-instructions.md'))).to.equal(true);
+		});
+
+		it('Skips existing AI assistant instruction files when run again', async () => {
+			await cli.run(['project', 'ai', localProjPath], { reject: true });
+
+			const { stdout, stderr, exitCode } = await cli.run(['project', 'ai', localProjPath]);
+
+			expect(stdout).to.include('Skipped .github/copilot-instructions.md (already exists)');
+			expect(stdout).to.include('Skipped AGENTS.md (already exists)');
+			expect(stdout).to.include('Skipped CLAUDE.md (already exists)');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails when run in a directory that is not a Particle project', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['project', 'ai', PATH_TMP_DIR]);
+
+			expect(stdout).to.include(`${PATH_TMP_DIR} is not a Particle project directory (no project.properties found)`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
 		});
 	});
 });

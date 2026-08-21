@@ -75,7 +75,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'logic-function enable', 'logic-function delete', 'logic-function logs', 'logic-function',
 		'login', 'logout', 'monitor', 'nyan', 'preprocess',
 		'product device list', 'product device add', 'product device remove',
-		'product device', 'product', 'profile', 'project create', 'project', 'publish',
+		'product device', 'product', 'profile', 'project create', 'project ai', 'project', 'publish',
 		'serial list', 'serial monitor', 'serial identify', 'serial wifi',
 		'serial mac', 'serial inspect', 'serial flash', 'serial', 'subscribe',
 		'tachyon setup', 'tachyon download-package', 'tachyon clean-cache',

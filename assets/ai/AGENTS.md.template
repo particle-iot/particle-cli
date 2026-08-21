@@ -1,0 +1,103 @@
+# Particle Firmware Project Instructions
+
+Instructions for AI coding assistants working on this Particle IoT firmware project.
+
+## Background
+
+- Particle devices are programmed in C++17 (some older devices use C++11).
+- Devices run an operating system called Device OS that provides a standard API for system and hardware services.
+- Each device runs a single firmware binary that implements all of the desired functionality.
+- Startup code goes in the `setup()` function. Operational code goes in the `loop()` function; keep it non-blocking and return as quickly as possible.
+- Functions to interact with cloud services are in the `Particle` class. Network connectivity is handled by the `Cellular`, `WiFi`, or `Ethernet` classes.
+- In most cases devices are pre-configured with network credentials, so applications do not need code to set them up.
+- The API has many similarities to the Wiring API used on Arduino devices.
+
+## Project layout
+
+- `project.properties`: project metadata and library dependencies.
+- `.vscode/settings.json`: the target platform (`particle.targetPlatform`) and Device OS version (`particle.firmwareVersion`), for example:
+  ```json
+  {
+    "particle.firmwareVersion": "6.5.0",
+    "particle.targetPlatform": "p2"
+  }
+  ```
+  If `particle.targetPlatform` is missing, assume `msom`. If `particle.firmwareVersion` is missing, use the latest version installed in the toolchain directory (see Device OS headers below).
+- `src/`: application source code. The main source file contains `setup()` and `loop()`.
+- `lib/`: local copies of libraries used by the project.
+
+## Firmware conventions
+
+Start the main source file with this standard boilerplate:
+
+```cpp
+#include "Particle.h"
+
+SYSTEM_MODE(AUTOMATIC);
+
+SerialLogHandler logHandler(LOG_LEVEL_INFO);
+```
+
+- Use the logging library (`Log.trace`, `Log.info`, `Log.warn`, `Log.error`) instead of `Serial.print`.
+- Avoid long `delay()` calls in `loop()`. Schedule work with `millis()` comparisons or software timers so the loop stays non-blocking.
+- Check `Particle.connected()` before publishing events to the cloud.
+- See https://docs.particle.io/firmware/best-practices/firmware-introduction/ for more best practices.
+
+## Device OS API documentation
+
+LLM-friendly documentation is published on docs.particle.io:
+
+- Documentation index: https://docs.particle.io/llms.txt
+- Device OS firmware API reference (markdown): https://docs.particle.io/reference/device-os/firmware.md
+
+## Device OS headers
+
+When the Particle local toolchain is installed, the Device OS C++ header files are available at `~/.particle/toolchains/deviceOS/<version>/` on Mac and Linux, or `%USERPROFILE%\.particle\toolchains\deviceOS\<version>\` on Windows, where `<version>` matches `particle.firmwareVersion` in `.vscode/settings.json`. If that setting is missing, use the latest version directory found under the toolchain directory. Use the headers as a reference for the exact API signatures.
+
+## Software libraries
+
+Firmware functionality can be augmented with community libraries. Install a library from the project root (the directory containing `project.properties`):
+
+```
+particle library copy <name>
+```
+
+This downloads the library into the `lib/` directory, creating it if needed.
+
+To find the right library name:
+
+- If you know the library name or one distinctive keyword (a chip or product name like `DS2482` or `neopixel`), run `particle library search <term>`. It matches a single literal substring of the library name and one-line description only, so multi-word capability queries like `1-wire to i2c bridge` return nothing.
+- When searching by capability, or when a search returns zero or ambiguous results, do not keep retrying search terms. Instead, download the full library index once and query it locally:
+
+  ```
+  curl -s https://docs.particle.io/assets/files/libraryIndex.json -o /tmp/libraryIndex.json
+  ```
+
+  The index holds every public library, most popular first, including each library's full readme, so it supports the full-text capability searches that `particle library search` cannot do. It is about 3 MB: query it with `jq` or a script instead of reading it into context. In each record of `.libraries[]`, `attributes.name` is the name to pass to `particle library copy`, `attributes.sentence` is the one-line description, and `readme` is the full readme text. Prefer earlier (more popular) matches. Example capability search:
+
+  ```
+  jq -r '.libraries[] | select(((.attributes.sentence // "") + (.readme // "")) | test("1-wire.*i2c|i2c.*1-wire"; "i")) | .attributes.name + " - " + (.attributes.sentence // "")' /tmp/libraryIndex.json
+  ```
+
+## Verifying the firmware compiles
+
+Compile the project in the cloud from the project root:
+
+```
+particle compile <platform> . --saveTo firmware.bin
+```
+
+Replace `<platform>` with `particle.targetPlatform` from `.vscode/settings.json`, such as `msom`, `boron`, `p2`, or `photon2`. If that setting is missing, assume `msom`. Fix any compilation errors and compile again until the build succeeds.
+
+If you are running inside VS Code with the Particle Workbench extension and can execute VS Code build tasks, you can compile locally instead by running the `Particle: Compile application (local)` task.
+
+## Testing on a device
+
+If a device is available, flash the firmware and watch its log output:
+
+```
+particle flash <device-name>
+particle serial monitor --follow
+```
+
+`particle flash <device-name>` compiles the source code in the cloud and flashes the device over the air. Use `particle flash --local` to flash a device connected over USB.
