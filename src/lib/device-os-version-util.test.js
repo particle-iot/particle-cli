@@ -87,6 +87,26 @@ describe('downloadDeviceOsVersionBinaries', () => {
 
 	});
 
+	it('should not resolve until the downloaded files are fully written to disk', async() => {
+		const largeBinary = Buffer.concat(new Array(200).fill(binary));
+		const api = {
+			getDeviceOsVersions: sinon.stub().resolves({
+				version: '2.3.1',
+				base_url: 'https://api.particle.io/v1/firmware/device-os/v2.3.1',
+				modules: [
+					{ filename: 'photon-system-part1@2.3.1.bin', prefixInfo: { moduleFunction: 'system-part' } }
+				]
+			})
+		};
+		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1')
+			.intercept('/photon-system-part1@2.3.1.bin', 'GET')
+			.reply(200, largeBinary);
+
+		const data = await downloadDeviceOsVersionBinaries({ api, platformId: 6, version: '2.3.1', ui });
+
+		expect(fs.statSync(data[0]).size).to.equal(largeBinary.length);
+	});
+
 	it('should fail if the platform is not supported by the requested version', async() => {
 		let error;
 		const api = {
