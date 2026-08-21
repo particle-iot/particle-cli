@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const { loadTemplateFiles } = require('../lib/template-processor');
-const aiTemplatePath = path.join(__dirname, '/../../assets/ai');
+const aiTemplatePath = path.join(__dirname, '../../assets/ai');
 const CLICommandBase = require('./base');
 
 /**
