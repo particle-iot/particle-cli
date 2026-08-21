@@ -56,16 +56,28 @@ When the Particle local toolchain is installed, the Device OS C++ header files a
 
 ## Software libraries
 
-Firmware functionality can be augmented with community libraries. To find and install a library, run these commands from the project root (the directory containing `project.properties`):
+Firmware functionality can be augmented with community libraries. Install a library from the project root (the directory containing `project.properties`):
 
 ```
-particle library search <term>
 particle library copy <name>
 ```
 
-`particle library copy` downloads the library into the `lib/` directory, creating it if needed.
+This downloads the library into the `lib/` directory, creating it if needed.
 
-An index of the available libraries, most popular first, can be downloaded from https://docs.particle.io/assets/files/libraryIndex.json. For each record in the JSON file, `attributes.name` is the name to pass to `particle library copy`, and `attributes.sentence`, `attributes.paragraph`, and the readme are useful for finding relevant libraries.
+To find the right library name:
+
+- If you know the library name or one distinctive keyword (a chip or product name like `DS2482` or `neopixel`), run `particle library search <term>`. It matches a single literal substring of the library name and one-line description only, so multi-word capability queries like `1-wire to i2c bridge` return nothing.
+- When searching by capability, or when a search returns zero or ambiguous results, do not keep retrying search terms. Instead, download the full library index once and query it locally:
+
+  ```
+  curl -s https://docs.particle.io/assets/files/libraryIndex.json -o /tmp/libraryIndex.json
+  ```
+
+  The index holds every public library, most popular first, including each library's full readme, so it supports the full-text capability searches that `particle library search` cannot do. It is about 3 MB: query it with `jq` or a script instead of reading it into context. In each record of `.libraries[]`, `attributes.name` is the name to pass to `particle library copy`, `attributes.sentence` is the one-line description, and `readme` is the full readme text. Prefer earlier (more popular) matches. Example capability search:
+
+  ```
+  jq -r '.libraries[] | select(((.attributes.sentence // "") + (.readme // "")) | test("1-wire.*i2c|i2c.*1-wire"; "i")) | .attributes.name + " - " + (.attributes.sentence // "")' /tmp/libraryIndex.json
+  ```
 
 ## Verifying the firmware compiles
 
