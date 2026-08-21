@@ -38,7 +38,7 @@ describe('ProjectAICommand', () => {
 			const claude = await fs.readFile(path.join(projectDir, 'CLAUDE.md'), 'utf8');
 			const copilot = await fs.readFile(path.join(projectDir, '.github', 'copilot-instructions.md'), 'utf8');
 			expect(agents).to.include('# Particle Firmware Project Instructions');
-			expect(claude).to.include('Read `AGENTS.md`');
+			expect(claude).to.include('@AGENTS.md');
 			expect(copilot).to.include('Read `AGENTS.md`');
 			const output = projectAICommand.ui.stdout.write.getCalls().map((call) => call.args[0]).join('');
 			expect(output).to.include('Created AGENTS.md');
