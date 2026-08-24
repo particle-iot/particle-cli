@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.50.0 - Aug 24 2026
+* Fix unknown module 131 when downloading and flashing Device OS
+* Add --timestamp option to particle serial
+* Add AI templates to project creation
+
 # 3.49.2 - Jul 14 2026
 * Fix bug with get secrets rendering logic function URLs incorrectly
 * Add names of logic functions and integrations that use a specific secret
