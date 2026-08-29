@@ -106,6 +106,7 @@ const ubuntu20 = Object.freeze({
 		steps.registerDeviceStep,
 		steps.getESIMProfilesStep,
 		steps.createConfigBlobStep,
+		steps.verifyConfigPartitionStep,
 		steps.flashOSAndConfigStep,
 		steps.setupCompletedStep
 	])
@@ -149,6 +150,7 @@ const ubuntu24 = Object.freeze({
 		steps.printOSInfo,
 		steps.registerDeviceStep,
 		steps.createConfigBlobStep,
+		steps.verifyConfigPartitionStep,
 		steps.flashOSAndConfigStep,
 		steps.setupCompletedStep
 	])

@@ -116,7 +116,7 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(tachyon, 'backup', 'Backup Tachyon NV data', {
 		options: {
 			'output-dir': {
-				description: 'Directory to save the backup files'
+				description: 'Directory to save the backup files. Defaults to the backups folder in the Particle data directory'
 			},
 			'log-dir': {
 				description: 'Directory to save the log files'
@@ -136,7 +136,7 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(tachyon, 'restore', 'Restore Tachyon NV data', {
 		options: {
 			'input-dir': {
-				description: 'Directory containing the NV data files'
+				description: 'Directory containing the NV data files. Defaults to the backups folder in the Particle data directory'
 			},
 			'log-dir': {
 				description: 'Directory to save the log files'

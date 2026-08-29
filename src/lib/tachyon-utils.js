@@ -543,6 +543,97 @@ async function readManifestFromLocalFile(path, targetFile = 'manifest.json') {
 	}
 }
 
+const IMAGE_MANIFEST_FILE = 'manifest.json';
+// The first-boot configuration blob lives in `misc`: 1MiB at a 4096-byte sector.
+const CONFIG_PARTITION = 'misc';
+const CONFIG_PARTITION_SECTORS = 256;
+const SECTOR_SIZE_IN_BYTES = 4096;
+
+function xmlAttr(attrs, name) {
+	const m = new RegExp(`\\b${name}="([^"]*)"`).exec(attrs);
+	return m ? m[1] : undefined;
+}
+
+/**
+ * Parse the flat, attribute-only Qualcomm rawprogram grammar into partition
+ * extents. Sector values may be ptool expressions ("NUM_DISK_SECTORS-5.") which
+ * only resolve against a real device, so those entries are skipped.
+ * @param {string[]} xmlContents  rawprogramN.xml sources
+ * @returns {Map<string, {lun: number, startSector: number, numSectors: number}>}
+ */
+function parseRawProgramPartitions(xmlContents) {
+	const table = new Map();
+	for (const xml of xmlContents) {
+		const re = /<(?:program|erase)\b([^>]*?)\/?>/g;
+		let match;
+		while ((match = re.exec(xml)) !== null) {
+			const attrs = match[1];
+			const label = xmlAttr(attrs, 'label');
+			const start = Number(xmlAttr(attrs, 'start_sector'));
+			const num = Number(xmlAttr(attrs, 'num_partition_sectors'));
+			const lun = Number(xmlAttr(attrs, 'physical_partition_number'));
+			if (!label || !Number.isFinite(start) || !Number.isFinite(num) || !Number.isFinite(lun)) {
+				continue;
+			}
+			const prev = table.get(label);
+			// An erase entry carries the whole declared extent and each program
+			// chunk its own slice, so the footprint is the union of both.
+			if (!prev) {
+				table.set(label, { lun, startSector: start, numSectors: num });
+			} else {
+				const startSector = Math.min(prev.startSector, start);
+				const end = Math.max(prev.startSector + prev.numSectors, start + num);
+				table.set(label, { lun: prev.lun, startSector, numSectors: end - startSector });
+			}
+		}
+	}
+	return table;
+}
+
+/**
+ * The partition table a system image DECLARES, read from the rawprogram XMLs its
+ * manifest points at.
+ *
+ * This is the layout the device will have AFTER the image is flashed, which is
+ * why a pre-flash check has to be made against it: the live GPT still describes
+ * the OUTGOING layout, and on a 20.04 -> 24.04 setup the two differ.
+ *
+ * @param {Object} args
+ * @param {string} args.imagePath  a system image zip, or an unpacked image directory
+ */
+async function readPartitionsFromImage({ imagePath }) {
+	const stats = await fs.stat(imagePath);
+	let manifest;
+	let xmlContents;
+
+	if (stats.isDirectory()) {
+		manifest = JSON.parse(await fs.readFile(path.join(imagePath, IMAGE_MANIFEST_FILE), 'utf8'));
+		const base = manifest?.targets?.[0]?.qcm6490?.edl?.base || '.';
+		const programXml = manifest?.targets?.[0]?.qcm6490?.edl?.program_xml || [];
+		xmlContents = await Promise.all(
+			programXml.map((f) => fs.readFile(path.join(imagePath, base, f), 'utf8'))
+		);
+	} else {
+		const dir = await unzip.Open.file(imagePath);
+		const manifestEntry = dir.files.find((f) => path.basename(f.path) === IMAGE_MANIFEST_FILE);
+		if (!manifestEntry) {
+			throw new Error(`Unable to find ${IMAGE_MANIFEST_FILE} in ${imagePath}`);
+		}
+		manifest = JSON.parse((await manifestEntry.buffer()).toString());
+		const programXml = manifest?.targets?.[0]?.qcm6490?.edl?.program_xml || [];
+		xmlContents = [];
+		for (const name of programXml) {
+			const entry = dir.files.find((f) => f.path.endsWith(name));
+			if (!entry) {
+				throw new Error(`Unable to find ${name} in ${imagePath}`);
+			}
+			xmlContents.push((await entry.buffer()).toString());
+		}
+	}
+
+	return parseRawProgramPartitions(xmlContents);
+}
+
 module.exports = {
 	addLogHeaders,
 	addManifestInfoLog,
@@ -554,5 +645,10 @@ module.exports = {
 	handleFlashError,
 	promptOSSelection,
 	isFile,
-	readManifestFromLocalFile
+	readManifestFromLocalFile,
+	readPartitionsFromImage,
+	parseRawProgramPartitions,
+	CONFIG_PARTITION,
+	CONFIG_PARTITION_SECTORS,
+	SECTOR_SIZE_IN_BYTES
 };
