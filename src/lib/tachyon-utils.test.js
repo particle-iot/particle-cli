@@ -3,7 +3,8 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const { expect } = require('../../test/setup');
-const { parseRawProgramPartitions, readPartitionsFromImage } = require('./tachyon-utils');
+const GPT = require('gpt');
+const { parseRawProgramPartitions, readPartitionsFromImage, readLunCapacities } = require('./tachyon-utils');
 
 const rawprogram0 = `<?xml version="1.0" ?>
 <data>
@@ -67,6 +68,46 @@ describe('tachyon-utils partition tables', () => {
 		it('throws when a referenced rawprogram file is missing', async () => {
 			await fs.remove(path.join(dir, 'rawprogram0.xml'));
 			await expect(readPartitionsFromImage({ imagePath: dir })).to.be.rejected;
+		});
+	});
+
+	describe('readLunCapacities', () => {
+		let dir;
+
+		/** A primary GPT whose backup header sits at `lastSector`. */
+		async function writeGpt(lun, lastSector) {
+			const gpt = new GPT({ blockSize: 4096 });
+			gpt.currentLBA = 1n;
+			gpt.backupLBA = BigInt(lastSector);
+			gpt.firstLBA = 6n;
+			gpt.lastLBA = BigInt(lastSector - 5);
+			gpt.tableOffset = 2n;
+			const buffer = Buffer.alloc(gpt.blockSize * 6);
+			gpt.write(buffer, gpt.blockSize);
+			await fs.writeFile(path.join(dir, `gpt_main${lun}.bin`), buffer);
+		}
+
+		beforeEach(async () => {
+			dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tachyon-gpt-'));
+		});
+
+		afterEach(async () => {
+			await fs.remove(dir);
+		});
+
+		it('reports each LUN size from the GPT the device is running', async () => {
+			// The firehose resolves NUM_DISK_SECTORS against the real LUN, so this is
+			// the authoritative size -- the provisioning XML only records a request.
+			await writeGpt(1, 2068);
+			await writeGpt(5, 36863);
+			expect(await readLunCapacities({ gptPath: dir })).to.eql([
+				{ lun: 1, sectors: 2069 },
+				{ lun: 5, sectors: 36864 }
+			]);
+		});
+
+		it('skips a LUN that has no GPT, as on an EVT device without LUN 6', async () => {
+			expect(await readLunCapacities({ gptPath: dir })).to.eql([]);
 		});
 	});
 });

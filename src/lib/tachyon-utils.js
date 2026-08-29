@@ -140,7 +140,53 @@ async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, g
 		// Ignore other errors as the gpt read will fail for LUN 6 for EVT devices.
 		// If there was an actual error reading the partitions, it will trigger an error in parsePartitions.
 	}
+	await logLunCapacities({ gptPath: tempPath, logFile });
 	return parsePartitions({ gptPath: tempPath });
+}
+
+/**
+ * The real size of each LUN, straight off the device.
+ *
+ * The firehose resolves NUM_DISK_SECTORS against the actual LUN when it writes the
+ * GPT, so the header's backup-header LBA is the last sector that LUN has -- the
+ * provisioning XML only ever states what was REQUESTED, which UFS rounds up to a
+ * whole number of allocation units. This is therefore the authoritative answer to
+ * "how big is LUN n on this device", and it costs nothing: the GPTs are already
+ * on disk from the read above.
+ */
+async function readLunCapacities({ gptPath }) {
+	const capacities = [];
+	for (let i = 0; i <= 6; i++) {
+		try {
+			const buffer = await fs.readFile(path.join(gptPath, `gpt_main${i}.bin`));
+			const gpt = new GPT({ blockSize: 4096 });
+			gpt.parse(buffer, gpt.blockSize);
+			// backupLBA is the last addressable sector, so the count is one more.
+			capacities.push({ lun: i, sectors: Number(gpt.backupLBA) + 1 });
+		} catch {
+			// LUN 6 does not exist on EVT devices; a LUN we cannot read simply has
+			// no reportable size.
+		}
+	}
+	return capacities;
+}
+
+async function logLunCapacities({ gptPath, logFile }) {
+	if (!logFile) {
+		return;
+	}
+	try {
+		const capacities = await readLunCapacities({ gptPath });
+		if (!capacities.length) {
+			return;
+		}
+		const lines = capacities.map(({ lun, sectors }) =>
+			`  LUN ${lun}: ${sectors} sectors (${Math.round((sectors * 4096) / 1024 / 1024)} MiB)`
+		);
+		fs.appendFileSync(logFile, `UFS LUN geometry read from the device GPT:${os.EOL}${lines.join(os.EOL)}${os.EOL}`);
+	} catch {
+		// Diagnostics only: never fail a flash because the geometry could not be logged.
+	}
 }
 
 async function parsePartitions({ gptPath }) {
@@ -647,6 +693,7 @@ module.exports = {
 	isFile,
 	readManifestFromLocalFile,
 	readPartitionsFromImage,
+	readLunCapacities,
 	parseRawProgramPartitions,
 	CONFIG_PARTITION,
 	CONFIG_PARTITION_SECTORS,
