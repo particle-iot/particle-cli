@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const { expect } = require('../../test/setup');
 const GPT = require('gpt');
-const { parseRawProgramPartitions, readPartitionsFromImage, readLunCapacities } = require('./tachyon-utils');
+const { parseRawProgramPartitions, readPartitionsFromImage, readLunCapacities, partitionDefinitions, getIdentification } = require('./tachyon-utils');
 
 const rawprogram0 = `<?xml version="1.0" ?>
 <data>
@@ -68,6 +68,91 @@ describe('tachyon-utils partition tables', () => {
 		it('throws when a referenced rawprogram file is missing', async () => {
 			await fs.remove(path.join(dir, 'rawprogram0.xml'));
 			await expect(readPartitionsFromImage({ imagePath: dir })).to.be.rejected;
+		});
+	});
+
+	describe('partitionDefinitions', () => {
+		const table = [
+			{ lun: 0, partition: { name: 'system', firstLBA: 100n, lastLBA: 199n } },
+			{ lun: 5, partition: { name: 'fsg', firstLBA: 64n, lastLBA: 1087n } }
+		];
+
+		it('throws when a required partition is missing', () => {
+			expect(() => partitionDefinitions({
+				partitionList: ['fsg', 'boot_a'],
+				partitionTable: table,
+				deviceId: 'abc',
+				dir: '/tmp'
+			})).to.throw('Partition boot_a not found in device partition table');
+		});
+
+		it('skips a missing partition that is declared optional', () => {
+			const parts = partitionDefinitions({
+				partitionList: ['fsg', 'boot_a', 'boot_b'],
+				partitionTable: table,
+				deviceId: 'abc',
+				dir: '/tmp',
+				optionalPartitions: ['boot_a', 'boot_b']
+			});
+			expect(parts).to.have.lengthOf(1);
+			expect(parts[0].label).to.equal('fsg');
+		});
+
+		it('still returns an optional partition when it is present', () => {
+			const parts = partitionDefinitions({
+				partitionList: ['system'],
+				partitionTable: table,
+				deviceId: 'abc',
+				dir: '/tmp',
+				optionalPartitions: ['system']
+			});
+			expect(parts).to.have.lengthOf(1);
+			expect(parts[0].num_partition_sectors).to.equal(100);
+		});
+	});
+
+	describe('getIdentification', () => {
+		let dir;
+		const writeFsg = async () => {
+			const fsg = path.join(dir, 'fsg.bin');
+			await fs.writeFile(fsg, Buffer.alloc(64));
+			return fsg;
+		};
+
+		beforeEach(async () => {
+			dir = await fs.mkdtemp(path.join(os.tmpdir(), 'ident-'));
+		});
+		afterEach(async () => {
+			await fs.remove(dir);
+		});
+
+		it('identifies the 24.04 layout when boot_a/boot_b are absent', async () => {
+			const partitionTable = [
+				{ lun: 5, partition: { name: 'nvdata1' } },
+				{ lun: 0, partition: { name: 'system' } },
+				{ lun: 0, partition: { name: 'misc' } }
+			];
+			const info = await getIdentification({
+				deviceId: 'abc',
+				partitionTable,
+				partitionFilenames: { fsg: await writeFsg() }
+			});
+			expect(info.osVersion).to.equal('Ubuntu 24.04');
+			expect(info.deviceId).to.equal('abc');
+		});
+
+		it('does not claim 24.04 for a slotted system layout with no boot partitions', async () => {
+			const partitionTable = [
+				{ lun: 5, partition: { name: 'nvdata1' } },
+				{ lun: 0, partition: { name: 'system_a' } },
+				{ lun: 0, partition: { name: 'system' } }
+			];
+			const info = await getIdentification({
+				deviceId: 'abc',
+				partitionTable,
+				partitionFilenames: { fsg: await writeFsg() }
+			});
+			expect(info.osVersion).to.equal('Unknown');
 		});
 	});
 

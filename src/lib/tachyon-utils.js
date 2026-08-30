@@ -76,7 +76,7 @@ async function getEDLDevice({ ui = new UI(), showSetupMessage = false } = {}) {
 	}
 }
 
-async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false, modifyPartitions = (partitions) => partitions } = {}) {
+async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false, optionalPartitions = [], modifyPartitions = (partitions) => partitions } = {}) {
 	const { firehosePath, tempPath, gptXmlPath } = await initFiles();
 
 	const partitionTable = await readPartitionsFromDevice({
@@ -91,7 +91,8 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 		partitionList: partitionsList,
 		partitionTable,
 		deviceId: device.id,
-		dir
+		dir,
+		optionalPartitions
 	}));
 	const partitionFilenames = partitions.reduce((acc, partition) => {
 		acc[partition.label] = partition.filename;
@@ -210,10 +211,16 @@ async function parsePartitions({ gptPath }) {
 	return table;
 }
 
-function partitionDefinitions({ partitionList, partitionTable, deviceId, dir }) {
+function partitionDefinitions({ partitionList, partitionTable, deviceId, dir, optionalPartitions = [] }) {
 	return partitionList.map((name) => {
 		const entry = partitionTable.find(({ partition }) => partition.name === name);
 		if (!entry) {
+			if (optionalPartitions.includes(name)) {
+				// Layouts differ across OS versions: 20.04 has boot_a/boot_b, the 24.04
+				// layout does not. Callers that only sniff these for identification pass
+				// them as optional so a missing one is absence, not a hard failure.
+				return null;
+			}
 			throw new Error(`Partition ${name} not found in device partition table`);
 		}
 		return {
@@ -223,7 +230,7 @@ function partitionDefinitions({ partitionList, partitionTable, deviceId, dir }) 
 			num_partition_sectors: Number(entry.partition.lastLBA) - Number(entry.partition.firstLBA) + 1,
 			filename: path.join(dir, `${deviceId}_${entry.partition.name}.backup`)
 		};
-	});
+	}).filter(Boolean);
 }
 
 async function verifyFilesExist(partitions) {
@@ -276,6 +283,7 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 		ui,
 		logFile: outputLog,
 		partitionsList: [FSG_PARTITION, BOOT_A_PARTITION, BOOT_B_PARTITION],
+		optionalPartitions: [BOOT_A_PARTITION, BOOT_B_PARTITION],
 		dir: partitionDir,
 		device: device,
 		operation: 'read',
@@ -308,8 +316,12 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 
 async function getIdentification({ deviceId, partitionTable, partitionFilenames }) {
 	const fsgBuffer = await fs.readFile(partitionFilenames[FSG_PARTITION]);
-	const bootABuffer = await fs.readFile(partitionFilenames[BOOT_A_PARTITION]);
-	const bootBBuffer = await fs.readFile(partitionFilenames[BOOT_B_PARTITION]);
+	const readIfPresent = async (name) => {
+		const filename = partitionFilenames[name];
+		return filename ? fs.readFile(filename) : Buffer.alloc(0);
+	};
+	const bootABuffer = await readIfPresent(BOOT_A_PARTITION);
+	const bootBBuffer = await readIfPresent(BOOT_B_PARTITION);
 
 	const regionNa = fsgBuffer.includes(REGION_NA_MARKER);
 	const regionRow = fsgBuffer.includes(REGION_ROW_MARKER);
@@ -334,6 +346,12 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	const ubuntu20 = bootABuffer.includes(UBUNTU_20_MARKER) || bootBBuffer.includes(UBUNTU_20_MARKER);
 	const ubuntu24 = bootABuffer.includes(UBUNTU_24_MARKER) || bootBBuffer.includes(UBUNTU_24_MARKER);
 	const hasVendorBoot = !!partitionTable.find(({ partition }) => partition.name.startsWith('vendor_boot'));
+	const hasPartition = (name) => !!partitionTable.find(({ partition }) => partition.name === name);
+	// The 24.04 layout dropped boot_a/boot_b and replaced the slotted system_a/system_b
+	// with a single `system`. With no boot partition to sniff a marker from, that shape
+	// is itself the identification.
+	const noBootPartitions = !hasPartition(BOOT_A_PARTITION) && !hasPartition(BOOT_B_PARTITION);
+	const singleSystem = hasPartition('system') && !hasPartition('system_a');
 	let osVersion = 'Unknown';
 	let board = 'formfactor_dvt';
 	if (nvdataLun === 0) {
@@ -345,6 +363,8 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 		} else if (ubuntu20 && !ubuntu24) {
 			osVersion = 'Ubuntu 20.04';
 		} else if (ubuntu24 && !ubuntu20) {
+			osVersion = 'Ubuntu 24.04';
+		} else if (noBootPartitions && singleSystem) {
 			osVersion = 'Ubuntu 24.04';
 		}
 	}
@@ -695,6 +715,8 @@ module.exports = {
 	readPartitionsFromImage,
 	readLunCapacities,
 	parseRawProgramPartitions,
+	partitionDefinitions,
+	getIdentification,
 	CONFIG_PARTITION,
 	CONFIG_PARTITION_SECTORS,
 	SECTOR_SIZE_IN_BYTES
