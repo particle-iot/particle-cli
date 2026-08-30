@@ -38,6 +38,22 @@ describe('tachyon workflows', () => {
 		});
 	}
 
+	it('promises modem activation only where setup actually provisions the eSIM', () => {
+		// The completion message tells the user the device will "activate the built-in
+		// 5G modem". That is only true if setup fetched the eSIM profiles into the
+		// config blob, so tie the claim to the step rather than letting the copy drift
+		// away from what the workflow does -- 24.04 promised the cloud but not the
+		// modem for exactly as long as it was missing getESIMProfilesStep.
+		for (const value of ['ubuntu20', 'ubuntu24']) {
+			const wf = byValue(value);
+			const provisions = stepNames(wf).includes('getESIMProfilesStep');
+			for (const variant of wf.variants) {
+				const claims = /5G modem/.test(variant.setupCompletedMessage);
+				expect(claims, `${value}/${variant.value} modem claim`).to.equal(provisions);
+			}
+		}
+	});
+
 	it('offers a headless variant with a completion message on every ubuntu workflow', () => {
 		for (const value of ['ubuntu20', 'ubuntu24']) {
 			const headless = byValue(value).variants.find((v) => v.value === 'headless');

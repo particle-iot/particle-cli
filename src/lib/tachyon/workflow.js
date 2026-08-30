@@ -134,6 +134,7 @@ const ubuntu24 = Object.freeze({
 				`  - Power off the device by holding the power button for 3 seconds and releasing.${os.EOL}` +
 				`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
 				`When the device boots it will:${os.EOL}` +
+				`  - Activate the built-in 5G modem.${os.EOL}` +
 				`  - Connect to the Particle Cloud.${os.EOL}` +
 				`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
 				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
@@ -144,6 +145,7 @@ const ubuntu24 = Object.freeze({
 			setupCompletedMessage: 'All done! Your Tachyon device is now booting ' +
 				`into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
 				`It will also:${os.EOL}` +
+				`  - Activate the built-in 5G modem${os.EOL}` +
 				`  - Connect to the Particle Cloud${os.EOL}` +
 				`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
 				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
