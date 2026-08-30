@@ -149,13 +149,21 @@ const ubuntu24 = Object.freeze({
 				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
 		},
 	],
+	// Same step list as ubuntu20. getCountryStep and getESIMProfilesStep were missing
+	// here, so 24.04 setup never asked for a country and never fetched the eSIM
+	// profiles -- the config blob went out with no `esim` key and the device relied on
+	// whatever was already provisioned on the eUICC. particle-linux has read this since
+	// it shipped (bootstrap.ts stores `esim_bootstrap` from the blob's `esim`), so the
+	// consumer was there the whole time; only the producer was missing.
 	steps: Object.freeze([
 		steps.pickVariant,
 		steps.getUserConfigurationStep,
 		steps.configureProductStep,
+		steps.getCountryStep,
 		steps.downloadOS,
 		steps.printOSInfo,
 		steps.registerDeviceStep,
+		steps.getESIMProfilesStep,
 		steps.createConfigBlobStep,
 		steps.verifyConfigPartitionStep,
 		steps.flashOSAndConfigStep,
