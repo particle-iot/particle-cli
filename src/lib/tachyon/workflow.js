@@ -114,11 +114,8 @@ const ubuntu20 = Object.freeze({
 
 /** @type {Workflow} */
 const ubuntu24 = Object.freeze({
-	name: 'Ubuntu 24.04 (beta)',
+	name: 'Ubuntu 24.04',
 	value: 'ubuntu24',
-	selectionWarning: 'Heads-up: Development of Ubuntu 24.04 (beta) is still in progress. Some features may be ' +
-		`unstable or missing.${os.EOL}` +
-		`See https://developer.particle.io/tachyon/software/ubuntu_24_04/overview for more information.${os.EOL}`,
 	osInfo: {
 		distributionDisplay: 'Ubuntu 24.04',
 		distribution: 'ubuntu',
@@ -139,6 +136,16 @@ const ubuntu24 = Object.freeze({
 				`When the device boots it will:${os.EOL}` +
 				`  - Connect to the Particle Cloud.${os.EOL}` +
 				`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
+				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
+		},
+		{
+			name: 'Headless (command-line only)',
+			value: 'headless',
+			setupCompletedMessage: 'All done! Your Tachyon device is now booting ' +
+				`into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+				`It will also:${os.EOL}` +
+				`  - Connect to the Particle Cloud${os.EOL}` +
+				`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
 				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
 		},
 	],
