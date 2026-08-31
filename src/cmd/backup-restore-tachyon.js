@@ -96,12 +96,12 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			});
 			fs.appendFileSync(outputLog, `==================${os.EOL}`);
 			fs.appendFileSync(outputLog, `Backup Done${os.EOL}`);
-			fs.appendFileSync(outputLog, `Created File: ${compressedFile.outputFile}${os.EOL}`);
+			fs.appendFileSync(outputLog, `Created File: ${compressedFile.zipPath}${os.EOL}`);
 			fs.appendFileSync(outputLog, `SHA256: ${compressedFile.sha256}${os.EOL}`);
-			this.ui.stdout.write(`Created File: ${compressedFile.outputFile}${os.EOL}`);
+			this.ui.stdout.write(`Created File: ${compressedFile.zipPath}${os.EOL}`);
 			this.ui.stdout.write(`Backing up NV data from device ${device.id} complete!${os.EOL}`);
 			this.ui.stdout.write(
-				`Restore it with: particle tachyon restore --filepath ${compressedFile.outputFile}${os.EOL}`
+				`Restore it with: particle tachyon restore --filepath ${compressedFile.zipPath}${os.EOL}`
 			);
 		} catch (error) {
 			const { retry } = await handleFlashError({ error, ui: this.ui });
