@@ -17,6 +17,8 @@ const BOOT_B_PARTITION = 'boot_b';
 
 const REGION_NA_MARKER = Buffer.from('SG560D-NA');
 const REGION_ROW_MARKER = Buffer.from('SG560D-EM');
+const MODEM_MODEL_PREFIX = 'SG560D';
+const REGION_BY_MODEM_CODE = { NA: 'NA', EM: 'RoW' };
 const EFS_PARTITION_HEADER = Buffer.from('EFS');
 const UBUNTU_20_MARKER = Buffer.from('ANDROID');
 const UBUNTU_24_MARKER = Buffer.from('UEFI');
@@ -353,11 +355,12 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	const noBootPartitions = !hasPartition(BOOT_A_PARTITION) && !hasPartition(BOOT_B_PARTITION);
 	const singleSystem = hasPartition('system') && !hasPartition('system_a');
 	let osVersion = 'Unknown';
-	let board = 'formfactor_dvt';
+	let board = 'Unknown';
 	if (nvdataLun === 0) {
 		osVersion = 'Ubuntu 20.04 EVT';
 		board = 'formfactor';
 	} else if (nvdataLun === 5) {
+		board = 'formfactor_dvt';
 		if (hasVendorBoot) {
 			osVersion = 'Android 14';
 		} else if (ubuntu20 && !ubuntu24) {
@@ -609,6 +612,48 @@ async function readManifestFromLocalFile(path, targetFile = 'manifest.json') {
 	}
 }
 
+/**
+ * The cloud reports the modem firmware as e.g. SG560DNAPAR60A03. The two
+ * characters following the model identify the hardware region.
+ */
+function regionFromModemFirmware(firmwareVersion) {
+	if (typeof firmwareVersion !== 'string' || !firmwareVersion.startsWith(MODEM_MODEL_PREFIX)) {
+		return null;
+	}
+	const code = firmwareVersion.slice(MODEM_MODEL_PREFIX.length, MODEM_MODEL_PREFIX.length + 2);
+	return REGION_BY_MODEM_CODE[code] || null;
+}
+
+/**
+ * Best-effort lookup by the device ID exposed in EDL mode. Setup and identify
+ * must continue when the user is offline, the device has never connected, or
+ * the record is unavailable to the current account.
+ */
+async function lookupCloudDeviceInfo({ deviceId, api }) {
+	if (!api || !deviceId) {
+		return null;
+	}
+	try {
+		const device = await api.getDevice({ deviceId });
+		if (!device || !device.id) {
+			return null;
+		}
+		const distro = device.linux_metadata?.distro || {};
+		return {
+			name: device.name || null,
+			region: regionFromModemFirmware(device.modem_firmware_version),
+			serialNumber: device.serial_number || null,
+			modemFirmwareVersion: device.modem_firmware_version || null,
+			imageVersion: distro.version || null,
+			imageVariant: distro.variant || null,
+			productId: device.product_id || null,
+			lastHeard: device.last_heard || null
+		};
+	} catch (_error) {
+		return null;
+	}
+}
+
 const IMAGE_MANIFEST_FILE = 'manifest.json';
 // The first-boot configuration blob lives in `misc`: 1MiB at a 4096-byte sector.
 const CONFIG_PARTITION = 'misc';
@@ -712,6 +757,8 @@ module.exports = {
 	promptOSSelection,
 	isFile,
 	readManifestFromLocalFile,
+	regionFromModemFirmware,
+	lookupCloudDeviceInfo,
 	readPartitionsFromImage,
 	readLunCapacities,
 	parseRawProgramPartitions,

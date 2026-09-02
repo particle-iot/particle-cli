@@ -10,7 +10,14 @@ const os = require('os');
 
 const DownloadManager = require('../lib/download-manager');
 const path = require('path');
-const { getTachyonInfo, getEDLDevice, handleFlashError, promptOSSelection, isFile, readManifestFromLocalFile
+const {
+	getTachyonInfo,
+	getEDLDevice,
+	handleFlashError,
+	promptOSSelection,
+	isFile,
+	readManifestFromLocalFile,
+	lookupCloudDeviceInfo
 } = require('../lib/tachyon-utils');
 const { TachyonConnectionError } = require('../lib/qdl');
 const { workflows, workflowRun } = require('../lib/tachyon/workflow');
@@ -48,10 +55,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._logsDir = path.join(this._baseDir, 'logs');
 		this.downloadManager = new DownloadManager(this.ui);
 		this.outputLog = null;
+		this._hardwareOptionSources = {};
 		this.defaultOptions = {
-			region: 'NA',
 			version: settings.tachyonVersion || 'stable',
-			board: 'formfactor_dvt',
 			distroVersion: '20.04',
 			country: settings.profile_json.country || 'USA',
 			variant: null,
@@ -83,19 +89,28 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			this.outputLog = path.join(this._logsDir, `tachyon_flash_${this.device.id}_${Date.now()}.log`);
 			await fs.ensureFile(this.outputLog);
 			this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
+			// EDL supplies the device ID without touching storage, so begin the cloud
+			// lookup immediately while the slower best-effort local read runs.
+			const cloudInfoPromise = lookupCloudDeviceInfo({ deviceId: this.device.id, api: this.api });
 			const deviceInfo = await this._getDeviceInfo();
 			deviceInfo.usbVersion = this.device.usbVersion.major;
-			this._printDeviceInfo(deviceInfo);
 			// check if there is a config file
 			// validate version if local then workflow will be inferred from the manifest
 			const isLocalVersion = version ? await isFile(version) : false;
-			const config = await this._loadConfig({ options, deviceInfo, isLocalVersion });
+			const cloudInfo = await cloudInfoPromise;
+			const config = await this._loadConfig({ options, deviceInfo, cloudInfo, isLocalVersion });
+			const resolvedDeviceInfo = {
+				...deviceInfo,
+				region: config.region,
+				board: config.board
+			};
+			this._printDeviceInfo(resolvedDeviceInfo);
 
 			const context = {
 				...config,
 				ui: this.ui,
 				api: this.api,
-				deviceInfo: deviceInfo,
+				deviceInfo: resolvedDeviceInfo,
 				device: this.device,
 				log: {
 					file: this.outputLog,
@@ -124,13 +139,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				device: this.device
 			}));
 		} catch (error) {
-			// Preserve the retry flow for a transport failure. Layout errors fall
-			// through to the EDL-only identity below.
-			const { retry } = await handleFlashError({ error, ui: this.ui });
-			if (retry) {
-				return this._getDeviceInfo();
-			}
 			if (error instanceof TachyonConnectionError) {
+				const { retry } = await handleFlashError({ error, ui: this.ui });
+				if (retry) {
+					return this._getDeviceInfo();
+				}
 				throw new Error('Unable to communicate with the device. Please restart the device and try again.');
 			}
 
@@ -139,27 +152,34 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			// GPT must not prevent an image containing its own GPT from being flashed.
 			this.ui.write(this.ui.chalk.yellow(
 				`Could not read the existing device layout: ${error.message}${os.EOL}` +
-				`Continuing with the identity reported in EDL mode. Setup will use any ` +
-				`--region and --board options, then its normal defaults.${os.EOL}`
+				`Continuing with the identity reported in EDL mode. Setup will use explicit ` +
+				`options, a loaded configuration, Particle Cloud, or ask you.${os.EOL}`
 			));
 			return {
 				deviceId: this.device.id,
 				region: 'Unknown',
 				manufacturingData: 'Unknown',
 				osVersion: 'Unknown',
-				board: this.defaultOptions.board
+				board: 'Unknown'
 			};
 		}
 	}
 
 	async _printDeviceInfo(deviceInfo) {
+		const sourceSuffix = (name) => {
+			const source = this._hardwareOptionSources[name];
+			return source && source !== 'device' ? ` (from ${source})` : '';
+		};
+		const boardNames = {
+			formfactor: 'EVT',
+			formfactor_dvt: 'DVT or later',
+			rb3g2: 'Qualcomm RB3 Gen 2'
+		};
 		this.ui.write(this.ui.chalk.bold('Device info:'));
 		this.ui.write(os.EOL);
 		this.ui.write(` -  Device ID: ${deviceInfo.deviceId}`);
-		if (deviceInfo.board === 'formfactor') {
-			this.ui.write(' -  Board: EVT');
-		}
-		this.ui.write(` -  Region: ${deviceInfo.region}`);
+		this.ui.write(` -  Board: ${boardNames[deviceInfo.board] || deviceInfo.board}${sourceSuffix('board')}`);
+		this.ui.write(` -  Region: ${deviceInfo.region}${sourceSuffix('region')}`);
 		this.ui.write(` -  OS Version: ${deviceInfo.osVersion}`);
 		let usbWarning = '';
 		if (this.device.usbVersion.major <= 2) {
@@ -192,9 +212,14 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	 * @return {Promise<void>}
 	 * @private
 	 */
-	async _loadConfig({ options, deviceInfo, isLocalVersion }) {
+	async _loadConfig({ options, deviceInfo, cloudInfo, isLocalVersion }) {
 		const configFromFile = await this._loadConfigFromFile(options.loadConfig);
-		const optionsFromDevice = {};
+		const hardwareOptions = await this._resolveHardwareOptions({
+			options,
+			configFromFile,
+			deviceInfo,
+			cloudInfo
+		});
 
 		const selectedWorkflow = await this._selectWorkflow({
 			isLocalVersion,
@@ -206,17 +231,12 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const cleanedOptions = Object.fromEntries(
 			Object.entries(options).filter(([_, v]) => v !== undefined)
 		);
-		if (deviceInfo) {
-			optionsFromDevice.region = deviceInfo.region.toLowerCase() !== 'unknown' ? deviceInfo.region : 'NA';
-			optionsFromDevice.board = deviceInfo.board;
-		}
-
 		const config = {
 			...this.defaultOptions,
 			...selectedWorkflow?.overrideDefaults,
-			...optionsFromDevice,
 			...configFromFile,
 			...cleanedOptions,
+			...hardwareOptions,
 			workflow: selectedWorkflow,
 			isLocalVersion: !!isLocalVersion
 		};
@@ -237,6 +257,74 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		}
 
 		return config;
+	}
+
+	/**
+	 * Resolve region and board independently. The first known value wins:
+	 *
+	 *   1. command-line option (the operator's most explicit choice)
+	 *   2. loaded setup configuration
+	 *   3. the physical device's current partitions
+	 *   4. the device's Particle Cloud record
+	 *   5. interactive user input
+	 *
+	 * "Unknown" is not a value and never prevents a later source from answering.
+	 * There is deliberately no implicit NA or DVT fallback: choosing the wrong
+	 * region or board can select an incompatible image.
+	 */
+	async _resolveHardwareOptions({ options, configFromFile, deviceInfo, cloudInfo }) {
+		const resolve = async (name, prompt) => {
+			const candidates = [
+				{ value: options?.[name], source: 'command line' },
+				{ value: configFromFile?.[name], source: 'loaded configuration' },
+				{ value: deviceInfo?.[name], source: 'device' },
+				{ value: cloudInfo?.[name], source: 'Particle Cloud' }
+			];
+			const selected = candidates.find(({ value }) => this._isKnownHardwareOption(value));
+			if (selected) {
+				this._hardwareOptionSources[name] = selected.source;
+				return selected.value;
+			}
+			const value = await prompt();
+			this._hardwareOptionSources[name] = 'user input';
+			return value;
+		};
+
+		return {
+			region: await resolve('region', () => this._selectRegion()),
+			board: await resolve('board', () => this._selectBoard())
+		};
+	}
+
+	_isKnownHardwareOption(value) {
+		return typeof value === 'string' && value.trim() !== '' && value.toLowerCase() !== 'unknown';
+	}
+
+	async _selectRegion() {
+		const { region } = await this.ui.prompt([{
+			type: 'list',
+			name: 'region',
+			message: 'Select the device region:',
+			choices: [
+				{ name: 'NA (North America)', value: 'NA' },
+				{ name: 'RoW (Rest of the World)', value: 'RoW' }
+			]
+		}]);
+		return region;
+	}
+
+	async _selectBoard() {
+		const { board } = await this.ui.prompt([{
+			type: 'list',
+			name: 'board',
+			message: 'Select the device board:',
+			choices: [
+				{ name: 'Tachyon EVT', value: 'formfactor' },
+				{ name: 'Tachyon DVT or later', value: 'formfactor_dvt' },
+				{ name: 'Qualcomm RB3 Gen 2', value: 'rb3g2' }
+			]
+		}]);
+		return board;
 	}
 
 	async _selectWorkflow({ isLocalVersion, version, configFromFile, defaultWorkflow }) {
@@ -262,8 +350,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			try {
 				const data = fs.readFileSync(loadConfig, 'utf8');
 				const config = JSON.parse(data);
-				// remove board to prevent overwriting.
-				delete config.board;
 				return { ...config, silent: true, loadedFromFile: true };
 			} catch (error) {
 				throw new VError(error, 'The configuration file is not a valid JSON file');
@@ -284,6 +370,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _saveConfig(config) {
 		const configFields = [
 			'region',
+			'board',
 			'version',
 			'variant',
 			'skipCli',

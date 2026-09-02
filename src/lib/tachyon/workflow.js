@@ -23,9 +23,9 @@ const steps = require('./steps');
 /**
  * Setup options used by the workflow runner.
  * @typedef {Object} SetupOptions
- * @property {('NA'|'RoW'|string)} region - Target region. Default: `'NA'`.
+ * @property {('NA'|'RoW'|string)} region - Target region, resolved from explicit input, the device, the cloud, or a prompt.
  * @property {string} version - Tachyon version or channel. Default: `settings.tachyonVersion || 'stable'`.
- * @property {string} board - Hardware/board identifier (e.g., `'formfactor_dvt'`). Default: `'formfactor_dvt'`.
+ * @property {string} board - Hardware/board identifier (e.g., `'formfactor_dvt'`), resolved from explicit input, the device, the cloud, or a prompt.
  * @property {string} distroVersion - Distro version (e.g., `'20.04'`). Default: `'20.04'`.
  * @property {string} country - Country/locale code (e.g., `'USA'`). Default: `'USA'`.
  * @property {string|null} variant - Optional SKU/variant; `null` if not applicable. Default: `null`.

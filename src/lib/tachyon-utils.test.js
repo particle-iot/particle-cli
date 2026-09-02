@@ -2,9 +2,17 @@
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
-const { expect } = require('../../test/setup');
+const { expect, sinon } = require('../../test/setup');
 const GPT = require('gpt');
-const { parseRawProgramPartitions, readPartitionsFromImage, readLunCapacities, partitionDefinitions, getIdentification } = require('./tachyon-utils');
+const {
+	parseRawProgramPartitions,
+	readPartitionsFromImage,
+	readLunCapacities,
+	partitionDefinitions,
+	getIdentification,
+	regionFromModemFirmware,
+	lookupCloudDeviceInfo
+} = require('./tachyon-utils');
 
 const rawprogram0 = `<?xml version="1.0" ?>
 <data>
@@ -14,6 +22,46 @@ const rawprogram0 = `<?xml version="1.0" ?>
   <program start_sector="NUM_DISK_SECTORS-5." physical_partition_number="0" num_partition_sectors="5" filename="gpt_backup0.bin" SECTOR_SIZE_IN_BYTES="4096" label="BackupGPT"/>
 </data>
 `;
+
+describe('Tachyon cloud identification', () => {
+	it('derives the region from the modem firmware version', () => {
+		expect(regionFromModemFirmware('SG560DNAPAR60A03')).to.equal('NA');
+		expect(regionFromModemFirmware('SG560DEMPAR60A03')).to.equal('RoW');
+		expect(regionFromModemFirmware('SG560DZZPAR60A03')).to.equal(null);
+		expect(regionFromModemFirmware(null)).to.equal(null);
+	});
+
+	it('returns the setup metadata available from the cloud', async () => {
+		const device = {
+			id: '422a060000000000d0c7965f',
+			name: 'bobs-yellow-hat-d0c7965f',
+			serial_number: 'P06400000000000',
+			modem_firmware_version: 'SG560DNAPAR60A03',
+			product_id: 35245,
+			last_heard: '2026-08-31T02:57:13.857Z',
+			linux_metadata: { distro: { version: '1.2.17', variant: 'headless' } }
+		};
+		const api = { getDevice: sinon.stub().resolves(device) };
+
+		expect(await lookupCloudDeviceInfo({ deviceId: device.id, api })).to.eql({
+			name: device.name,
+			region: 'NA',
+			serialNumber: device.serial_number,
+			modemFirmwareVersion: device.modem_firmware_version,
+			imageVersion: '1.2.17',
+			imageVariant: 'headless',
+			productId: device.product_id,
+			lastHeard: device.last_heard
+		});
+		expect(api.getDevice).to.have.been.calledWith({ deviceId: device.id });
+	});
+
+	it('returns null rather than blocking setup when lookup fails', async () => {
+		const api = { getDevice: sinon.stub().rejects(new Error('offline')) };
+		expect(await lookupCloudDeviceInfo({ deviceId: 'abc', api })).to.equal(null);
+		expect(await lookupCloudDeviceInfo({ deviceId: null, api })).to.equal(null);
+	});
+});
 
 describe('tachyon-utils partition tables', () => {
 	describe('parseRawProgramPartitions', () => {
@@ -153,6 +201,16 @@ describe('tachyon-utils partition tables', () => {
 				partitionFilenames: { fsg: await writeFsg() }
 			});
 			expect(info.osVersion).to.equal('Unknown');
+		});
+
+		it('does not silently classify an unfamiliar layout as DVT', async () => {
+			const info = await getIdentification({
+				deviceId: 'abc',
+				partitionTable: [{ lun: 0, partition: { name: 'system' } }],
+				partitionFilenames: { fsg: await writeFsg() }
+			});
+
+			expect(info.board).to.equal('Unknown');
 		});
 	});
 

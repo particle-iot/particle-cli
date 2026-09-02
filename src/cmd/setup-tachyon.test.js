@@ -8,6 +8,7 @@ const { TachyonConnectionError } = require('../lib/qdl');
 
 let getEDLDevice;
 let getTachyonInfo;
+let lookupCloudDeviceInfo;
 let handleFlashError;
 let workflowRun;
 let baseDir;
@@ -15,6 +16,7 @@ let baseDir;
 const tachyonUtils = {
 	getEDLDevice: (...args) => getEDLDevice(...args),
 	getTachyonInfo: (...args) => getTachyonInfo(...args),
+	lookupCloudDeviceInfo: (...args) => lookupCloudDeviceInfo(...args),
 	handleFlashError: (...args) => handleFlashError(...args)
 };
 
@@ -64,6 +66,7 @@ describe('SetupTachyonCommand', () => {
 		ui = fakeUi();
 		getEDLDevice = sinon.stub().resolves(device);
 		getTachyonInfo = sinon.stub();
+		lookupCloudDeviceInfo = sinon.stub().resolves(null);
 		handleFlashError = sinon.stub().resolves(false);
 		workflowRun = sinon.stub().resolves({});
 		command = new SetupTachyonCommand({ ui });
@@ -99,9 +102,10 @@ describe('SetupTachyonCommand', () => {
 			region: 'Unknown',
 			manufacturingData: 'Unknown',
 			osVersion: 'Unknown',
-			board: 'formfactor_dvt'
+			board: 'Unknown'
 		});
 		expect(ui.write).to.have.been.calledWithMatch(/Continuing with the identity reported in EDL mode/);
+		expect(handleFlashError).not.to.have.been.called;
 	});
 
 	it('lets setup reach the workflow when identification cannot parse the GPT', async () => {
@@ -110,6 +114,8 @@ describe('SetupTachyonCommand', () => {
 
 		await command.setup();
 
+		expect(lookupCloudDeviceInfo).to.have.been.calledWith({ deviceId: device.id, api: command.api });
+		expect(lookupCloudDeviceInfo).to.have.been.calledBefore(getTachyonInfo);
 		expect(workflowRun).to.have.been.calledOnce;
 		expect(workflowRun.firstCall.args[1].deviceInfo.deviceId).to.equal(device.id);
 		expect(workflowRun.firstCall.args[1].device).to.equal(device);
@@ -136,5 +142,91 @@ describe('SetupTachyonCommand', () => {
 
 		expect(await command._getDeviceInfo()).to.equal(expected);
 		expect(getTachyonInfo).to.have.been.calledTwice;
+	});
+
+	it('keeps region and board from a loaded configuration', async () => {
+		const filename = path.join(baseDir, 'setup.json');
+		await fs.writeJson(filename, { region: 'RoW', board: 'formfactor' });
+
+		expect(await command._loadConfigFromFile(filename)).to.include({
+			region: 'RoW',
+			board: 'formfactor',
+			silent: true,
+			loadedFromFile: true
+		});
+	});
+
+	describe('hardware option precedence', () => {
+		const local = { region: 'NA', board: 'formfactor_dvt' };
+		const cloud = { region: 'RoW', board: null };
+
+		beforeEach(() => {
+			sinon.stub(command, '_selectRegion').resolves('prompt-region');
+			sinon.stub(command, '_selectBoard').resolves('prompt-board');
+		});
+
+		it('prefers command-line values over every discovered value', async () => {
+			const result = await command._resolveHardwareOptions({
+				options: { region: 'RoW', board: 'rb3g2' },
+				configFromFile: { region: 'NA', board: 'formfactor' },
+				deviceInfo: local,
+				cloudInfo: cloud
+			});
+
+			expect(result).to.eql({ region: 'RoW', board: 'rb3g2' });
+			expect(command._hardwareOptionSources).to.eql({ region: 'command line', board: 'command line' });
+		});
+
+		it('prefers loaded configuration over device and cloud values', async () => {
+			const result = await command._resolveHardwareOptions({
+				options: {},
+				configFromFile: { region: 'RoW', board: 'formfactor' },
+				deviceInfo: local,
+				cloudInfo: cloud
+			});
+
+			expect(result).to.eql({ region: 'RoW', board: 'formfactor' });
+			expect(command._hardwareOptionSources).to.eql({ region: 'loaded configuration', board: 'loaded configuration' });
+		});
+
+		it('prefers readable device values over cloud values', async () => {
+			const result = await command._resolveHardwareOptions({
+				options: {},
+				configFromFile: {},
+				deviceInfo: local,
+				cloudInfo: cloud
+			});
+
+			expect(result).to.eql(local);
+			expect(command._hardwareOptionSources).to.eql({ region: 'device', board: 'device' });
+		});
+
+		it('uses cloud region and prompts for a board the cloud does not report', async () => {
+			const result = await command._resolveHardwareOptions({
+				options: {},
+				configFromFile: {},
+				deviceInfo: { region: 'Unknown', board: 'Unknown' },
+				cloudInfo: cloud
+			});
+
+			expect(result).to.eql({ region: 'RoW', board: 'prompt-board' });
+			expect(command._selectRegion).not.to.have.been.called;
+			expect(command._selectBoard).to.have.been.calledOnce;
+			expect(command._hardwareOptionSources).to.eql({ region: 'Particle Cloud', board: 'user input' });
+		});
+
+		it('prompts instead of silently defaulting when no source knows', async () => {
+			const result = await command._resolveHardwareOptions({
+				options: {},
+				configFromFile: {},
+				deviceInfo: { region: 'Unknown', board: 'Unknown' },
+				cloudInfo: null
+			});
+
+			expect(result).to.eql({ region: 'prompt-region', board: 'prompt-board' });
+			expect(command._selectRegion).to.have.been.calledOnce;
+			expect(command._selectBoard).to.have.been.calledOnce;
+			expect(command._hardwareOptionSources).to.eql({ region: 'user input', board: 'user input' });
+		});
 	});
 });
