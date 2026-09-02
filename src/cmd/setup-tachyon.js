@@ -12,6 +12,7 @@ const DownloadManager = require('../lib/download-manager');
 const path = require('path');
 const { getTachyonInfo, getEDLDevice, handleFlashError, promptOSSelection, isFile, readManifestFromLocalFile
 } = require('../lib/tachyon-utils');
+const { TachyonConnectionError } = require('../lib/qdl');
 const { workflows, workflowRun } = require('../lib/tachyon/workflow');
 
 const showWelcomeMessage = (ui) => `
@@ -123,12 +124,31 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				device: this.device
 			}));
 		} catch (error) {
-			// If this fails, the flash won't work so abort early.
+			// Preserve the retry flow for a transport failure. Layout errors fall
+			// through to the EDL-only identity below.
 			const { retry } = await handleFlashError({ error, ui: this.ui });
 			if (retry) {
 				return this._getDeviceInfo();
 			}
-			throw new Error('Unable to get device info. Please restart the device and try again.');
+			if (error instanceof TachyonConnectionError) {
+				throw new Error('Unable to communicate with the device. Please restart the device and try again.');
+			}
+
+			// Identification is useful for automatically preserving the region and board
+			// type, but it describes the layout being replaced. A blank, corrupt, or new
+			// GPT must not prevent an image containing its own GPT from being flashed.
+			this.ui.write(this.ui.chalk.yellow(
+				`Could not read the existing device layout: ${error.message}${os.EOL}` +
+				`Continuing with the identity reported in EDL mode. Setup will use any ` +
+				`--region and --board options, then its normal defaults.${os.EOL}`
+			));
+			return {
+				deviceId: this.device.id,
+				region: 'Unknown',
+				manufacturingData: 'Unknown',
+				osVersion: 'Unknown',
+				board: this.defaultOptions.board
+			};
 		}
 	}
 
