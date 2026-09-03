@@ -10,6 +10,7 @@ let getEDLDevice;
 let getTachyonInfo;
 let lookupCloudDeviceInfo;
 let handleFlashError;
+let readManifestFromLocalFile;
 let workflowRun;
 let baseDir;
 
@@ -17,7 +18,23 @@ const tachyonUtils = {
 	getEDLDevice: (...args) => getEDLDevice(...args),
 	getTachyonInfo: (...args) => getTachyonInfo(...args),
 	lookupCloudDeviceInfo: (...args) => lookupCloudDeviceInfo(...args),
-	handleFlashError: (...args) => handleFlashError(...args)
+	handleFlashError: (...args) => handleFlashError(...args),
+	readManifestFromLocalFile: (...args) => readManifestFromLocalFile(...args)
+};
+
+const workflowFixtures = {
+	ubuntu20: {
+		value: 'ubuntu20',
+		osInfo: { distribution: 'ubuntu', distributionVersion: '20.04' }
+	},
+	ubuntu24: {
+		value: 'ubuntu24',
+		osInfo: { distribution: 'ubuntu', distributionVersion: '24.04' }
+	},
+	android14: {
+		value: 'android14',
+		osInfo: { distribution: 'android', distributionVersion: '14' }
+	}
 };
 
 const settings = {
@@ -30,7 +47,7 @@ const settings = {
 const SetupTachyonCommand = proxyquire('./setup-tachyon', {
 	'../lib/tachyon-utils': tachyonUtils,
 	'../lib/tachyon/workflow': {
-		workflows: { ubuntu20: { value: 'ubuntu20' } },
+		workflows: workflowFixtures,
 		workflowRun: (...args) => workflowRun(...args)
 	},
 	'../lib/api-call': {
@@ -68,6 +85,7 @@ describe('SetupTachyonCommand', () => {
 		getTachyonInfo = sinon.stub();
 		lookupCloudDeviceInfo = sinon.stub().resolves(null);
 		handleFlashError = sinon.stub().resolves(false);
+		readManifestFromLocalFile = sinon.stub();
 		workflowRun = sinon.stub().resolves({});
 		command = new SetupTachyonCommand({ ui });
 		command.device = device;
@@ -153,6 +171,81 @@ describe('SetupTachyonCommand', () => {
 			board: 'formfactor',
 			silent: true,
 			loadedFromFile: true
+		});
+	});
+
+	describe('workflow selection', () => {
+		for (const [distroVersion, workflowName] of [['20.04', 'ubuntu20'], ['24.04', 'ubuntu24']]) {
+			it(`uses explicit distro version ${distroVersion} and skips the OS selection prompt`, async () => {
+				const selectInteractively = sinon.stub(command, '_pickWorkflowToExecute');
+				sinon.stub(command, '_resolveHardwareOptions').resolves({ region: 'NA', board: 'formfactor_dvt' });
+				sinon.stub(command, '_getManifestBuilds').resolves([]);
+
+				const config = await command._loadConfig({
+					options: { distroVersion },
+					deviceInfo: {},
+					cloudInfo: null,
+					isLocalVersion: false
+				});
+
+				expect(config.workflow).to.equal(workflowFixtures[workflowName]);
+				expect(config.distroVersion).to.equal(distroVersion);
+				expect(selectInteractively).not.to.have.been.called;
+				expect(command._getManifestBuilds).to.have.been.calledWithMatch({
+					osInfo: workflowFixtures[workflowName].osInfo
+				});
+			});
+		}
+
+		it('keeps distro metadata aligned with an interactive OS selection', async () => {
+			sinon.stub(command, '_pickWorkflowToExecute').resolves(workflowFixtures.ubuntu24);
+			sinon.stub(command, '_resolveHardwareOptions').resolves({ region: 'NA', board: 'formfactor_dvt' });
+			sinon.stub(command, '_getManifestBuilds').resolves([]);
+
+			const config = await command._loadConfig({
+				options: {},
+				deviceInfo: {},
+				cloudInfo: null,
+				isLocalVersion: false
+			});
+
+			expect(config.workflow).to.equal(workflowFixtures.ubuntu24);
+			expect(config.distroVersion).to.equal('24.04');
+		});
+
+		it('lets an explicit distro version override a loaded workflow', async () => {
+			const workflow = await command._selectWorkflow({
+				isLocalVersion: false,
+				distroVersion: '24.04',
+				configFromFile: { workflow: 'ubuntu20' },
+				defaultWorkflow: workflowFixtures.ubuntu20
+			});
+
+			expect(workflow).to.equal(workflowFixtures.ubuntu24);
+		});
+
+		it('rejects an unsupported explicit distro version', async () => {
+			await expect(command._selectWorkflow({
+				isLocalVersion: false,
+				distroVersion: '22.04',
+				configFromFile: {},
+				defaultWorkflow: workflowFixtures.ubuntu20
+			})).to.be.rejectedWith("Unsupported Linux distribution version '22.04'");
+		});
+
+		it('rejects a distro version that conflicts with a local image', async () => {
+			readManifestFromLocalFile.resolves({
+				distribution: 'ubuntu',
+				distribution_version: '20.04'
+			});
+
+			await expect(command._selectWorkflow({
+				isLocalVersion: true,
+				version: '/tmp/tachyon-ubuntu-20.04.zip',
+				distroVersion: '24.04',
+				configFromFile: {},
+				defaultWorkflow: workflowFixtures.ubuntu20
+			})).to.be.rejectedWith("does not match the local image distribution version '20.04'");
 		});
 	});
 

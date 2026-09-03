@@ -224,6 +224,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const selectedWorkflow = await this._selectWorkflow({
 			isLocalVersion,
 			version: options.version,
+			distroVersion: options.distroVersion,
 			configFromFile,
 			defaultWorkflow: this.defaultOptions.workflow
 		});
@@ -237,6 +238,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			...configFromFile,
 			...cleanedOptions,
 			...hardwareOptions,
+			distroVersion: selectedWorkflow.osInfo.distributionVersion,
 			workflow: selectedWorkflow,
 			isLocalVersion: !!isLocalVersion
 		};
@@ -327,13 +329,36 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return board;
 	}
 
-	async _selectWorkflow({ isLocalVersion, version, configFromFile, defaultWorkflow }) {
+	async _selectWorkflow({ isLocalVersion, version, distroVersion, configFromFile, defaultWorkflow }) {
+		const requestedWorkflow = distroVersion ? this._getUbuntuWorkflow(distroVersion) : null;
+
+		// A local image is authoritative because its embedded manifest describes what
+		// will actually be flashed. An explicit distro may confirm it, but may not
+		// contradict it.
 		if (isLocalVersion) {
 			const manifest = await readManifestFromLocalFile(version);
-			return Object.values(workflows).find(wf =>
+			const imageWorkflow = Object.values(workflows).find(wf =>
 				wf.osInfo.distribution === manifest.distribution &&
 				wf.osInfo.distributionVersion === manifest.distribution_version
 			);
+			if (!imageWorkflow) {
+				throw new Error(
+					`The local image uses unsupported distribution '${manifest.distribution} ${manifest.distribution_version}'`
+				);
+			}
+			if (requestedWorkflow && requestedWorkflow !== imageWorkflow) {
+				throw new Error(
+					`The requested distribution version '${distroVersion}' does not match the local image ` +
+					`distribution version '${manifest.distribution_version}'`
+				);
+			}
+			return imageWorkflow;
+		}
+
+		// An explicit command-line distro is the user's selection. It takes priority
+		// over a loaded configuration and avoids asking the OS selection question.
+		if (requestedWorkflow) {
+			return requestedWorkflow;
 		}
 		if (configFromFile?.workflow) {
 			return workflows[configFromFile.workflow];
@@ -343,6 +368,19 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			return this._pickWorkflowToExecute();
 		}
 		return defaultWorkflow;
+	}
+
+	_getUbuntuWorkflow(distroVersion) {
+		const normalizedVersion = String(distroVersion).trim();
+		const ubuntuWorkflows = Object.values(workflows).filter(wf => wf.osInfo.distribution === 'ubuntu');
+		const workflow = ubuntuWorkflows.find(wf => wf.osInfo.distributionVersion === normalizedVersion);
+		if (!workflow) {
+			const supportedVersions = ubuntuWorkflows.map(wf => wf.osInfo.distributionVersion).join(', ');
+			throw new Error(
+				`Unsupported Linux distribution version '${normalizedVersion}'. Supported versions: ${supportedVersions}`
+			);
+		}
+		return workflow;
 	}
 
 	async _loadConfigFromFile(loadConfig) {

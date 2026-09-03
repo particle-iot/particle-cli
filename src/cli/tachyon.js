@@ -32,7 +32,8 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Board to download package for'
 			},
 			distro_version: {
-				description: 'Linux distribution version to use'
+				description: 'Linux distribution version to use',
+				type: 'string'
 			},
 			skip_cli: {
 				description: 'Do not log in the Particle CLI',
@@ -67,7 +68,8 @@ module.exports = ({ commandProcessor, root }) => {
 				type: 'string'
 			},
 			distro_version: {
-				description: 'Linux distribution version to use'
+				description: 'Linux distribution version to use',
+				type: 'string'
 			}
 		},
 		handler: (args) => {
@@ -178,4 +180,3 @@ module.exports = ({ commandProcessor, root }) => {
 
 	return tachyon;
 };
-
