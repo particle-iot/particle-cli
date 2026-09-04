@@ -1,5 +1,13 @@
 # Changelog
 
+# 3.50.1 - Sep 03 2026
+* Allow Tachyon setup to proceed from EDL without requiring a recognizable existing partition layout
+* Fix Tachyon configuration writes when changing OS partition layouts by validating the target image and re-reading the GPT after flashing
+* Align Ubuntu 24.04 onboarding with Ubuntu 20.04, including country selection, eSIM provisioning, and headless setup
+* Make `--distro_version` select the requested Ubuntu workflow without an extra OS prompt
+* Improve Tachyon identification with EDL and Particle Cloud metadata when device partitions cannot be read
+* Improve Tachyon backup and restore validation, including partition bounds, checksums, and post-write verification
+
 # 3.50.0 - Aug 24 2026
 * Fix unknown module 131 when downloading and flashing Device OS
 * Add --timestamp option to particle serial
