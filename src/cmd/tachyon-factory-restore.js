@@ -19,7 +19,9 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		this.ui = ui || this.ui;
 		spinnerMixin(this);
 		this._baseDir = settings.ensureFolder();
-		this._backupDir = path.join(process.cwd());
+		// Must match BackupRestoreTachyonCommand's default, or hasBackups() looks
+		// in the wrong place and the factory restore silently re-backs-up.
+		this._backupDir = path.join(this._baseDir, 'backups');
 		this._logsDir = path.join(this._baseDir, 'logs');
 		this.outputLog = null;
 		this.device = null;
@@ -46,7 +48,7 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 
 		const hasBackups = await this.hasBackups();
 		if (hasBackups) {
-			this.ui.write('Backup of manufacturing data found in the working directory, skipping backup step.');
+			this.ui.write('Backup of manufacturing data found, skipping backup step.');
 		} else {
 			continueProcess = await this._printMissingFilesWarning();
 			if (!continueProcess) {
@@ -165,9 +167,15 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 	}
 
 	async hasBackups() {
-		const names = await fs.readdir(this._backupDir);
 		const expected = `manufacturing_backup_${this.device.id}.zip`;
-		return names.includes(expected);
+		// Also accept the working directory, where backups landed before they were
+		// stored under the Particle data directory.
+		for (const dir of [this._backupDir, process.cwd()]) {
+			if (await fs.exists(path.join(dir, expected))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	async backupStep(){

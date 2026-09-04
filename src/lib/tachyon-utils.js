@@ -83,7 +83,7 @@ async function getEDLDevice({ ui = new UI(), showSetupMessage = false } = {}) {
 	}
 }
 
-async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false, modifyPartitions = (partitions) => partitions } = {}) {
+async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false, optionalPartitions = [], modifyPartitions = (partitions) => partitions } = {}) {
 	const { firehosePath, tempPath, gptXmlPath } = await initFiles();
 
 	const partitionTable = await readPartitionsFromDevice({
@@ -98,7 +98,8 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 		partitionList: partitionsList,
 		partitionTable,
 		deviceId: device.id,
-		dir
+		dir,
+		optionalPartitions
 	}));
 	const partitionFilenames = partitions.reduce((acc, partition) => {
 		acc[partition.label] = partition.filename;
@@ -147,7 +148,53 @@ async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, g
 		// Ignore other errors as the gpt read will fail for LUN 6 for EVT devices.
 		// If there was an actual error reading the partitions, it will trigger an error in parsePartitions.
 	}
+	await logLunCapacities({ gptPath: tempPath, logFile });
 	return parsePartitions({ gptPath: tempPath });
+}
+
+/**
+ * The real size of each LUN, straight off the device.
+ *
+ * The firehose resolves NUM_DISK_SECTORS against the actual LUN when it writes the
+ * GPT, so the header's backup-header LBA is the last sector that LUN has -- the
+ * provisioning XML only ever states what was REQUESTED, which UFS rounds up to a
+ * whole number of allocation units. This is therefore the authoritative answer to
+ * "how big is LUN n on this device", and it costs nothing: the GPTs are already
+ * on disk from the read above.
+ */
+async function readLunCapacities({ gptPath }) {
+	const capacities = [];
+	for (let i = 0; i <= 6; i++) {
+		try {
+			const buffer = await fs.readFile(path.join(gptPath, `gpt_main${i}.bin`));
+			const gpt = new GPT({ blockSize: 4096 });
+			gpt.parse(buffer, gpt.blockSize);
+			// backupLBA is the last addressable sector, so the count is one more.
+			capacities.push({ lun: i, sectors: Number(gpt.backupLBA) + 1 });
+		} catch {
+			// LUN 6 does not exist on EVT devices; a LUN we cannot read simply has
+			// no reportable size.
+		}
+	}
+	return capacities;
+}
+
+async function logLunCapacities({ gptPath, logFile }) {
+	if (!logFile) {
+		return;
+	}
+	try {
+		const capacities = await readLunCapacities({ gptPath });
+		if (!capacities.length) {
+			return;
+		}
+		const lines = capacities.map(({ lun, sectors }) =>
+			`  LUN ${lun}: ${sectors} sectors (${Math.round((sectors * 4096) / 1024 / 1024)} MiB)`
+		);
+		fs.appendFileSync(logFile, `UFS LUN geometry read from the device GPT:${os.EOL}${lines.join(os.EOL)}${os.EOL}`);
+	} catch {
+		// Diagnostics only: never fail a flash because the geometry could not be logged.
+	}
 }
 
 async function parsePartitions({ gptPath }) {
@@ -171,10 +218,16 @@ async function parsePartitions({ gptPath }) {
 	return table;
 }
 
-function partitionDefinitions({ partitionList, partitionTable, deviceId, dir }) {
+function partitionDefinitions({ partitionList, partitionTable, deviceId, dir, optionalPartitions = [] }) {
 	return partitionList.map((name) => {
 		const entry = partitionTable.find(({ partition }) => partition.name === name);
 		if (!entry) {
+			if (optionalPartitions.includes(name)) {
+				// Layouts differ across OS versions: 20.04 has boot_a/boot_b, the 24.04
+				// layout does not. Callers that only sniff these for identification pass
+				// them as optional so a missing one is absence, not a hard failure.
+				return null;
+			}
 			throw new Error(`Partition ${name} not found in device partition table`);
 		}
 		return {
@@ -184,7 +237,7 @@ function partitionDefinitions({ partitionList, partitionTable, deviceId, dir }) 
 			num_partition_sectors: Number(entry.partition.lastLBA) - Number(entry.partition.firstLBA) + 1,
 			filename: path.join(dir, `${deviceId}_${entry.partition.name}.backup`)
 		};
-	});
+	}).filter(Boolean);
 }
 
 async function verifyFilesExist(partitions) {
@@ -237,6 +290,7 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 		ui,
 		logFile: outputLog,
 		partitionsList: [FSG_PARTITION, BOOT_A_PARTITION, BOOT_B_PARTITION],
+		optionalPartitions: [BOOT_A_PARTITION, BOOT_B_PARTITION],
 		dir: partitionDir,
 		device: device,
 		operation: 'read',
@@ -269,8 +323,12 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 
 async function getIdentification({ deviceId, partitionTable, partitionFilenames }) {
 	const fsgBuffer = await fs.readFile(partitionFilenames[FSG_PARTITION]);
-	const bootABuffer = await fs.readFile(partitionFilenames[BOOT_A_PARTITION]);
-	const bootBBuffer = await fs.readFile(partitionFilenames[BOOT_B_PARTITION]);
+	const readIfPresent = async (name) => {
+		const filename = partitionFilenames[name];
+		return filename ? fs.readFile(filename) : Buffer.alloc(0);
+	};
+	const bootABuffer = await readIfPresent(BOOT_A_PARTITION);
+	const bootBBuffer = await readIfPresent(BOOT_B_PARTITION);
 
 	const regionNa = fsgBuffer.includes(REGION_NA_MARKER);
 	const regionRow = fsgBuffer.includes(REGION_ROW_MARKER);
@@ -295,17 +353,26 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	const ubuntu20 = bootABuffer.includes(UBUNTU_20_MARKER) || bootBBuffer.includes(UBUNTU_20_MARKER);
 	const ubuntu24 = bootABuffer.includes(UBUNTU_24_MARKER) || bootBBuffer.includes(UBUNTU_24_MARKER);
 	const hasVendorBoot = !!partitionTable.find(({ partition }) => partition.name.startsWith('vendor_boot'));
+	const hasPartition = (name) => !!partitionTable.find(({ partition }) => partition.name === name);
+	// The 24.04 layout dropped boot_a/boot_b and replaced the slotted system_a/system_b
+	// with a single `system`. With no boot partition to sniff a marker from, that shape
+	// is itself the identification.
+	const noBootPartitions = !hasPartition(BOOT_A_PARTITION) && !hasPartition(BOOT_B_PARTITION);
+	const singleSystem = hasPartition('system') && !hasPartition('system_a');
 	let osVersion = 'Unknown';
-	let board = 'formfactor_dvt';
+	let board = 'Unknown';
 	if (nvdataLun === 0) {
 		osVersion = 'Ubuntu 20.04 EVT';
 		board = 'formfactor';
 	} else if (nvdataLun === 5) {
+		board = 'formfactor_dvt';
 		if (hasVendorBoot) {
 			osVersion = 'Android 14';
 		} else if (ubuntu20 && !ubuntu24) {
 			osVersion = 'Ubuntu 20.04';
 		} else if (ubuntu24 && !ubuntu20) {
+			osVersion = 'Ubuntu 24.04';
+		} else if (noBootPartitions && singleSystem) {
 			osVersion = 'Ubuntu 24.04';
 		}
 	}
@@ -604,6 +671,97 @@ async function lookupCloudDeviceInfo({ deviceId, api }) {
 	}
 }
 
+const IMAGE_MANIFEST_FILE = 'manifest.json';
+// The first-boot configuration blob lives in `misc`: 1MiB at a 4096-byte sector.
+const CONFIG_PARTITION = 'misc';
+const CONFIG_PARTITION_SECTORS = 256;
+const SECTOR_SIZE_IN_BYTES = 4096;
+
+function xmlAttr(attrs, name) {
+	const m = new RegExp(`\\b${name}="([^"]*)"`).exec(attrs);
+	return m ? m[1] : undefined;
+}
+
+/**
+ * Parse the flat, attribute-only Qualcomm rawprogram grammar into partition
+ * extents. Sector values may be ptool expressions ("NUM_DISK_SECTORS-5.") which
+ * only resolve against a real device, so those entries are skipped.
+ * @param {string[]} xmlContents  rawprogramN.xml sources
+ * @returns {Map<string, {lun: number, startSector: number, numSectors: number}>}
+ */
+function parseRawProgramPartitions(xmlContents) {
+	const table = new Map();
+	for (const xml of xmlContents) {
+		const re = /<(?:program|erase)\b([^>]*?)\/?>/g;
+		let match;
+		while ((match = re.exec(xml)) !== null) {
+			const attrs = match[1];
+			const label = xmlAttr(attrs, 'label');
+			const start = Number(xmlAttr(attrs, 'start_sector'));
+			const num = Number(xmlAttr(attrs, 'num_partition_sectors'));
+			const lun = Number(xmlAttr(attrs, 'physical_partition_number'));
+			if (!label || !Number.isFinite(start) || !Number.isFinite(num) || !Number.isFinite(lun)) {
+				continue;
+			}
+			const prev = table.get(label);
+			// An erase entry carries the whole declared extent and each program
+			// chunk its own slice, so the footprint is the union of both.
+			if (!prev) {
+				table.set(label, { lun, startSector: start, numSectors: num });
+			} else {
+				const startSector = Math.min(prev.startSector, start);
+				const end = Math.max(prev.startSector + prev.numSectors, start + num);
+				table.set(label, { lun: prev.lun, startSector, numSectors: end - startSector });
+			}
+		}
+	}
+	return table;
+}
+
+/**
+ * The partition table a system image DECLARES, read from the rawprogram XMLs its
+ * manifest points at.
+ *
+ * This is the layout the device will have AFTER the image is flashed, which is
+ * why a pre-flash check has to be made against it: the live GPT still describes
+ * the OUTGOING layout, and on a 20.04 -> 24.04 setup the two differ.
+ *
+ * @param {Object} args
+ * @param {string} args.imagePath  a system image zip, or an unpacked image directory
+ */
+async function readPartitionsFromImage({ imagePath }) {
+	const stats = await fs.stat(imagePath);
+	let manifest;
+	let xmlContents;
+
+	if (stats.isDirectory()) {
+		manifest = JSON.parse(await fs.readFile(path.join(imagePath, IMAGE_MANIFEST_FILE), 'utf8'));
+		const base = manifest?.targets?.[0]?.qcm6490?.edl?.base || '.';
+		const programXml = manifest?.targets?.[0]?.qcm6490?.edl?.program_xml || [];
+		xmlContents = await Promise.all(
+			programXml.map((f) => fs.readFile(path.join(imagePath, base, f), 'utf8'))
+		);
+	} else {
+		const dir = await unzip.Open.file(imagePath);
+		const manifestEntry = dir.files.find((f) => path.basename(f.path) === IMAGE_MANIFEST_FILE);
+		if (!manifestEntry) {
+			throw new Error(`Unable to find ${IMAGE_MANIFEST_FILE} in ${imagePath}`);
+		}
+		manifest = JSON.parse((await manifestEntry.buffer()).toString());
+		const programXml = manifest?.targets?.[0]?.qcm6490?.edl?.program_xml || [];
+		xmlContents = [];
+		for (const name of programXml) {
+			const entry = dir.files.find((f) => f.path.endsWith(name));
+			if (!entry) {
+				throw new Error(`Unable to find ${name} in ${imagePath}`);
+			}
+			xmlContents.push((await entry.buffer()).toString());
+		}
+	}
+
+	return parseRawProgramPartitions(xmlContents);
+}
+
 module.exports = {
 	addLogHeaders,
 	addManifestInfoLog,
@@ -617,5 +775,13 @@ module.exports = {
 	isFile,
 	readManifestFromLocalFile,
 	regionFromModemFirmware,
-	lookupCloudDeviceInfo
+	lookupCloudDeviceInfo,
+	readPartitionsFromImage,
+	readLunCapacities,
+	parseRawProgramPartitions,
+	partitionDefinitions,
+	getIdentification,
+	CONFIG_PARTITION,
+	CONFIG_PARTITION_SECTORS,
+	SECTOR_SIZE_IN_BYTES
 };

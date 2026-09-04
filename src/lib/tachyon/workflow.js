@@ -23,9 +23,9 @@ const steps = require('./steps');
 /**
  * Setup options used by the workflow runner.
  * @typedef {Object} SetupOptions
- * @property {('NA'|'RoW'|string)} region - Target region. Default: `'NA'`.
+ * @property {('NA'|'RoW'|string)} region - Target region, resolved from explicit input, the device, the cloud, or a prompt.
  * @property {string} version - Tachyon version or channel. Default: `settings.tachyonVersion || 'stable'`.
- * @property {string} board - Hardware/board identifier (e.g., `'formfactor_dvt'`). Default: `'formfactor_dvt'`.
+ * @property {string} board - Hardware/board identifier (e.g., `'formfactor_dvt'`), resolved from explicit input, the device, the cloud, or a prompt.
  * @property {string} distroVersion - Distro version (e.g., `'20.04'`). Default: `'20.04'`.
  * @property {string} country - Country/locale code (e.g., `'USA'`). Default: `'USA'`.
  * @property {string|null} variant - Optional SKU/variant; `null` if not applicable. Default: `null`.
@@ -106,6 +106,7 @@ const ubuntu20 = Object.freeze({
 		steps.registerDeviceStep,
 		steps.getESIMProfilesStep,
 		steps.createConfigBlobStep,
+		steps.verifyConfigPartitionStep,
 		steps.flashOSAndConfigStep,
 		steps.setupCompletedStep
 	])
@@ -113,11 +114,8 @@ const ubuntu20 = Object.freeze({
 
 /** @type {Workflow} */
 const ubuntu24 = Object.freeze({
-	name: 'Ubuntu 24.04 (beta)',
+	name: 'Ubuntu 24.04',
 	value: 'ubuntu24',
-	selectionWarning: 'Heads-up: Development of Ubuntu 24.04 (beta) is still in progress. Some features may be ' +
-		`unstable or missing.${os.EOL}` +
-		`See https://developer.particle.io/tachyon/software/ubuntu_24_04/overview for more information.${os.EOL}`,
 	osInfo: {
 		distributionDisplay: 'Ubuntu 24.04',
 		distribution: 'ubuntu',
@@ -136,19 +134,40 @@ const ubuntu24 = Object.freeze({
 				`  - Power off the device by holding the power button for 3 seconds and releasing.${os.EOL}` +
 				`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
 				`When the device boots it will:${os.EOL}` +
+				`  - Activate the built-in 5G modem.${os.EOL}` +
 				`  - Connect to the Particle Cloud.${os.EOL}` +
 				`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
 				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
 		},
+		{
+			name: 'Headless (command-line only)',
+			value: 'headless',
+			setupCompletedMessage: 'All done! Your Tachyon device is now booting ' +
+				`into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+				`It will also:${os.EOL}` +
+				`  - Activate the built-in 5G modem${os.EOL}` +
+				`  - Connect to the Particle Cloud${os.EOL}` +
+				`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
+				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
+		},
 	],
+	// Same step list as ubuntu20. getCountryStep and getESIMProfilesStep were missing
+	// here, so 24.04 setup never asked for a country and never fetched the eSIM
+	// profiles -- the config blob went out with no `esim` key and the device relied on
+	// whatever was already provisioned on the eUICC. particle-linux has read this since
+	// it shipped (bootstrap.ts stores `esim_bootstrap` from the blob's `esim`), so the
+	// consumer was there the whole time; only the producer was missing.
 	steps: Object.freeze([
 		steps.pickVariant,
 		steps.getUserConfigurationStep,
 		steps.configureProductStep,
+		steps.getCountryStep,
 		steps.downloadOS,
 		steps.printOSInfo,
 		steps.registerDeviceStep,
+		steps.getESIMProfilesStep,
 		steps.createConfigBlobStep,
+		steps.verifyConfigPartitionStep,
 		steps.flashOSAndConfigStep,
 		steps.setupCompletedStep
 	])

@@ -6,7 +6,14 @@ const temp = require('temp').track();
 const path = require('path');
 const settings = require('../../../settings');
 const { sha512crypt } = require('sha512crypt-node');
-const { promptWifiNetworks, prepareFlashFiles } = require('../tachyon-utils');
+const {
+	promptWifiNetworks,
+	prepareFlashFiles,
+	readPartitionsFromImage,
+	CONFIG_PARTITION,
+	CONFIG_PARTITION_SECTORS,
+	SECTOR_SIZE_IN_BYTES
+} = require('../tachyon-utils');
 const { platformForId, PLATFORMS } = require('../platform');
 const { supportedCountries } = require('../supported-countries');
 const DownloadManager = require('../download-manager');
@@ -355,6 +362,12 @@ async function getESIMProfilesStep({ api, ui, deviceInfo, productId, country }, 
 	return { esim };
 }
 
+/**
+ * Build the first-boot configuration blob. It is only written to `misc` after the
+ * OS is flashed (see `flash`), because until then the device's GPT still
+ * describes the OUTGOING layout: resolving the address here and programming it
+ * later would put the blob at whatever moved into those sectors.
+ */
 async function createConfigBlobStep(context, stepIndex) {
 	formatAndDisplaySteps({
 		ui: context.ui,
@@ -362,17 +375,51 @@ async function createConfigBlobStep(context, stepIndex) {
 		step: stepIndex,
 	});
 	const { configBlobPath } = await createBlobFile(context);
-	const { xmlFile: xmlPath } = await prepareFlashFiles({
-		logFile: context.log.file,
-		ui: context.ui,
-		partitionsList: ['misc'],
-		dir: path.dirname(configBlobPath),
-		deviceId: context.deviceInfo.deviceId,
-		operation: 'program',
-		checkFiles: true,
-		device: context.device,
+	return { configBlobPath };
+}
+
+/**
+ * Fail before a multi-GB write if the image we are about to flash cannot hold the
+ * configuration blob. 24.04 shipped without a `misc` partition at all, which made
+ * `particle tachyon setup` fail after the flash on a device already running
+ * 24.04, and silently write the blob to the wrong sectors coming from 20.04.
+ */
+async function verifyConfigPartitionStep({ ui, osFilePath, configBlobPath, skipFlashingOs, workflow }, stepIndex) {
+	if (skipFlashingOs || !configBlobPath) {
+		// Nothing is being flashed, so the live layout is the one that counts and
+		// the post-flash GPT read is the only gate that applies.
+		return {};
+	}
+	formatAndDisplaySteps({
+		ui,
+		text: 'Checking that the operating system image can store your configuration...',
+		step: stepIndex,
 	});
-	return { xmlPath };
+
+	const imageName = path.basename(osFilePath);
+	const partitions = await readPartitionsFromImage({ imagePath: osFilePath });
+	const misc = partitions.get(CONFIG_PARTITION);
+	if (!misc) {
+		throw new VError(
+			`The ${workflow.osInfo.distributionDisplay} image '${imageName}' has no '${CONFIG_PARTITION}' partition, ` +
+			'so your password, Wi-Fi and registration settings cannot be applied. ' +
+			'Use a newer image, or flash without setup and configure the device by hand.'
+		);
+	}
+	if (misc.numSectors < CONFIG_PARTITION_SECTORS) {
+		throw new VError(
+			`The '${CONFIG_PARTITION}' partition in '${imageName}' is ${misc.numSectors} sectors; ` +
+			`at least ${CONFIG_PARTITION_SECTORS} are required.`
+		);
+	}
+	const { size } = await fs.stat(configBlobPath);
+	const capacity = misc.numSectors * SECTOR_SIZE_IN_BYTES;
+	if (size > capacity) {
+		throw new VError(
+			`The configuration is ${size} bytes but the '${CONFIG_PARTITION}' partition in '${imageName}' holds ${capacity}.`
+		);
+	}
+	return {};
 }
 
 async function createBlobFile(context) {
@@ -403,7 +450,7 @@ async function createBlobFile(context) {
 	return { configBlobPath: filePath, configBlob: config };
 }
 
-async function flashOSAndConfigStep({ ui, log, productSlug, device, xmlPath, variant, osFilePath, skipFlashingOs, workflow }, stepIndex) {
+async function flashOSAndConfigStep({ ui, log, productSlug, device, configBlobPath, variant, osFilePath, skipFlashingOs, workflow }, stepIndex) {
 	const message = getFlashMessage({ ui, device, productSlug, workflow });
 	return runStepWithTiming(
 		ui,
@@ -412,30 +459,33 @@ async function flashOSAndConfigStep({ ui, log, productSlug, device, xmlPath, var
 		() => flash({
 			device,
 			log,
+			ui,
 			osPath: osFilePath,
-			xmlPath: xmlPath,
+			configBlobPath,
 			skipFlashingOs: skipFlashingOs,
 			skipReset: variant !== 'headless'
 		})
 	);
 }
 
-async function flash({ device, osPath, xmlPath, skipFlashingOs, skipReset, log }) {
+async function flash({ device, osPath, configBlobPath, skipFlashingOs, skipReset, log, ui }) {
 	const flashCommand = new FlashCommand();
-	const shouldResetOS = skipReset || xmlPath;
+	// Stay in EDL after the OS write while a configuration blob is still to come.
+	const keepInEdl = skipReset || Boolean(configBlobPath);
 	if (!skipFlashingOs) {
 		// flash OS
 		await flashCommand.flashTachyon({
 			device,
 			files: [osPath],
-			skipReset: shouldResetOS,
+			skipReset: keepInEdl,
 			output: log.file,
 			verbose: false
 		});
 	} else {
 		log.info(`Skip flashing OS ${os.EOL}`);
 	}
-	if (xmlPath) {
+	if (configBlobPath) {
+		const xmlPath = await resolveConfigPartition({ device, osPath, configBlobPath, log, ui });
 		// flash xml
 		await flashCommand.flashTachyonXml({
 			device,
@@ -446,6 +496,36 @@ async function flash({ device, osPath, xmlPath, skipFlashingOs, skipReset, log }
 	}
 	return { flashSuccessful: true };
 
+}
+
+/**
+ * Read the GPT the device is running NOW -- after the OS write -- and build the
+ * qdl program XML that puts the configuration blob at that address. Never reuse
+ * an XML built from the pre-flash table: the LBA `misc` had on the outgoing
+ * layout may belong to another partition on the incoming one.
+ */
+async function resolveConfigPartition({ device, osPath, configBlobPath, log, ui }) {
+	try {
+		const { xmlFile } = await prepareFlashFiles({
+			logFile: log.file,
+			ui,
+			partitionsList: [CONFIG_PARTITION],
+			dir: path.dirname(configBlobPath),
+			operation: 'program',
+			checkFiles: true,
+			device,
+		});
+		return xmlFile;
+	} catch (error) {
+		if (error.message && error.message.includes('not found in device partition table')) {
+			throw new VError(
+				`The device has no '${CONFIG_PARTITION}' partition after flashing '${path.basename(osPath)}', ` +
+				'so your password, Wi-Fi and registration settings could not be applied. ' +
+				'The operating system was installed; configure the device by hand, or flash an image that provides it.'
+			);
+		}
+		throw error;
+	}
 }
 
 function getFlashMessage({ ui, device, productSlug, workflow }){
@@ -531,6 +611,7 @@ module.exports = {
 	registerDeviceStep,
 	getESIMProfilesStep,
 	createConfigBlobStep,
+	verifyConfigPartitionStep,
 	flashOSAndConfigStep,
 	setupCompletedStep
 };
