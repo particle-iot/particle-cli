@@ -17,6 +17,11 @@ const BOOT_B_PARTITION = 'boot_b';
 
 const REGION_NA_MARKER = Buffer.from('SG560D-NA');
 const REGION_ROW_MARKER = Buffer.from('SG560D-EM');
+
+// The modem firmware string carries the region in the two characters that follow
+// the `SG560D` model prefix: `SG560DNA...` is North America, `SG560DEM...` is the
+// rest of the world. This is the same rule the manufacturing test applies -- see
+// tachyon-overlays: overlays/manufacturing/files/read-region.sh.
 const MODEM_MODEL_PREFIX = 'SG560D';
 const REGION_BY_MODEM_CODE = { NA: 'NA', EM: 'RoW' };
 const EFS_PARTITION_HEADER = Buffer.from('EFS');
@@ -613,8 +618,10 @@ async function readManifestFromLocalFile(path, targetFile = 'manifest.json') {
 }
 
 /**
- * The cloud reports the modem firmware as e.g. SG560DNAPAR60A03. The two
- * characters following the model identify the hardware region.
+ * Derive the region from a modem firmware version string.
+ *
+ * @param {string} firmwareVersion e.g. `SG560DNAPAR60A03`
+ * @returns {('NA'|'RoW'|null)} null when the string is absent or unrecognised
  */
 function regionFromModemFirmware(firmwareVersion) {
 	if (typeof firmwareVersion !== 'string' || !firmwareVersion.startsWith(MODEM_MODEL_PREFIX)) {
@@ -625,9 +632,19 @@ function regionFromModemFirmware(firmwareVersion) {
 }
 
 /**
- * Best-effort lookup by the device ID exposed in EDL mode. Setup and identify
- * must continue when the user is offline, the device has never connected, or
- * the record is unavailable to the current account.
+ * Look a device up in the Particle Cloud by its device ID.
+ *
+ * A device in EDL mode reports its device ID over plain USB enumeration, before
+ * any firehose upload or partition read. That ID is enough to ask the cloud what
+ * the device is, which is both faster and more complete than sniffing partitions:
+ * the cloud knows the region (via `modem_firmware_version`, the same
+ * `SG560D` + `NA`/`EM` string the manufacturing test reads), the serial number,
+ * and which image was last reported.
+ *
+ * This never throws. A CLI that is not logged in, a device that has never
+ * connected, and a machine with no network are all ordinary outcomes here.
+ *
+ * @returns {Promise<Object|null>} null when the device cannot be looked up
  */
 async function lookupCloudDeviceInfo({ deviceId, api }) {
 	if (!api || !deviceId) {
@@ -638,7 +655,7 @@ async function lookupCloudDeviceInfo({ deviceId, api }) {
 		if (!device || !device.id) {
 			return null;
 		}
-		const distro = device.linux_metadata?.distro || {};
+		const distro = (device.linux_metadata && device.linux_metadata.distro) || {};
 		return {
 			name: device.name || null,
 			region: regionFromModemFirmware(device.modem_firmware_version),
