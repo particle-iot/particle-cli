@@ -336,7 +336,17 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	publishEvent({ name, data, product }){
+	publishEvent({ name, data, product, org }){
+		if (org){
+			// particle-api-js has no org parameter for publishEvent; build the request here
+			return this._wrap(
+				this.api.post({
+					uri: `/v1/orgs/${org}/events`,
+					auth: this.accessToken,
+					data: { name, data, private: true }
+				})
+			);
+		}
 		return this._wrap(
 			this.api.publishEvent({
 				name,
