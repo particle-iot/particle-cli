@@ -21,16 +21,16 @@ describe('Subscribe Commands [@device]', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
 		'Options:',
-		'  --all      Listen to all events instead of just those from my devices  [boolean]',
 		'  --device   Listen to events from this device only  [string]',
 		'  --product  Target a device within the given Product ID or Slug  [string]',
+		'  --org      Specify the organization slug (e.g. my-org)  [string]',
 		'',
 		'Examples:',
 		'  particle subscribe                  Subscribe to all event published by my devices',
 		'  particle subscribe update           Subscribe to events starting with `update` from my devices',
 		'  particle subscribe --product 12345  Subscribe to all events published by devices within product `12345`',
+		'  particle subscribe --org my-org     Subscribe to all events published by devices within organization `my-org`',
 		'  particle subscribe --device blue    Subscribe to all events published by device `blue`',
-		'  particle subscribe --all            Subscribe to public events and all events published by my devices',
 		'  particle subscribe --until data     Subscribe to all events and exit when an event has data matching `data`',
 		'  particle subscribe --max 4          Subscribe to all events and exit after seeing `4` events',
 		''
@@ -99,47 +99,25 @@ describe('Subscribe Commands [@device]', () => {
 		expect(isCanceled).to.equal(true);
 	});
 
-	it('Subscribes to `--all` events', async () => {
-		await cli.callStrobyStart(DEVICE_NAME);
+	it('Subscribes to an organization\'s events', async () => {
+		const org = 'cyberdyne-systems';
+		const args = ['subscribe', '--org', org];
+		const { received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
-		const eventName = DEVICE_ID.substring(0, 6);
-		const eventData = 'active';
-		const args = ['subscribe', '--all', eventName];
-		const { received: [msg, ...data], isCanceled } = await runAndCollectEventOutput(args);
-		const events = getPublishedEventsByName(data, eventName);
-
-		expect(msg).to.equal(`Subscribing to "${eventName}" from the firehose (all devices) and my personal stream (my devices)`);
-		expect(events).to.have.lengthOf.above(2);
-		events.forEach(event => {
-			expect(event).to.have.property('name', eventName);
-			expect(event).to.have.property('data').to.equal(eventData);
-			expect(event).to.have.property('coreid', DEVICE_ID);
-		});
+		expect(msg).to.equal(`Subscribing to all events from organization ${org}'s stream`);
 		expect(isCanceled).to.equal(true);
 	});
 
-	it('Subscribes to `--all` events with partial matching', async () => {
-		await cli.callStrobyStart(DEVICE_NAME);
-
-		const eventName = DEVICE_ID.substring(0, 4);
-		const args = ['subscribe', '--all', eventName];
-		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
-
-		expect(msg).to.equal(`Subscribing to "${eventName}" from the firehose (all devices) and my personal stream (my devices)`);
-		expect(events).to.have.lengthOf.above(2);
-		events.forEach(event => {
-			expect(event).to.have.property('name');
-			expect(event.name.startsWith(eventName)).to.equal(true);
-			expect(event).to.have.property('data');
-			expect(event).to.have.property('coreid');
-		});
-		expect(isCanceled).to.equal(true);
-	});
-
-	it('Fails when `--all` flag is set but event name is not provided', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['subscribe', '--all']);
-		expect(stdout).to.include('`event` parameter is required when `--all` flag is set');
+	it('Fails when `--org` is combined with `--product`', async () => {
+		const { stdout, stderr, exitCode } = await cli.run(['subscribe', '--org', 'cyberdyne-systems', '--product', PRODUCT_01_ID]);
+		expect(stdout).to.include('`--org` cannot be combined with `--product` or `--device`');
 		expect(stderr.split(os.EOL)).to.include.members(help);
+		expect(exitCode).to.equal(1);
+	});
+
+	it('Rejects the removed `--all` flag', async () => {
+		const { stdout, stderr, exitCode } = await cli.run(['subscribe', '--all', 'led']);
+		expect(stdout + stderr).to.include("Unknown argument 'all'");
 		expect(exitCode).to.equal(1);
 	});
 

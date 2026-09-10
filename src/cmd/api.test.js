@@ -246,6 +246,32 @@ describe('ParticleApi', () => {
 		});
 	});
 
+	describe('getEventStream', () => {
+		it('opens the user stream when no scope is given', async () => {
+			const stub = sandbox.stub(particleApi.api, 'getEventStream').resolves({ body: 'stream' });
+
+			await particleApi.getEventStream({ deviceId: 'mine', name: 'led' });
+
+			expect(stub).to.have.been.calledWithMatch({ deviceId: 'mine', name: 'led', auth: 'test-token' });
+			expect(stub.firstCall.args[0].org).to.equal(undefined);
+		});
+
+		it('forwards a product scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'getEventStream').resolves({ body: 'stream' });
+
+			await particleApi.getEventStream({ name: 'led', product: 'my-product' });
+
+			expect(stub).to.have.been.calledWithMatch({ product: 'my-product' });
+		});
+
+		it('forwards an org scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'getEventStream').resolves({ body: 'stream' });
+
+			await particleApi.getEventStream({ name: 'led', org: 'my-org' });
+
+			expect(stub).to.have.been.calledWithMatch({ org: 'my-org', name: 'led' });
+		});
+	});
 	describe('listEnv', () => {
 		it('should call the correct API endpoint for sandbox', async () => {
 			const expectedUri = '/v1/env';
