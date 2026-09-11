@@ -69,7 +69,7 @@ describe('Publish Command-Line Interface', () => {
 					'  --org      Specify the organization slug (e.g. my-org)  [string]',
 					'',
 					'Examples:',
-					'  particle publish temp 25.0                  Publish a temp event to your private event stream',
+					'  particle publish temp 25.0                  Publish a temp event to your event stream',
 					'  particle publish temp 25.0 --product 12345  Publish a temp event to your product 12345\'s event stream',
 					'  particle publish temp 25.0 --org my-org     Publish a temp event to every product in organization my-org',
 					''

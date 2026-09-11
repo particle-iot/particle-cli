@@ -20,7 +20,7 @@ describe('Publish Commands', () => {
 		'  --org      Specify the organization slug (e.g. my-org)  [string]',
 		'',
 		'Examples:',
-		'  particle publish temp 25.0                  Publish a temp event to your private event stream',
+		'  particle publish temp 25.0                  Publish a temp event to your event stream',
 		'  particle publish temp 25.0 --product 12345  Publish a temp event to your product 12345\'s event stream',
 		'  particle publish temp 25.0 --org my-org     Publish a temp event to every product in organization my-org',
 	];
@@ -62,7 +62,7 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include(`Published private event: ${eventName}${os.EOL}`);
+		expect(stdout).to.include(`Published event: ${eventName}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -71,16 +71,7 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName, '--product', PRODUCT_01_ID];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	it('Publishes a private product event', async () => {
-		const args = ['publish', eventName, '--product', PRODUCT_01_ID];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stdout).to.include(`Published event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -90,7 +81,7 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName, '--org', org];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include(`Published private event: ${eventName} to organization: ${org}${os.EOL}`);
+		expect(stdout).to.include(`Published event: ${eventName} to organization: ${org}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});

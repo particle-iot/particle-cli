@@ -17,7 +17,7 @@ module.exports = class PublishCommand extends CLICommandBase {
 			);
 		}
 
-		let epilogue = `private event: ${event}`;
+		let epilogue = `event: ${event}`;
 
 		if (product){
 			epilogue += ` to product: ${product}`;

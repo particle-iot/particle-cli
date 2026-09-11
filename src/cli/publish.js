@@ -16,7 +16,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new PublishCommand(args).publishEvent(args);
 		},
 		examples: {
-			'$0 $command temp 25.0': 'Publish a temp event to your private event stream',
+			'$0 $command temp 25.0': 'Publish a temp event to your event stream',
 			'$0 $command temp 25.0 --product 12345': 'Publish a temp event to your product 12345\'s event stream',
 			'$0 $command temp 25.0 --org my-org': 'Publish a temp event to every product in organization my-org'
 		}

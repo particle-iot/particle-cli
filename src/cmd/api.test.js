@@ -273,12 +273,13 @@ describe('ParticleApi', () => {
 		});
 	});
 	describe('publishEvent', () => {
-		it('publishes a private event to the user stream', async () => {
+		it('publishes an event to the user stream', async () => {
 			const stub = sandbox.stub(particleApi.api, 'publishEvent').resolves({ body: { ok: true } });
 
 			await particleApi.publishEvent({ name: 'temp', data: '25.0' });
 
-			expect(stub).to.have.been.calledWithMatch({ name: 'temp', data: '25.0', isPrivate: true, auth: 'test-token' });
+			expect(stub).to.have.been.calledWithMatch({ name: 'temp', data: '25.0', auth: 'test-token' });
+			expect(stub.firstCall.args[0]).to.not.have.property('isPrivate');
 			expect(stub.firstCall.args[0].product).to.equal(undefined);
 		});
 
@@ -300,7 +301,7 @@ describe('ParticleApi', () => {
 			expect(postStub).to.have.been.calledWithMatch({
 				uri: '/v1/orgs/my-org/events',
 				auth: 'test-token',
-				data: { name: 'temp', data: '25.0', private: true }
+				data: { name: 'temp', data: '25.0' }
 			});
 			expect(result).to.deep.equal({ ok: true });
 		});

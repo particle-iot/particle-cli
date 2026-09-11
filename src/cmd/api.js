@@ -343,7 +343,7 @@ module.exports = class ParticleApi {
 				this.api.post({
 					uri: `/v1/orgs/${org}/events`,
 					auth: this.accessToken,
-					data: { name, data, private: true }
+					data: { name, data }
 				})
 			);
 		}
@@ -352,7 +352,6 @@ module.exports = class ParticleApi {
 				name,
 				data,
 				product,
-				isPrivate: true,
 				auth: this.accessToken
 			})
 		);
