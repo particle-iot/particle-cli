@@ -30,6 +30,7 @@ describe('Flash Commands [@device]', () => {
 		'  --factory           Flash user application to the factory reset location. Only available for USB flash  [boolean]',
 		'  --yes               Answer yes to all questions  [boolean]',
 		'  --target            The firmware version to compile against. Defaults to latest version.  [string]',
+		'  --compiler          Where to compile the source code. local uses the toolchain under ~/.particle/toolchains, downloading it when missing  [string] [choices: "cloud", "local"] [default: "cloud"]',
 		'  --application-only  Do not update Device OS when flashing locally  [boolean]',
 		'  --port              Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial  [string]',
 		'',

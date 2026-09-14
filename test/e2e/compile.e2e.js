@@ -26,6 +26,7 @@ describe('Compile Commands', () => {
 		'Options:',
 		'  --target          The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
 		'  --followSymlinks  Follow symlinks when collecting files  [boolean]',
+		'  --compiler        Where to compile the source code. local uses the toolchain under ~/.particle/toolchains, downloading it when missing  [string] [choices: "cloud", "local"] [default: "cloud"]',
 		'  --saveTo          Filename for the compiled binary  [string]',
 		'',
 		'Examples:',

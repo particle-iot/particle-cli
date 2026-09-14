@@ -1,5 +1,6 @@
 'use strict';
 const utilities = require('../lib/utilities');
+const { compilerOption } = require('./compiler-option');
 
 module.exports = ({ commandProcessor, root }) => {
 	const cloud = commandProcessor.createCategory(root, 'cloud', 'Access Particle cloud functionality');
@@ -11,7 +12,8 @@ module.exports = ({ commandProcessor, root }) => {
 		'followSymlinks': {
 			boolean: true,
 			description: 'Follow symlinks when collecting files'
-		}
+		},
+		...compilerOption()
 	};
 
 	commandProcessor.createCommand(cloud, 'list', 'Display a list of your devices, as well as their variables and functions', {
