@@ -122,7 +122,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			.then(() => this.ui.stdout.write(`Successfully renamed device ${device} to: ${name}${os.EOL}`));
 	}
 
-	async flashDevice({ target, followSymlinks, product, params: { device, files } }){
+	async flashDevice({ target, followSymlinks, product, compiler, params: { device, files } }){
 		if (product){
 			if (!this.isDeviceId(device)){
 				await this.showProductDeviceNameUsageError(device);
@@ -155,7 +155,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
 				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
 
-				const { filename } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
+				const { filename } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files, compiler });
 
 				fileMapping = { map: { [filename]: filename } };
 			}
