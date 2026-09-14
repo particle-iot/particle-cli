@@ -22,6 +22,7 @@ const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
 const BundleCommands = require('./bundle');
 const { sourcePatterns } = require('../lib/file-types');
 const { LocalCompiler } = require('../lib/toolchain/local-compiler');
+const { vendorProjectLibraries } = require('../lib/toolchain/library-vendor');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
@@ -358,6 +359,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 		const platformName = platformForId(platformId).name;
 		const projectDir = await this._localProjectDir({ files, fileMapping });
 		const assetOtaDir = await this._assetOtaDirOf(projectDir);
+		// make cannot fetch dependencies.* the way the cloud compiler does; vendor them into lib/
+		await this._vendorLibraries(projectDir);
 		const compiler = this._localCompiler();
 
 		const result = await compiler.compile({
@@ -383,6 +386,10 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 	_localCompiler() {
 		return new LocalCompiler({ ui: this.ui });
+	}
+
+	_vendorLibraries(projectDir) {
+		return vendorProjectLibraries({ projectDir, api: this.api, ui: this.ui });
 	}
 
 	/**

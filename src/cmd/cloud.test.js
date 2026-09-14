@@ -992,6 +992,18 @@ describe('Cloud Commands', () => {
 			expect(cloud.ui.stdout.write).to.have.been.calledWithMatch(/Compile succeeded\./);
 		});
 
+		it('vendors the project libraries before running make', async () => {
+			const vendor = sandbox.stub(cloud, '_vendorLibraries').resolves([{ name: 'neopixel', version: '1.0.3' }]);
+			await cloud._compileLocal({
+				files: [projectDir],
+				fileMapping: { basePath: process.cwd(), map: {} },
+				platformId: 12,
+				filename: path.join(outDir, 'app.bin')
+			});
+			expect(vendor).to.have.been.calledWith(path.resolve(projectDir));
+			expect(vendor).to.have.been.calledBefore(compile);
+		});
+
 		it('lays individual files out in a temp directory from the file map', async () => {
 			const source = path.join(projectDir, 'src', 'app.ino');
 			const filename = path.join(outDir, 'single.bin');
