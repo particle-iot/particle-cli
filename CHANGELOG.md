@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.50.2 - Sep 14 2026
+* Harden library install
+
 # 3.50.1 - Sep 03 2026
 * Allow Tachyon setup to proceed from EDL without requiring a recognizable existing partition layout
 * Fix Tachyon configuration writes when changing OS partition layouts by validating the target image and re-reading the GPT after flashing
