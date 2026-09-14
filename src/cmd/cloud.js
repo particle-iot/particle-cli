@@ -285,11 +285,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			requireToken();
 		}
 
-		if (target && !isLocal) {
-			if (target === 'latest') {
-				return;
-			}
-
+		// `latest` means no specific version, which is what the compiler does without a target
+		if (target && target !== 'latest' && !isLocal) {
 			const data = await this.api.listDeviceOsVersions({ platformId });
 
 			const validTarget = data?.versions?.filter((t) => t.version === target);
