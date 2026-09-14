@@ -884,6 +884,25 @@ describe('Cloud Commands', () => {
 		});
 	});
 
+	describe('flashDevice with --compiler local', () => {
+		it('compiles locally before flashing over the air', async () => {
+			const projectDir = path.join(PATH_TMP_DIR, 'ota-local-project');
+			await fs.ensureDir(projectDir);
+			const cloud = new CloudCommands({ stdout: { write: sandbox.stub() }, stderr: { write: sandbox.stub() } });
+			sandbox.stub(cloud.api, 'getDeviceAttributes').resolves({ platform_id: 12 });
+			sandbox.stub(cloud, 'compileCodeImpl').resolves({ isBundle: false, filename: '/out/app.bin' });
+			sandbox.stub(cloud, '_doFlash').resolves();
+			try {
+				await cloud.flashDevice({ target: '6.4.1', compiler: 'local', params: { device: 'red', files: [projectDir] } });
+			} finally {
+				await fs.remove(projectDir);
+			}
+			expect(cloud.compileCodeImpl).to.have.been.calledOnce;
+			expect(cloud.compileCodeImpl.firstCall.args[0]).to.include({ compiler: 'local', target: '6.4.1', platformId: 12, deviceType: 'argon' });
+			expect(cloud._doFlash).to.have.been.calledWith({ product: undefined, deviceId: 'red', fileMapping: { map: { '/out/app.bin': '/out/app.bin' } } });
+		});
+	});
+
 	describe('compileCodeImpl with --compiler local', () => {
 		let cloud, projectDir;
 

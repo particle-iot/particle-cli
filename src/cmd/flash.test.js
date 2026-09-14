@@ -254,6 +254,70 @@ describe('FlashCommand', () => {
 	});
 
 
+	describe('--compiler forwarding', () => {
+		it('hands --compiler to the compile step for a source directory', async () => {
+			const dir = await temp.mkdir();
+			await fs.writeFile(path.join(dir, 'app.ino'), 'void setup(){}');
+			const stub = sinon.stub(flash, '_compileCode').resolves(['compiled.bin']);
+
+			await flash._prepareFilesToFlash({ parsedFiles: [dir], platformId: 12, target: '6.4.1', compiler: 'local' });
+
+			expect(stub).to.have.been.calledWith({ parsedFiles: [dir], platformId: 12, target: '6.4.1', compiler: 'local' });
+		});
+
+		it('hands --compiler to compileCodeImpl', async () => {
+			const CloudCommand = require('./cloud');
+			const stub = sinon.stub(CloudCommand.prototype, 'compileCodeImpl').resolves({ filename: '/out/app.bin', isBundle: false });
+
+			const result = await flash._compileCode({ parsedFiles: ['.'], platformId: 12, target: '6.4.1', compiler: 'local' });
+
+			expect(result).to.eql(['/out/app.bin']);
+			expect(stub.firstCall.args[0]).to.deep.include({ platformId: 12, target: '6.4.1', compiler: 'local', files: ['.'] });
+		});
+
+		it('warns that --compiler local is ignored when flashing a binary', async () => {
+			const write = sinon.stub(flash.ui, 'write');
+			const bin = await temp.path({ suffix: '.bin' });
+			await fs.writeFile(bin, 'binary data');
+
+			await flash._prepareFilesToFlash({ parsedFiles: [bin], compiler: 'local' });
+
+			expect(write).to.have.been.calledWith(`--compiler local is ignored: ${path.basename(bin)} is a binary, nothing is compiled`);
+		});
+
+		it('says nothing about the default compiler when flashing a binary', async () => {
+			const write = sinon.stub(flash.ui, 'write');
+			const bin = await temp.path({ suffix: '.bin' });
+			await fs.writeFile(bin, 'binary data');
+
+			await flash._prepareFilesToFlash({ parsedFiles: [bin] });
+
+			expect(write).to.not.have.been.called;
+		});
+
+		it('passes --compiler to the USB and over-the-air paths', async () => {
+			sinon.stub(flash.ui, 'logFirstTimeFlashWarning');
+			const local = sinon.stub(flash, 'flashLocal').resolves();
+			const cloud = sinon.stub(flash, 'flashCloud').resolves();
+
+			await flash.flash(undefined, undefined, [], { local: true, target: '6.4.1', compiler: 'local' });
+			expect(local).to.have.been.calledWith({ files: [], applicationOnly: undefined, target: '6.4.1', compiler: 'local' });
+
+			await flash.flash('red', undefined, [], { compiler: 'local' });
+			expect(cloud).to.have.been.calledWith({ device: 'red', files: [], target: undefined, compiler: 'local' });
+		});
+
+		it('warns when --compiler local meets --usb', async () => {
+			sinon.stub(flash.ui, 'logFirstTimeFlashWarning');
+			const write = sinon.stub(flash.ui, 'write');
+			sinon.stub(flash, 'flashOverUsb').resolves();
+
+			await flash.flash(undefined, 'app.bin', [], { usb: true, compiler: 'local' });
+
+			expect(write).to.have.been.calledWith('--compiler local is ignored: --usb flashes a binary, nothing is compiled');
+		});
+	});
+
 	describe('_processBundle', () => {
 		it('returns a flat list of filenames after extracting bundles', async () => {
 			const filesToFlash = ['system-part1.bin', 'bundle.zip', 'system-part2.bin'];

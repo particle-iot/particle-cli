@@ -147,6 +147,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		yes,
 		tachyon,
 		output,
+		compiler = 'cloud',
 		'skip-reset': skipReset,
 		'application-only': applicationOnly
 	}) {
@@ -158,17 +159,26 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.logFirstTimeFlashWarning();
 
 		if (usb) {
+			this._warnCompilerIgnored({ compiler, reason: '--usb flashes a binary' });
 			await this.flashOverUsb({ binary, factory });
 		} else if (serial) {
+			this._warnCompilerIgnored({ compiler, reason: '--serial flashes a binary' });
 			await this.flashSerialDeprecated({ binary, port, yes });
 		} else if (local) {
 			const allFiles = binary ? [binary, ...files] : files;
-			await this.flashLocal({ files: allFiles, applicationOnly, target });
+			await this.flashLocal({ files: allFiles, applicationOnly, target, compiler });
 		} else if (tachyon) {
+			this._warnCompilerIgnored({ compiler, reason: '--tachyon flashes an image' });
 			const allFiles = binary ? [binary, ...files] : files;
 			await this.flashTachyon({ files: allFiles, skipReset, output });
 		} else {
-			await this.flashCloud({ device, files, target });
+			await this.flashCloud({ device, files, target, compiler });
+		}
+	}
+
+	_warnCompilerIgnored({ compiler, reason }) {
+		if (compiler && compiler !== 'cloud') {
+			this.ui.write(`--compiler ${compiler} is ignored: ${reason}, nothing is compiled`);
 		}
 	}
 
@@ -433,13 +443,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 	}
 
-	async flashCloud({ device, files, target }) {
+	async flashCloud({ device, files, target, compiler }) {
 		// We don't check for Device Protection here
 		// because it will not matter for cloud flashing
 		// These are rejected for Protected Devices even if the device is in Service Mode
+		// The upload needs a login even when the code was compiled locally
 		await verifyFreshTokenMiddleware({ thresholdMs: 15 * 60 * 1000 });
 		const CloudCommands = require('../cmd/cloud');
-		const args = { target, params: { device, files } };
+		const args = { target, compiler, params: { device, files } };
 		return new CloudCommands().flashDevice(args);
 	}
 
@@ -448,16 +459,16 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
 
-	async flashLocal({ files, applicationOnly, target, verbose = true }) {
+	async flashLocal({ files, applicationOnly, target, compiler, verbose = true }) {
 		const { files: parsedFiles, deviceIdOrName, knownApp } = await this._analyzeFiles(files);
 		const { api, auth } = this._particleApi();
 		await usbUtils.executeWithUsbDevice({
 			args: { idOrName: deviceIdOrName, api, auth, ui: this.ui },
-			func: (dev) => this._flashLocal(dev, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose)
+			func: (dev) => this._flashLocal(dev, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose, compiler)
 		});
 	}
 
-	async _flashLocal(device, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose = true) {
+	async _flashLocal(device, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose = true, compiler = 'cloud') {
 		const platformId = device.platformId;
 		const platformName = platformForId(platformId).name;
 		const currentDeviceOsVersion = device.firmwareVersion;
@@ -473,7 +484,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			parsedFiles,
 			platformId,
 			platformName,
-			target
+			target,
+			compiler
 		});
 
 		filesToFlash = await this._processBundle({ filesToFlash });
@@ -559,8 +571,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 
-	async _prepareFilesToFlash({ knownApp, parsedFiles, platformId, platformName, target }) {
+	async _prepareFilesToFlash({ knownApp, parsedFiles, platformId, platformName, target, compiler = 'cloud' }) {
 		if (knownApp) {
+			this._warnCompilerIgnored({ compiler, reason: `${knownApp} is a pre-built app` });
 			const knownAppPath = knownAppsForPlatform(platformName)[knownApp];
 			if (knownAppPath) {
 				return { skipDeviceOSFlash: true, files: [knownAppPath] };
@@ -585,11 +598,12 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 			if (binaries.length > 0 && sources.length === 0) {
 				// this is a binary directory so get all the binaries from all the parsedFiles
+				this._warnCompilerIgnored({ compiler, reason: 'the directory holds binaries' });
 				const binaries = await this._findBinaries(parsedFiles);
 				return { skipDeviceOSFlash: false, files: binaries };
 			} else if (sources.length > 0) {
 				// this is a source directory so compile it
-				const compileResult = await this._compileCode({ parsedFiles, platformId, target });
+				const compileResult = await this._compileCode({ parsedFiles, platformId, target, compiler });
 				return { skipDeviceOSFlash: false, files: compileResult };
 			} else {
 				throw new Error('No files found to flash');
@@ -598,19 +612,20 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// this is a file so figure out if it's a source file that should be compiled or a
 			// binary that should be flashed directly
 			if (binaryExtensions.includes(path.extname(filePath))) {
+				this._warnCompilerIgnored({ compiler, reason: `${path.basename(filePath)} is a binary` });
 				const binaries = await this._findBinaries(parsedFiles);
 				return { skipDeviceOSFlash: false, files: binaries };
 			} else {
-				const compileResult = await this._compileCode({ parsedFiles, platformId, target });
+				const compileResult = await this._compileCode({ parsedFiles, platformId, target, compiler });
 				return { skipDeviceOSFlash: false, files: compileResult };
 			}
 		}
 	}
 
-	async _compileCode({ parsedFiles, platformId, target }) {
+	async _compileCode({ parsedFiles, platformId, target, compiler = 'cloud' }) {
 		const cloudCommand = new CloudCommand();
 		const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
-		const { filename } = await cloudCommand.compileCodeImpl({ target, saveTo, platformId, files: parsedFiles });
+		const { filename } = await cloudCommand.compileCodeImpl({ target, saveTo, platformId, files: parsedFiles, compiler });
 		return [filename];
 	}
 

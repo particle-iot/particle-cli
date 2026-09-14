@@ -245,6 +245,7 @@ describe('Cloud Command-Line Interface', () => {
 					'  particle cloud flash blue                                      Compile the source code in the current directory in the cloud and flash to device `blue`',
 					'  particle cloud flash green tinker                              Flash the default `tinker` app to device `green`',
 					'  particle cloud flash red blink.ino                             Compile `blink.ino` in the cloud and flash to device `red`',
+					'  particle cloud flash red --compiler local                      Compile the source code in the current directory on this machine and flash to device `red` over the air',
 					'  particle cloud flash orange firmware.bin                       Flash a pre-compiled `firmware.bin` binary to device `orange`',
 					'  particle cloud flash 0123456789abcdef01234567 --product 12345  Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`',
 					''

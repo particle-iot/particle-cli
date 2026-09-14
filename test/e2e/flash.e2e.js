@@ -42,6 +42,7 @@ describe('Flash Commands [@device]', () => {
 		'  particle flash --local                             Compile the source code in the current directory in the cloud and flash to the device connected over USB',
 		'  particle flash --local <deviceId> application.bin  Compile the source code in the current directory in the cloud and flash to the device connected over USB',
 		'  particle flash --local --target 5.0.0              Compile the source code in the current directory in the cloud against the target version and flash to the device connected over USB',
+		'  particle flash --local --compiler local            Compile the source code in the current directory on this machine and flash to the device connected over USB',
 		'  particle flash --local application.bin             Flash the pre-compiled binary to the device connected over USB',
 		'  particle flash --local application.zip             Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
 		'  particle flash --local tinker                      Flash the default Tinker app to the device connected over USB',
