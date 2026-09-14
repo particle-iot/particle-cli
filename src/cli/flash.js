@@ -1,5 +1,6 @@
 'use strict';
 const unindent = require('../lib/unindent');
+const { compilerOption } = require('./compiler-option');
 
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'flash', 'Send firmware to your device', {
@@ -32,6 +33,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'target': {
 				description: 'The firmware version to compile against. Defaults to latest version.'
 			},
+			...compilerOption(),
 			'application-only': {
 				boolean: true,
 				description: 'Do not update Device OS when flashing locally'
