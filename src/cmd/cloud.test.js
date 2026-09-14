@@ -884,6 +884,130 @@ describe('Cloud Commands', () => {
 		});
 	});
 
+	describe('compileCodeImpl with --compiler local', () => {
+		let cloud, projectDir;
+
+		beforeEach(async () => {
+			projectDir = path.join(PATH_TMP_DIR, 'local-compile-project');
+			await fs.ensureDir(path.join(projectDir, 'src'));
+			await fs.outputFile(path.join(projectDir, 'src', 'app.ino'), '');
+			cloud = new CloudCommands({ stdout: { write: sandbox.stub() }, stderr: { write: sandbox.stub() } });
+			sandbox.stub(cloud.api, 'listDeviceOsVersions').resolves({ versions: [{ version: '6.4.1', release_state: 'ga' }] });
+			sandbox.stub(cloud, '_handleMultiFileArgs').resolves({ basePath: process.cwd(), map: { 'src/app.ino': path.join(projectDir, 'src', 'app.ino') } });
+			sandbox.stub(cloud, '_compileLocal').resolves({ isBundle: false, filename: '/out/app.bin' });
+			sandbox.stub(cloud, '_compileAndDownload').resolves({ isBundle: false, filename: '/out/cloud.bin' });
+		});
+
+		afterEach(async () => {
+			await fs.remove(projectDir);
+		});
+
+		it('skips the cloud target lookup and hands --target to the local compiler', async () => {
+			const result = await cloud.compileCodeImpl({ target: '6.4.1', deviceType: 'argon', platformId: 12, files: [projectDir], compiler: 'local' });
+			expect(cloud.api.listDeviceOsVersions).to.not.have.been.called;
+			expect(cloud._compileAndDownload).to.not.have.been.called;
+			expect(cloud._compileLocal).to.have.been.calledOnce;
+			const args = cloud._compileLocal.firstCall.args[0];
+			expect(args).to.include({ platformId: 12, target: '6.4.1' });
+			expect(args.files).to.eql([projectDir]);
+			expect(args.filename).to.match(/^argon_firmware_\d+\.bin$/);
+			expect(result).to.eql({ isBundle: false, filename: '/out/app.bin' });
+		});
+
+		it('still requires a login and validates --target against the API for the cloud compiler', async () => {
+			// requireToken reads the real settings, which the test HOME leaves without a token
+			await expect(cloud.compileCodeImpl({ target: '6.4.1', deviceType: 'argon', platformId: 12, files: [projectDir], compiler: 'cloud' }))
+				.to.be.rejectedWith(/not logged in/);
+			const realSettings = require('../../settings');
+			sandbox.stub(realSettings, 'access_token').value('fake-token');
+			await cloud.compileCodeImpl({ target: '6.4.1', deviceType: 'argon', platformId: 12, files: [projectDir], compiler: 'cloud' });
+			expect(cloud.api.listDeviceOsVersions).to.have.been.calledWith({ platformId: 12 });
+			expect(cloud._compileAndDownload).to.have.been.calledOnce;
+			expect(cloud._compileLocal).to.not.have.been.called;
+		});
+	});
+
+	describe('_compileLocal', () => {
+		let cloud, compile, projectDir, outDir;
+
+		beforeEach(async () => {
+			projectDir = path.join(PATH_TMP_DIR, 'local-compile-project');
+			outDir = path.join(PATH_TMP_DIR, 'local-compile-out');
+			await fs.ensureDir(path.join(projectDir, 'src'));
+			await fs.ensureDir(outDir);
+			await fs.outputFile(path.join(projectDir, 'src', 'app.ino'), 'void setup(){}');
+			await fs.outputFile(path.join(projectDir, 'project.properties'), 'name=app\nassetOtaDir=assets\n');
+			cloud = new CloudCommands({ stdout: { write: sandbox.stub() }, stderr: { write: sandbox.stub() } });
+			compile = sandbox.stub().callsFake(async ({ projectDir: dir }) => {
+				const filename = path.join(dir, 'target', '6.4.1', 'argon', `${path.basename(dir)}.bin`);
+				await fs.outputFile(filename, 'compiled');
+				return { filename, isBundle: false, version: '6.4.1' };
+			});
+			sandbox.stub(cloud, '_localCompiler').returns({ compile });
+		});
+
+		afterEach(async () => {
+			await fs.remove(projectDir);
+			await fs.remove(outDir);
+		});
+
+		it('builds a directory argument in place and copies the binary to the requested name', async () => {
+			const filename = path.join(outDir, 'app.bin');
+			const result = await cloud._compileLocal({
+				files: [projectDir],
+				fileMapping: { basePath: process.cwd(), map: {} },
+				platformId: 12,
+				filename,
+				target: '6.4.1'
+			});
+			expect(compile).to.have.been.calledOnce;
+			expect(compile.firstCall.args[0]).to.include({
+				projectDir: path.resolve(projectDir),
+				platformId: 12,
+				platformName: 'argon',
+				version: '6.4.1',
+				assetOtaDir: 'assets'
+			});
+			expect(await fs.readFile(filename, 'utf8')).to.equal('compiled');
+			expect(result).to.eql({ isBundle: false, filename: path.resolve(filename) });
+			expect(cloud.ui.stdout.write).to.have.been.calledWithMatch(/Compile succeeded\./);
+		});
+
+		it('lays individual files out in a temp directory from the file map', async () => {
+			const source = path.join(projectDir, 'src', 'app.ino');
+			const filename = path.join(outDir, 'single.bin');
+			await cloud._compileLocal({
+				files: [source],
+				fileMapping: { basePath: process.cwd(), map: { 'app.ino': source } },
+				platformId: 12,
+				filename
+			});
+			const staged = compile.firstCall.args[0].projectDir;
+			expect(staged).to.not.equal(path.resolve(projectDir));
+			expect(await fs.readFile(path.join(staged, 'app.ino'), 'utf8')).to.equal('void setup(){}');
+			expect(compile.firstCall.args[0].assetOtaDir).to.equal(undefined);
+			expect(await fs.pathExists(filename)).to.equal(true);
+		});
+
+		it('copies a bundle to the bundle name when the Makefile produced a zip', async () => {
+			compile.callsFake(async ({ projectDir: dir }) => {
+				const filename = path.join(dir, 'target', '6.4.1', 'argon', `${path.basename(dir)}.zip`);
+				await fs.outputFile(filename, 'zipped');
+				return { filename, isBundle: true, version: '6.4.1' };
+			});
+			const bundleFilename = path.join(outDir, 'app.zip');
+			const result = await cloud._compileLocal({
+				files: [projectDir],
+				fileMapping: { basePath: process.cwd(), map: {} },
+				platformId: 12,
+				filename: path.join(outDir, 'app.bin'),
+				bundleFilename
+			});
+			expect(await fs.readFile(bundleFilename, 'utf8')).to.equal('zipped');
+			expect(result).to.eql({ isBundle: true, filename: path.resolve(bundleFilename) });
+		});
+	});
+
 	describe('_parseMemoryStats', () => {
 		let cloud;
 		beforeEach(() => {
