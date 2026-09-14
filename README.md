@@ -103,6 +103,34 @@ You can specify a version with the `--target` argument.
 1. Connect your device via USB
 1. Run `particle update`.
 
+### particle compile --compiler local
+
+`particle compile` and `particle flash` build your project in the cloud by default. Pass
+`--compiler local` to build on your own machine with the same toolchain Particle Workbench
+uses: the Device OS source, the `gcc-arm` cross compiler, `buildtools` and the build scripts.
+
+```sh
+$ particle compile argon my-project --compiler local
+$ particle flash --local --compiler local
+$ particle flash my-device my-project --compiler local
+```
+
+* The toolchain is installed under `~/.particle/toolchains`, the directory Workbench uses, so
+  anything Workbench already installed is reused and nothing is downloaded twice. The first
+  local compile on a machine without Workbench downloads about 1 GB for one Device OS version;
+  the CLI prints what it fetches and shows a progress bar.
+* `--target <version>` picks the Device OS version to build against, resolved from the public
+  toolchain manifest. Without it the CLI uses the default version for the platform and prints it.
+  On `flash --local` the same version is flashed to the device.
+* A local compile needs no login once the toolchain and the project's libraries are on disk.
+  Libraries listed as `dependencies.*` in `project.properties` are copied into `lib/` the first
+  time, which does need a login (`particle login`).
+* The project directory is built in place, as in Workbench: output goes to
+  `<project>/target/<version>/<platform>/`, `.ino` files are preprocessed next to their
+  sources, and `particle.include` / `particle.ignore` are not applied.
+* Supported on macOS, Linux and Windows on x64, and on Apple Silicon through Rosetta. Not
+  available on Linux arm64, and project paths must not contain spaces.
+
 
 ## Command Reference
 
