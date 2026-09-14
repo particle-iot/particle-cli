@@ -933,6 +933,16 @@ describe('Cloud Commands', () => {
 			expect(result).to.eql({ isBundle: false, filename: '/out/app.bin' });
 		});
 
+		it('treats --target latest as no target on the cloud path instead of returning nothing', async () => {
+			const realSettings = require('../../settings');
+			sandbox.stub(realSettings, 'access_token').value('fake-token');
+			const result = await cloud.compileCodeImpl({ target: 'latest', deviceType: 'argon', platformId: 12, files: [projectDir], compiler: 'cloud' });
+			expect(cloud.api.listDeviceOsVersions).to.not.have.been.called;
+			expect(cloud._compileAndDownload).to.have.been.calledOnce;
+			expect(cloud._compileAndDownload.firstCall.args[0]).to.include({ targetVersion: undefined });
+			expect(result).to.eql({ isBundle: false, filename: '/out/cloud.bin' });
+		});
+
 		it('still requires a login and validates --target against the API for the cloud compiler', async () => {
 			// requireToken reads the real settings, which the test HOME leaves without a token
 			await expect(cloud.compileCodeImpl({ target: '6.4.1', deviceType: 'argon', platformId: 12, files: [projectDir], compiler: 'cloud' }))
