@@ -21,6 +21,7 @@ const temp = require('temp').track();
 const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
 const BundleCommands = require('./bundle');
 const { sourcePatterns } = require('../lib/file-types');
+const { LocalCompiler } = require('../lib/toolchain/local-compiler');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
@@ -247,7 +248,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 	}
 
-	async compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
+	async compileCode({ target, followSymlinks, saveTo, compiler, params: { deviceType, files } }){
 		try {
 			if (files.length === 0) {
 				files.push('.'); // default to current directory
@@ -266,7 +267,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Compiling code for ${deviceType}${os.EOL}`);
 
-			const { filename, isBundle } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
+			const { filename, isBundle } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files, compiler });
 
 			this.ui.stdout.write(`Saved ${isBundle ? 'bundle' : 'firmware' } to: ${filename}${os.EOL}`);
 		} catch (e) {
@@ -274,12 +275,16 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 	}
 
-	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files }) {
+	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files, compiler = 'cloud' }) {
 		let targetVersion, assets, env;
+		const isLocal = compiler === 'local';
 
-		requireToken();
+		if (!isLocal) {
+			// the local toolchain needs no login and resolves the target against its own manifest
+			requireToken();
+		}
 
-		if (target) {
+		if (target && !isLocal) {
 			if (target === 'latest') {
 				return;
 			}
@@ -337,7 +342,72 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		const filename = this._getDownloadPathForBin(deviceType, saveTo);
 		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets, env);
+		if (isLocal) {
+			return this._compileLocal({ files, fileMapping, platformId, filename, bundleFilename, target });
+		}
 		return this._compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, env, bundleFilename });
+	}
+
+	/**
+	 * Compiles with the toolchain under ~/.particle/toolchains instead of the cloud.
+	 * Same contract as _compileAndDownload: writes the artifact to `filename` (or
+	 * `bundleFilename` when the Makefile bundled assets) and returns { isBundle, filename }.
+	 */
+	async _compileLocal({ files, fileMapping, platformId, filename, bundleFilename, target }) {
+		const { platformForId } = require('../lib/platform');
+		const platformName = platformForId(platformId).name;
+		const projectDir = await this._localProjectDir({ files, fileMapping });
+		const assetOtaDir = await this._assetOtaDirOf(projectDir);
+		const compiler = this._localCompiler();
+
+		const result = await compiler.compile({
+			projectDir,
+			platformId,
+			platformName,
+			version: target,
+			assetOtaDir,
+			verbose: global.verboseLevel > 1
+		});
+
+		const destination = result.isBundle
+			? (bundleFilename || `${utilities.filenameNoExt(filename)}.zip`)
+			: filename;
+		await fs.copy(result.filename, destination);
+
+		this.ui.stdout.write(`${os.EOL}Compile succeeded.${os.EOL}${os.EOL}`);
+		return {
+			isBundle: result.isBundle,
+			filename: path.resolve(destination)
+		};
+	}
+
+	_localCompiler() {
+		return new LocalCompiler({ ui: this.ui });
+	}
+
+	/**
+	 * A single directory argument is the project and is built in place, like Workbench
+	 * does. Anything else (individual files) is laid out in a temp directory using the
+	 * same file map the cloud would receive.
+	 */
+	async _localProjectDir({ files, fileMapping }) {
+		if (files.length === 1 && (await fs.stat(files[0])).isDirectory()) {
+			return path.resolve(files[0]);
+		}
+		const dir = temp.mkdirSync('particle-compile');
+		for (const [relative, source] of Object.entries(fileMapping.map)) {
+			await fs.copy(path.resolve(fileMapping.basePath, source), path.join(dir, relative));
+		}
+		return dir;
+	}
+
+	async _assetOtaDirOf(projectDir) {
+		try {
+			const props = await utilities.parsePropertyFile(path.join(projectDir, 'project.properties'));
+			return props.assetOtaDir || undefined;
+		} catch (_err) {
+			return undefined;
+		}
 	}
 
 	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, env, bundleFilename }){

@@ -657,5 +657,25 @@ describe('Compile Commands', () => {
 		const end = Date.now();
 		return { stdout, stderr, exitCode, start, end };
 	}
-});
 
+	// Needs the toolchain (about 1 GB on first run); opt in with E2E_LOCAL_COMPILE=1
+	it('Compiles a project locally with --compiler local', async function () {
+		if (!process.env.E2E_LOCAL_COMPILE) {
+			this.skip();
+		}
+		this.timeout(15 * 60 * 1000);
+		const project = path.join(PATH_FIXTURES_PROJECTS_DIR, 'blank');
+		const saveTo = path.join(PATH_TMP_DIR, 'argon-blank-local.bin');
+		const args = ['compile', 'argon', project, '--compiler', 'local', '--saveTo', saveTo];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include('Compiling code for argon');
+		expect(stdout).to.include('Targeting version:');
+		expect(stdout).to.include('Compile succeeded.');
+		expect(stdout).to.include(`Saved firmware to: ${saveTo}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+		expect(await fs.exists(saveTo)).to.equal(true);
+		await fs.remove(path.join(project, 'target'));
+	});
+});

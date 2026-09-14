@@ -92,7 +92,8 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Filename for the compiled binary'
 			}
 		}),
-		tokenExpiryThresholdMs: 15 * 60 * 1000,   // cloud compile can run several minutes
+		// cloud compile can run several minutes; a local compile needs no login
+		tokenExpiryThresholdMs: (args) => (args.compiler === 'local' ? undefined : 15 * 60 * 1000),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).compileCode(args);

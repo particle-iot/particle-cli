@@ -45,9 +45,14 @@ function findAuthenticationError(err) {
 
 async function runWithAuthMiddleware(options, argv){
 	try {
-		if (options.tokenExpiryThresholdMs) {
+		// a command may decide per invocation whether it needs a fresh token,
+		// e.g. `compile --compiler local` needs no login at all
+		const thresholdMs = typeof options.tokenExpiryThresholdMs === 'function'
+			? options.tokenExpiryThresholdMs(argv)
+			: options.tokenExpiryThresholdMs;
+		if (thresholdMs) {
 			await verifyFreshTokenMiddleware({
-				thresholdMs: options.tokenExpiryThresholdMs,
+				thresholdMs,
 				relogin: options.relogin
 			});
 		}
