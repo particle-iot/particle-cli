@@ -47,6 +47,7 @@
   "dependencies": {
     "@particle/device-constants": "^4.1.0",
     "@particle/softap-setup": "^4.1.2",
+    "@particle/unpack-file": "^3.0.3",
     "archiver": "^7.0.1",
     "binary-version-reader": "^4.0.2",
     "chalk": "^2.4.2",
