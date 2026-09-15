@@ -19,6 +19,7 @@ const { supportedCountries } = require('../supported-countries');
 const DownloadManager = require('../download-manager');
 const FlashCommand = require('../../cmd/flash');
 const VError = require('verror');
+const { validateImage } = require('./preserved-layout');
 
 /**
  *
@@ -26,6 +27,9 @@ const VError = require('verror');
  * @return {Promise<Object>}
  */
 async function pickVariant({ ui, workflow, manifest, version, log, isLocalVersion, variant, board }, stepIndex){
+	if (variant && !workflow.variants.some(v => v.value === variant)) {
+		throw new Error(`Unsupported ${workflow.name} variant: ${variant}`);
+	}
 	let selectedVariant;
 	if (variant) {
 		selectedVariant = variant;
@@ -384,7 +388,25 @@ async function createConfigBlobStep(context, stepIndex) {
  * `particle tachyon setup` fail after the flash on a device already running
  * 24.04, and silently write the blob to the wrong sectors coming from 20.04.
  */
-async function verifyConfigPartitionStep({ ui, osFilePath, configBlobPath, skipFlashingOs, workflow }, stepIndex) {
+async function verifyConfigPartitionStep({ ui, osFilePath, configBlobPath, skipFlashingOs, workflow, device, log }, stepIndex) {
+	if (workflow.preserveGpt) {
+		const { partitionTable, gptSnapshot } = await prepareFlashFiles({
+			logFile: log.file, ui, device, partitionsList: [], operation: 'read', preserveGpt: true
+		});
+		if (gptSnapshot?.length !== 14) {
+			throw new Error('A complete live GPT snapshot is required for QLI setup');
+		}
+		const misc = partitionTable.filter(p => p.partition.name === CONFIG_PARTITION);
+		const size = configBlobPath ? (await fs.stat(configBlobPath)).size : 0;
+		if (misc.length !== 1 || !size || BigInt(Math.ceil(size / SECTOR_SIZE_IN_BYTES)) >
+			misc[0].partition.lastLBA - misc[0].partition.firstLBA + 1n) {
+			throw new Error('Existing misc partition cannot hold the setup configuration');
+		}
+		if (!skipFlashingOs) {
+			await validateImage(osFilePath, partitionTable);
+		}
+		return { preservedGpt: gptSnapshot };
+	}
 	if (skipFlashingOs || !configBlobPath) {
 		// Nothing is being flashed, so the live layout is the one that counts and
 		// the post-flash GPT read is the only gate that applies.
@@ -423,7 +445,7 @@ async function verifyConfigPartitionStep({ ui, osFilePath, configBlobPath, skipF
 }
 
 async function createBlobFile(context) {
-	const noConfigInfo = ['workflow', 'manifest', 'ui', 'api', 'log', 'device', 'deviceInfo'];
+	const noConfigInfo = ['workflow', 'manifest', 'ui', 'api', 'log', 'device', 'deviceInfo', 'preservedGpt'];
 	const config = Object.fromEntries(
 		Object.entries(context).filter(([key, value]) =>
 			!noConfigInfo.includes(key) && value != null
@@ -450,7 +472,7 @@ async function createBlobFile(context) {
 	return { configBlobPath: filePath, configBlob: config };
 }
 
-async function flashOSAndConfigStep({ ui, log, productSlug, device, configBlobPath, variant, osFilePath, skipFlashingOs, workflow }, stepIndex) {
+async function flashOSAndConfigStep({ ui, log, productSlug, device, configBlobPath, variant, osFilePath, skipFlashingOs, workflow, preservedGpt }, stepIndex) {
 	const message = getFlashMessage({ ui, device, productSlug, workflow });
 	return runStepWithTiming(
 		ui,
@@ -462,13 +484,14 @@ async function flashOSAndConfigStep({ ui, log, productSlug, device, configBlobPa
 			ui,
 			osPath: osFilePath,
 			configBlobPath,
+			preservedGpt,
 			skipFlashingOs: skipFlashingOs,
 			skipReset: variant !== 'headless'
 		})
 	);
 }
 
-async function flash({ device, osPath, configBlobPath, skipFlashingOs, skipReset, log, ui }) {
+async function flash({ device, osPath, configBlobPath, skipFlashingOs, skipReset, log, ui, preservedGpt }) {
 	const flashCommand = new FlashCommand();
 	// Stay in EDL after the OS write while a configuration blob is still to come.
 	const keepInEdl = skipReset || Boolean(configBlobPath);
@@ -485,7 +508,7 @@ async function flash({ device, osPath, configBlobPath, skipFlashingOs, skipReset
 		log.info(`Skip flashing OS ${os.EOL}`);
 	}
 	if (configBlobPath) {
-		const xmlPath = await resolveConfigPartition({ device, osPath, configBlobPath, log, ui });
+		const xmlPath = await resolveConfigPartition({ device, osPath, configBlobPath, log, ui, preservedGpt });
 		// flash xml
 		await flashCommand.flashTachyonXml({
 			device,
@@ -504,17 +527,28 @@ async function flash({ device, osPath, configBlobPath, skipFlashingOs, skipReset
  * an XML built from the pre-flash table: the LBA `misc` had on the outgoing
  * layout may belong to another partition on the incoming one.
  */
-async function resolveConfigPartition({ device, osPath, configBlobPath, log, ui }) {
+async function resolveConfigPartition({ device, osPath, configBlobPath, log, ui, preservedGpt }) {
 	try {
-		const { xmlFile } = await prepareFlashFiles({
+		const { xmlFile, gptSnapshot } = await prepareFlashFiles({
 			logFile: log.file,
 			ui,
 			partitionsList: [CONFIG_PARTITION],
 			dir: path.dirname(configBlobPath),
 			operation: 'program',
 			checkFiles: true,
+			preserveGpt: Boolean(preservedGpt),
 			device,
+			modifyPartitions: (partitions) => partitions.map(p => {
+				const sectors = Math.ceil(fs.statSync(configBlobPath).size / SECTOR_SIZE_IN_BYTES);
+				if (!sectors || sectors > p.num_partition_sectors) {
+					throw new Error('Existing misc partition is too small for bootstrap');
+				}
+				return { ...p, num_partition_sectors: sectors };
+			}),
 		});
+		if (preservedGpt && JSON.stringify(gptSnapshot) !== JSON.stringify(preservedGpt)) {
+			throw new Error('GPT changed during QLI flashing; bootstrap was not written');
+		}
 		return xmlFile;
 	} catch (error) {
 		if (error.message && error.message.includes('not found in device partition table')) {

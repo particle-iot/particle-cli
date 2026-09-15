@@ -32,7 +32,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Board to download package for'
 			},
 			distro_version: {
-				description: 'Linux distribution version to use',
+				description: 'Linux distribution version to use (20.04, 24.04, or qli-2.0)',
 				type: 'string'
 			},
 			skip_cli: {

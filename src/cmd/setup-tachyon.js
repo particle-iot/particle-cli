@@ -372,6 +372,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	_getUbuntuWorkflow(distroVersion) {
 		const normalizedVersion = String(distroVersion).trim();
+		if (['qli-2.0', '2.0'].includes(normalizedVersion)) {
+			return workflows.qli20;
+		}
 		const ubuntuWorkflows = Object.values(workflows).filter(wf => wf.osInfo.distribution === 'ubuntu');
 		const workflow = ubuntuWorkflows.find(wf => wf.osInfo.distributionVersion === normalizedVersion);
 		if (!workflow) {
@@ -396,7 +399,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _getManifestBuilds({ version, osInfo, region, board }) {
-		const manifestVersion = await this.downloadManager.fetchManifest({ version });
+		const qliChannel = osInfo.distribution === 'qualcomm-linux' && ['stable', 'latest', 'beta', 'rc'].includes(version);
+		if (qliChannel && version !== 'latest') {
+			throw new Error('QLI uses the separate latest channel. Select latest, a 1.4+ version, or a local image.');
+		}
+		const manifestVersion = await this.downloadManager.fetchManifest(qliChannel ? { version, type: 'tachyon-qli' } : { version });
 		return manifestVersion.builds.filter(os =>
 			os.distribution === osInfo.distribution &&
 			os.distribution_version === osInfo.distributionVersion &&

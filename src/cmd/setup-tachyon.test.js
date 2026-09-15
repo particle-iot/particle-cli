@@ -23,6 +23,10 @@ const tachyonUtils = {
 };
 
 const workflowFixtures = {
+	qli20: {
+		value: 'qli20',
+		osInfo: { distribution: 'qualcomm-linux', distributionVersion: '2.0' }
+	},
 	ubuntu20: {
 		value: 'ubuntu20',
 		osInfo: { distribution: 'ubuntu', distributionVersion: '20.04' }
@@ -94,6 +98,19 @@ describe('SetupTachyonCommand', () => {
 	afterEach(async () => {
 		await fs.remove(baseDir);
 		sinon.restore();
+	});
+
+	it('infers QLI from a local image manifest', async () => {
+		readManifestFromLocalFile.resolves({ distribution: 'qualcomm-linux', distribution_version: '2.0' });
+		const workflow = await command._selectWorkflow({ isLocalVersion: true, version: '/tmp/qli.zip' });
+		expect(workflow).to.equal(workflowFixtures.qli20);
+	});
+	it('uses QLI channel metadata without changing the Ubuntu stream', async () => {
+		sinon.stub(command.downloadManager, 'fetchManifest').resolves({ builds: [] });
+		await command._getManifestBuilds({ version: 'latest', osInfo: workflowFixtures.qli20.osInfo });
+		expect(command.downloadManager.fetchManifest.firstCall.args[0]).to.eql({ version: 'latest', type: 'tachyon-qli' });
+		await command._getManifestBuilds({ version: 'stable', osInfo: workflowFixtures.ubuntu24.osInfo });
+		expect(command.downloadManager.fetchManifest.secondCall.args[0]).to.eql({ version: 'stable' });
 	});
 
 	it('uses information read from a recognised existing layout', async () => {
@@ -175,7 +192,7 @@ describe('SetupTachyonCommand', () => {
 	});
 
 	describe('workflow selection', () => {
-		for (const [distroVersion, workflowName] of [['20.04', 'ubuntu20'], ['24.04', 'ubuntu24']]) {
+		for (const [distroVersion, workflowName] of [['20.04', 'ubuntu20'], ['24.04', 'ubuntu24'], ['2.0', 'qli20']]) {
 			it(`uses explicit distro version ${distroVersion} and skips the OS selection prompt`, async () => {
 				const selectInteractively = sinon.stub(command, '_pickWorkflowToExecute');
 				sinon.stub(command, '_resolveHardwareOptions').resolves({ region: 'NA', board: 'formfactor_dvt' });

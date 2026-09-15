@@ -174,6 +174,26 @@ const ubuntu24 = Object.freeze({
 });
 
 
+/** QLI installs a headless stack and preserves the device's existing GPT. */
+const qli20 = Object.freeze({
+	name: 'Qualcomm Linux 2.0 Open (headless)',
+	value: 'qli20',
+	preserveGpt: true,
+	osInfo: {
+		distributionDisplay: 'Qualcomm Linux 2.0 Open',
+		distribution: 'qualcomm-linux',
+		distributionVersion: '2.0',
+		distributionVariant: 'open'
+	},
+	overrideDefaults: { version: 'latest', variant: 'headless' },
+	variants: [{
+		name: 'Headless (command-line only)',
+		value: 'headless',
+		setupCompletedMessage: `Setup is complete. Tachyon is booting Qualcomm Linux and applying your configuration.${os.EOL}`
+	}],
+	steps: ubuntu24.steps
+});
+
 /** @type {Workflow} */
 const android14 = Object.freeze({
 	name: 'Android 14 (beta)',
@@ -247,6 +267,7 @@ module.exports = {
 		ubuntu20,
 		ubuntu24,
 		android14,
+		qli20,
 	},
 	workflowRun: run
 };
