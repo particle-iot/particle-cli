@@ -45,7 +45,7 @@
     "todo": "git grep -e 'TODO (.*)' --ignore-case --heading --break --context=2 --full-name --line-number -- :^./package.json"
   },
   "dependencies": {
-    "@particle/device-constants": "^4.1.0",
+    "@particle/device-constants": "^4.2.0",
     "@particle/softap-setup": "^4.1.2",
     "archiver": "^7.0.1",
     "binary-version-reader": "^4.0.2",
