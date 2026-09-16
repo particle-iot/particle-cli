@@ -213,7 +213,7 @@ describe('SetupTachyonCommand', () => {
 	});
 
 	describe('workflow selection', () => {
-		for (const [distroVersion, workflowName] of [['20.04', 'ubuntu20'], ['24.04', 'ubuntu24'], ['26.04', 'ubuntu26'], ['2.0', 'qli20']]) {
+		for (const [distroVersion, workflowName] of [['20.04', 'ubuntu20'], ['24.04', 'ubuntu24'], ['26.04', 'ubuntu26'], ['qli-2.0', 'qli20']]) {
 			it(`uses explicit distro version ${distroVersion} and skips the OS selection prompt`, async () => {
 				const selectInteractively = sinon.stub(command, '_pickWorkflowToExecute');
 				sinon.stub(command, '_resolveHardwareOptions').resolves({ region: 'NA', board: 'formfactor_dvt' });
@@ -227,7 +227,7 @@ describe('SetupTachyonCommand', () => {
 				});
 
 				expect(config.workflow).to.equal(workflowFixtures[workflowName]);
-				expect(config.distroVersion).to.equal(distroVersion);
+				expect(config.distroVersion).to.equal(workflowFixtures[workflowName].osInfo.distributionVersion);
 				expect(config.version).to.equal(['20.04', '24.04'].includes(distroVersion) ? 'stable' : 'latest');
 				expect(selectInteractively).not.to.have.been.called;
 				expect(command._getManifestBuilds).to.have.been.calledWithMatch({
@@ -272,6 +272,11 @@ describe('SetupTachyonCommand', () => {
 			});
 			expect(config.workflow).to.equal(workflowFixtures.ubuntu26);
 			expect(command.downloadManager.fetchManifest).not.to.have.been.called;
+		});
+
+		it('rejects the bare 2.0 distro identifier', async () => {
+			await expect(command._selectWorkflow({ distroVersion: '2.0' }))
+				.to.be.rejectedWith("Unsupported Linux distribution version '2.0'");
 		});
 
 		it('accepts the qli-2.0 distro identifier', async () => {

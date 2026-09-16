@@ -64,6 +64,12 @@ describe('DownloadTachyonPackageCommand OS selection', () => {
 		expect(ui.prompt).not.to.have.been.called;
 	});
 
+	it('rejects the bare 2.0 distro identifier before downloading', async () => {
+		await expect(command.download({ distro_version: '2.0', version: 'latest', region: 'NA' }))
+			.to.be.rejectedWith("Unsupported Linux distribution version '2.0'");
+		expect(download).not.to.have.been.called;
+	});
+
 	it('rejects QLI desktop before downloading', async () => {
 		await expect(command.download({
 			distro_version: 'qli-2.0', version: 'latest', variant: 'desktop', region: 'NA'
