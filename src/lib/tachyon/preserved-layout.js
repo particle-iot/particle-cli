@@ -59,7 +59,12 @@ function validatePrograms(rows, table) {
 	// An overlapping live GPT would otherwise let an allowed label cover NV/persist.
 	for (let lun = 0; lun <= 6; lun++) {
 		const partitions = table.filter(p => p.lun === lun && p.partition.name)
-			.map(p => p.partition).sort((a, b) => a.firstLBA < b.firstLBA ? -1 : 1);
+			.map(p => p.partition)
+			// Qualcomm's factory GPT can contain an empty last_parti terminator.
+			// It allocates no sectors. Keep every real partition in the overlap check;
+			// last_parti remains forbidden as a payload target below.
+			.filter(p => !(p.name === 'last_parti' && p.firstLBA >= 6n && p.lastLBA + 1n === p.firstLBA))
+			.sort((a, b) => a.firstLBA < b.firstLBA ? -1 : 1);
 		for (let i = 0; i < partitions.length; i++) {
 			const p = partitions[i];
 			if (p.firstLBA < 6n || p.lastLBA < p.firstLBA || (i && partitions[i - 1].lastLBA >= p.firstLBA)) {

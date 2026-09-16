@@ -16,6 +16,23 @@ describe('QLI GPT-preserving image validation', () => {
 	it('accepts bounded writes within the live layout', () => {
 		expect(() => validatePrograms(valid(), table())).not.to.throw();
 	});
+	it('accepts the empty last_parti entries in the head2 factory GPT', () => {
+		const live = [...table(), ...[1, 2].flatMap(lun => [
+			{ lun, partition: { name: 'xbl_config_b', firstLBA: 1936n, lastLBA: 2063n } },
+			{ lun, partition: { name: 'last_parti', firstLBA: 2064n, lastLBA: 2063n } }
+		])];
+		expect(() => validatePrograms(valid(), live)).not.to.throw();
+		expect(() => validatePrograms([...valid(), row(1, 'last_parti', 2064)], live)).to.throw('Forbidden');
+	});
+	it('still rejects reversed real partitions and nonempty overlapping terminators', () => {
+		for (const partition of [
+			{ name: 'persist', firstLBA: 2064n, lastLBA: 2063n },
+			{ name: 'last_parti', firstLBA: 2064n, lastLBA: 2062n },
+			{ name: 'last_parti', firstLBA: 102n, lastLBA: 150n }
+		]) {
+			expect(() => validatePrograms(valid(), [...table(), { lun: 0, partition }])).to.throw('live GPT');
+		}
+	});
 	it('refuses a live layout whose payload overlaps protected storage', () => {
 		const live = [...table(), { lun: 0, partition: { name: 'persist', firstLBA: 102n, lastLBA: 150n } }];
 		expect(() => validatePrograms(valid(), live)).to.throw('overlapping live GPT');
