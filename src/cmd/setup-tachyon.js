@@ -399,11 +399,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _getManifestBuilds({ version, osInfo, region, board }) {
-		const qliChannel = osInfo.distribution === 'qualcomm-linux' && ['stable', 'latest', 'beta', 'rc'].includes(version);
-		if (qliChannel && version !== 'latest') {
-			throw new Error('QLI uses the separate latest channel. Select latest, a 1.4+ version, or a local image.');
-		}
-		const manifestVersion = await this.downloadManager.fetchManifest(qliChannel ? { version, type: 'tachyon-qli' } : { version });
+		const qliLatest = osInfo.distribution === 'qualcomm-linux' && version === 'latest';
+		const manifestVersion = await this.downloadManager.fetchManifest(qliLatest ? { version, type: 'tachyon-qli' } : { version });
 		return manifestVersion.builds.filter(os =>
 			os.distribution === osInfo.distribution &&
 			os.distribution_version === osInfo.distributionVersion &&

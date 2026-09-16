@@ -1,6 +1,5 @@
 'use strict';
 const fs = require('fs-extra');
-const crypto = require('crypto');
 const os = require('os');
 const semver = require('semver');
 const { getEdlDevices } = require('particle-usb');
@@ -84,8 +83,8 @@ async function getEDLDevice({ ui = new UI(), showSetupMessage = false } = {}) {
 	}
 }
 
-async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false, preserveGpt = false, optionalPartitions = [], modifyPartitions = (partitions) => partitions } = {}) {
-	const { firehosePath, tempPath, gptXmlPath } = await initFiles(preserveGpt);
+async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false, optionalPartitions = [], modifyPartitions = (partitions) => partitions } = {}) {
+	const { firehosePath, tempPath, gptXmlPath } = await initFiles();
 
 	const partitionTable = await readPartitionsFromDevice({
 		logFile,
@@ -111,22 +110,10 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 	}
 
 	const xmlFile = await generateXml({ partitions, tempPath, operation });
-	const gptSnapshot = [];
-	if (preserveGpt) {
-		for (let lun = 0; lun <= 6; lun++) {
-			for (const copy of ['main', 'backup']) {
-				const data = await fs.readFile(path.join(tempPath, `gpt_${copy}${lun}.bin`));
-				if (data.length !== (copy === 'main' ? 6 : 5) * 4096) {
-					throw new Error(`Incomplete ${copy} GPT read on LUN ${lun}`);
-				}
-				gptSnapshot.push({ lun, copy, sha256: crypto.createHash('sha256').update(data).digest('hex') });
-			}
-		}
-	}
-	return { firehosePath, xmlFile, partitionTable, partitionFilenames, gptSnapshot };
+	return { firehosePath, xmlFile, partitionTable, partitionFilenames };
 }
 
-async function initFiles(preserveGpt = false) {
+async function initFiles() {
 	const firehoseAsset = path.join(__dirname, '../../assets/qdl/firehose/prog_firehose_ddr.elf');
 	const gptXmlAsset = path.join(__dirname, '../../assets/qdl/read_gpt.xml');
 	const tempPath = await temp.mkdir('tachyon-init-files');
@@ -134,14 +121,6 @@ async function initFiles(preserveGpt = false) {
 	const gptXmlPath = path.join(tempPath, 'read_gpt.xml');
 	await fs.copyFile(firehoseAsset, firehosePath);
 	await fs.copyFile(gptXmlAsset, gptXmlPath);
-	if (preserveGpt) {
-		const xml = await fs.readFile(gptXmlPath, 'utf8');
-		const backups = Array.from({ length: 7 }, (_, lun) =>
-			`<read start_sector="NUM_DISK_SECTORS-5." physical_partition_number="${lun}" ` +
-			`num_partition_sectors="5" filename="gpt_backup${lun}.bin" SECTOR_SIZE_IN_BYTES="4096"/>`
-		).join('\n');
-		await fs.writeFile(gptXmlPath, xml.replace('</data>', `${backups}\n</data>`));
-	}
 	return { firehosePath, gptXmlPath, tempPath };
 }
 

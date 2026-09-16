@@ -178,7 +178,6 @@ const ubuntu24 = Object.freeze({
 const qli20 = Object.freeze({
 	name: 'Qualcomm Linux 2.0 Open (headless)',
 	value: 'qli20',
-	preserveGpt: true,
 	osInfo: {
 		distributionDisplay: 'Qualcomm Linux 2.0 Open',
 		distribution: 'qualcomm-linux',

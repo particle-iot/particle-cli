@@ -181,9 +181,6 @@ describe('Update CLI Command', () => {
 				linux: {
 					x64: {
 						url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz'
-					},
-					arm64: {
-						url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-arm64.gz'
 					}
 				},
 				darwin: {
