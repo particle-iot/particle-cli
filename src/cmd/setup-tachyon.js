@@ -15,12 +15,13 @@ const {
 	getEDLDevice,
 	handleFlashError,
 	promptOSSelection,
+	hasStableRelease,
 	isFile,
 	readManifestFromLocalFile,
 	lookupCloudDeviceInfo
 } = require('../lib/tachyon-utils');
 const { TachyonConnectionError } = require('../lib/qdl');
-const { workflows, workflowRun } = require('../lib/tachyon/workflow');
+const { workflows, workflowRun, getWorkflowForDistro } = require('../lib/tachyon/workflow');
 
 const showWelcomeMessage = (ui) => `
 ===================================================================================
@@ -199,7 +200,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _pickWorkflowToExecute() {
 		this._formatAndDisplaySteps(`Choose an operating system to flash onto this device ${os.EOL}`);
-		const workflow = await promptOSSelection({ ui: this.ui, workflows });
+		const stableBuilds = await this._getStableBuilds();
+		const workflow = await promptOSSelection({ ui: this.ui, workflows, stableBuilds });
 		if (workflow.selectionWarning) {
 			this.ui.write(this.ui.chalk.yellow(workflow.selectionWarning));
 		}
@@ -250,6 +252,14 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		}
 
 		if (!isLocalVersion) {
+			// An explicit version/channel always wins. Otherwise prefer stable for this
+			// OS, falling back to latest only when it has no stable release.
+			if (!options.version && !configFromFile?.version && config.version === 'stable') {
+				const stableBuilds = await this._getStableBuilds();
+				if (!hasStableRelease(selectedWorkflow, stableBuilds)) {
+					config.version = 'latest';
+				}
+			}
 			config.manifest = await this._getManifestBuilds({
 				version: config.version,
 				osInfo: config.workflow.osInfo,
@@ -330,7 +340,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _selectWorkflow({ isLocalVersion, version, distroVersion, configFromFile, defaultWorkflow }) {
-		const requestedWorkflow = distroVersion ? this._getUbuntuWorkflow(distroVersion) : null;
+		const requestedWorkflow = distroVersion ? getWorkflowForDistro(distroVersion) : null;
 
 		// A local image is authoritative because its embedded manifest describes what
 		// will actually be flashed. An explicit distro may confirm it, but may not
@@ -370,22 +380,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return defaultWorkflow;
 	}
 
-	_getUbuntuWorkflow(distroVersion) {
-		const normalizedVersion = String(distroVersion).trim();
-		if (['qli-2.0', '2.0'].includes(normalizedVersion)) {
-			return workflows.qli20;
-		}
-		const ubuntuWorkflows = Object.values(workflows).filter(wf => wf.osInfo.distribution === 'ubuntu');
-		const workflow = ubuntuWorkflows.find(wf => wf.osInfo.distributionVersion === normalizedVersion);
-		if (!workflow) {
-			const supportedVersions = ubuntuWorkflows.map(wf => wf.osInfo.distributionVersion).join(', ');
-			throw new Error(
-				`Unsupported Linux distribution version '${normalizedVersion}'. Supported versions: ${supportedVersions}`
-			);
-		}
-		return workflow;
-	}
-
 	async _loadConfigFromFile(loadConfig) {
 		if (loadConfig) {
 			try {
@@ -398,9 +392,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		}
 	}
 
+	async _getStableBuilds() {
+		// Cache within this setup run so the menu and default channel agree.
+		if (!this._stableManifest) {
+			this._stableManifest = this.downloadManager.fetchManifest({ version: 'stable' });
+		}
+		return (await this._stableManifest).builds;
+	}
+
 	async _getManifestBuilds({ version, osInfo, region, board }) {
-		const qliLatest = osInfo.distribution === 'qualcomm-linux' && version === 'latest';
-		const manifestVersion = await this.downloadManager.fetchManifest(qliLatest ? { version, type: 'tachyon-qli' } : { version });
+		const manifestVersion = version === 'stable' ? { builds: await this._getStableBuilds() } :
+			await this.downloadManager.fetchManifest({ version });
 		return manifestVersion.builds.filter(os =>
 			os.distribution === osInfo.distribution &&
 			os.distribution_version === osInfo.distributionVersion &&
