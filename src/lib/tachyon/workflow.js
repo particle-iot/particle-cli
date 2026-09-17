@@ -5,6 +5,7 @@ const steps = require('./steps');
  * @typedef {Object} Workflow
  * @property {string} name
  * @property {string} value
+ * @property {string[]} [distroVersions] - Accepted Linux distribution identifiers.
  * @property {Object} [overrideDefaults] - In case some defaults needs to be overridden
  * @property {Object} osInfo - Data required to filter out the OS from manifest
  * @property {string} [selectionWarning] - Warning to show after the user selects this workflow.
@@ -61,8 +62,9 @@ const steps = require('./steps');
 
 /** @type {Workflow} */
 const ubuntu20 = Object.freeze({
-	name: 'Ubuntu 20.04 (stable), recommended',
+	name: 'Ubuntu 20.04',
 	value: 'ubuntu20',
+	distroVersions: ['20.04'],
 	osInfo: {
 		distributionDisplay: 'Ubuntu 20.04',
 		distribution: 'ubuntu',
@@ -116,6 +118,7 @@ const ubuntu20 = Object.freeze({
 const ubuntu24 = Object.freeze({
 	name: 'Ubuntu 24.04',
 	value: 'ubuntu24',
+	distroVersions: ['24.04'],
 	osInfo: {
 		distributionDisplay: 'Ubuntu 24.04',
 		distribution: 'ubuntu',
@@ -151,32 +154,42 @@ const ubuntu24 = Object.freeze({
 				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
 		},
 	],
-	// Same step list as ubuntu20. getCountryStep and getESIMProfilesStep were missing
-	// here, so 24.04 setup never asked for a country and never fetched the eSIM
-	// profiles -- the config blob went out with no `esim` key and the device relied on
-	// whatever was already provisioned on the eUICC. particle-linux has read this since
-	// it shipped (bootstrap.ts stores `esim_bootstrap` from the blob's `esim`), so the
-	// consumer was there the whole time; only the producer was missing.
-	steps: Object.freeze([
-		steps.pickVariant,
-		steps.getUserConfigurationStep,
-		steps.configureProductStep,
-		steps.getCountryStep,
-		steps.downloadOS,
-		steps.printOSInfo,
-		steps.registerDeviceStep,
-		steps.getESIMProfilesStep,
-		steps.createConfigBlobStep,
-		steps.verifyConfigPartitionStep,
-		steps.flashOSAndConfigStep,
-		steps.setupCompletedStep
-	])
+	steps: ubuntu20.steps
 });
 
+/** @type {Workflow} */
+const ubuntu26 = Object.freeze({
+	name: 'Ubuntu 26.04',
+	value: 'ubuntu26',
+	distroVersions: ['26.04'],
+	osInfo: {
+		distributionDisplay: 'Ubuntu 26.04',
+		distribution: 'ubuntu',
+		distributionVersion: '26.04',
+		distributionVariant: 'ubuntu'
+	},
+	variants: ubuntu20.variants,
+	steps: ubuntu20.steps
+});
+
+/** @type {Workflow} */
+const qli20 = Object.freeze({
+	name: 'Qualcomm Linux 2.0 Open (headless)',
+	value: 'qli20',
+	distroVersions: ['qli-2.0'],
+	osInfo: {
+		distributionDisplay: 'Qualcomm Linux 2.0 Open',
+		distribution: 'qualcomm-linux',
+		distributionVersion: '2.0',
+		distributionVariant: 'open'
+	},
+	variants: ubuntu20.variants.filter(variant => variant.value === 'headless'),
+	steps: ubuntu20.steps
+});
 
 /** @type {Workflow} */
 const android14 = Object.freeze({
-	name: 'Android 14 (beta)',
+	name: 'Android 14',
 	value: 'android14',
 	osInfo: {
 		distributionDisplay: 'Android 14',
@@ -184,7 +197,6 @@ const android14 = Object.freeze({
 		distributionVersion: '14',
 	},
 	overrideDefaults:{
-		version: 'latest',
 		variant: 'android'
 	},
 	variants: [
@@ -242,11 +254,23 @@ async function run(workflow, context) {
 	return currentContext;
 }
 
+const workflows = { ubuntu20, ubuntu24, ubuntu26, qli20, android14 };
+
+function getWorkflowForDistro(distroVersion) {
+	const normalizedVersion = String(distroVersion).trim();
+	const linuxWorkflows = Object.values(workflows).filter(wf => wf.distroVersions);
+	const workflow = linuxWorkflows.find(wf => wf.distroVersions.includes(normalizedVersion));
+	if (!workflow) {
+		const supportedVersions = linuxWorkflows.map(wf => wf.distroVersions[0]).join(', ');
+		throw new Error(
+			`Unsupported Linux distribution version '${normalizedVersion}'. Supported versions: ${supportedVersions}`
+		);
+	}
+	return workflow;
+}
+
 module.exports = {
-	workflows: {
-		ubuntu20,
-		ubuntu24,
-		android14,
-	},
+	workflows,
+	getWorkflowForDistro,
 	workflowRun: run
 };

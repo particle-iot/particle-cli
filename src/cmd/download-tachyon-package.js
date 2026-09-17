@@ -1,6 +1,8 @@
 'use strict';
 const CLICommandBase = require('./base');
 const DownloadManager = require('../lib/download-manager');
+const { workflows, getWorkflowForDistro } = require('../lib/tachyon/workflow');
+const { promptOSSelection, hasStableRelease } = require('../lib/tachyon-utils');
 
 module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -25,59 +27,56 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		return regionMapping[region];
 	}
 
-	async _selectVersion() {
+	async _selectVersion(defaultVersion = 'stable') {
 		const question = [
 			{
 				type: 'input',
 				name: 'version',
 				message: 'Enter the version number:',
-				default: 'stable',
+				default: defaultVersion,
 			},
 		];
 		const answer = await this.ui.prompt(question);
 		return answer.version;
 	}
 
-	async _selectVariant(isRb3Board) {
-		const rgbVariantMapping = {
-			'preinstalled server': 'preinstalled-server'
-		};
-		const tachyonVariantMapping = {
-			'desktop (GUI)': 'desktop',
-			'headless (command-line only)': 'headless'
-		};
-		const variantMapping = isRb3Board ? rgbVariantMapping : tachyonVariantMapping;
-		const question = [
-			{
-				type: 'list',
-				name: 'variant',
-				message: 'Select the OS variant:',
-				choices: Object.keys(variantMapping),
-			},
-		];
-		const { variant } = await this.ui.prompt(question);
-		return variantMapping[variant];
+	async _selectVariant(variants) {
+		if (variants.length === 1) {
+			return variants[0].value;
+		}
+		const { variant } = await this.ui.prompt([{
+			type: 'list', name: 'variant', message: 'Select the OS variant:', choices: variants
+		}]);
+		return variant;
 	}
 
 	async download ({ region, version, alwaysCleanCache = false, variant, board = 'formfactor_dvt', distro_version: distroVersion }) {
-		// prompt for region and version if not provided
-		const isRb3Board = board === 'rb3g2'; // RGB board
+		const isRb3Board = board === 'rb3g2';
+		const manager = new DownloadManager(this.ui);
+		let workflow;
+		let stableManifest;
+		if (!isRb3Board) {
+			if (!distroVersion || !version) {
+				stableManifest = await manager.fetchManifest({ version: 'stable' });
+			}
+			workflow = distroVersion ? getWorkflowForDistro(distroVersion) :
+				await promptOSSelection({ ui: this.ui, workflows, stableBuilds: stableManifest.builds });
+		}
 		if (!region) {
 			region = !isRb3Board ? await this._selectRegion() : '';
 		}
 		if (!version) {
-			version = await this._selectVersion();
+			const defaultVersion = workflow && !hasStableRelease(workflow, stableManifest.builds) ? 'latest' : 'stable';
+			version = await this._selectVersion(defaultVersion);
 		}
-
+		const variants = workflow ? workflow.variants : [{ name: 'preinstalled server', value: 'preinstalled-server' }];
 		if (!variant) {
-			variant = await this._selectVariant(isRb3Board);
+			variant = await this._selectVariant(variants);
 		}
-		if (!distroVersion && !isRb3Board) {
-			distroVersion = '20.04';
-		}
-		const manager = new DownloadManager(this.ui);
-		const manifest = await manager.fetchManifest({ version, isRb3Board });
-		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board && (!distroVersion || build.distribution_version === distroVersion));
+		const manifest = version === 'stable' && stableManifest ? stableManifest : await manager.fetchManifest({ version });
+		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board &&
+			(workflow ? build.distribution === workflow.osInfo.distribution && build.distribution_version === workflow.osInfo.distributionVersion :
+				(!distroVersion || build.distribution_version === distroVersion)));
 
 		if (!build) {
 			throw new Error('No build available for the provided parameters');

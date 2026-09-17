@@ -27,6 +27,9 @@ const VError = require('verror');
  */
 async function pickVariant({ ui, workflow, manifest, version, log, isLocalVersion, variant, board }, stepIndex){
 	let selectedVariant;
+	if (variant && !workflow.variants.some(option => option.value === variant)) {
+		throw new Error(`Variant '${variant}' is not supported by ${workflow.name}`);
+	}
 	if (variant) {
 		selectedVariant = variant;
 		ui.write(os.EOL);

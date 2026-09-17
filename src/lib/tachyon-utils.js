@@ -562,13 +562,22 @@ async function handleFlashError({ error, ui }) {
 	return false;
 }
 
+function hasStableRelease(workflow, stableBuilds) {
+	return stableBuilds.some(build =>
+		build.distribution === workflow.osInfo.distribution &&
+		build.distribution_version === workflow.osInfo.distributionVersion
+	);
+}
+
 /**
- *
- * @param ui
+ * Offer every supported OS, marking those absent from stable metadata as Beta.
  * @return {Promise<Workflow>}
  */
-async function promptOSSelection({ ui, workflows }) {
-	const choices = Object.values(workflows);
+async function promptOSSelection({ ui, workflows, stableBuilds }) {
+	const choices = Object.values(workflows).map(workflow => ({
+		value: workflow.value,
+		name: workflow.name + (hasStableRelease(workflow, stableBuilds) ? '' : ' (Beta)')
+	}));
 	const question = [{
 		type: 'list',
 		name: 'osType',
@@ -772,6 +781,7 @@ module.exports = {
 	promptWifiNetworks,
 	handleFlashError,
 	promptOSSelection,
+	hasStableRelease,
 	isFile,
 	readManifestFromLocalFile,
 	regionFromModemFirmware,

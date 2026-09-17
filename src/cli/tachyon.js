@@ -11,7 +11,7 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true
 			},
 			version: {
-				description: 'Version to download package for (default: stable). Can include a directory or a local zip file'
+				description: 'Version to download package for (default: stable, or latest if no stable release exists). Can include a directory or a local zip file'
 			},
 			load_config: {
 				description: 'Path to a config file to use for setup'
@@ -32,7 +32,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Board to download package for'
 			},
 			distro_version: {
-				description: 'Linux distribution version to use',
+				description: 'Linux distribution version to use (20.04, 24.04, 26.04, or qli-2.0)',
 				type: 'string'
 			},
 			skip_cli: {
@@ -68,7 +68,7 @@ module.exports = ({ commandProcessor, root }) => {
 				type: 'string'
 			},
 			distro_version: {
-				description: 'Linux distribution version to use',
+				description: 'Linux distribution version to use (20.04, 24.04, 26.04, or qli-2.0)',
 				type: 'string'
 			}
 		},
