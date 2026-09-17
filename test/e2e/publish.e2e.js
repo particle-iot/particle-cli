@@ -17,10 +17,12 @@ describe('Publish Commands', () => {
 		'',
 		'Options:',
 		'  --product  Publish to the given Product ID or Slug\'s stream  [string]',
+		'  --org      Specify the organization slug (e.g. my-org)  [string]',
 		'',
 		'Examples:',
-		'  particle publish temp 25.0                  Publish a temp event to your private event stream',
+		'  particle publish temp 25.0                  Publish a temp event to your event stream',
 		'  particle publish temp 25.0 --product 12345  Publish a temp event to your product 12345\'s event stream',
+		'  particle publish temp 25.0 --org my-org     Publish a temp event to every product in organization my-org',
 	];
 
 	before(async () => {
@@ -60,7 +62,7 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include(`Published private event: ${eventName}${os.EOL}`);
+		expect(stdout).to.include(`Published event: ${eventName}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -69,20 +71,29 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName, '--product', PRODUCT_01_ID];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stdout).to.include(`Published event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Publishes a private product event', async () => {
-		const args = ['publish', eventName, '--product', PRODUCT_01_ID];
+	it('Publishes an organization event', async () => {
+		const org = 'cyberdyne-systems';
+		const args = ['publish', eventName, '--org', org];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stdout).to.include(`Published event: ${eventName} to organization: ${org}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
 
+	it('Fails when `--org` is combined with `--product`', async () => {
+		const args = ['publish', eventName, '--org', 'cyberdyne-systems', '--product', PRODUCT_01_ID];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include('`--org` cannot be combined with `--product`');
+		expect(stderr.split(os.EOL)).to.include.members(help);
+		expect(exitCode).to.equal(1);
+	});
 	it('Fails when user is signed-out', async () => {
 		await cli.logout();
 		const { stdout, stderr, exitCode } = await cli.run(['publish', eventName]);

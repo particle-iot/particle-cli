@@ -324,24 +324,34 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	getEventStream({ deviceId, name, product }){
+	getEventStream({ deviceId, name, product, org }){
 		return this._wrap(
 			this.api.getEventStream({
 				name,
 				deviceId,
 				product,
+				org,
 				auth: this.accessToken
 			})
 		);
 	}
 
-	publishEvent({ name, data, product }){
+	publishEvent({ name, data, product, org }){
+		if (org){
+			// particle-api-js has no org parameter for publishEvent; build the request here
+			return this._wrap(
+				this.api.post({
+					uri: `/v1/orgs/${org}/events`,
+					auth: this.accessToken,
+					data: { name, data }
+				})
+			);
+		}
 		return this._wrap(
 			this.api.publishEvent({
 				name,
 				data,
 				product,
-				isPrivate: true,
 				auth: this.accessToken
 			})
 		);

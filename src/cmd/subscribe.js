@@ -8,10 +8,12 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 		super(...args);
 	}
 
-	startListening({ device, all, until, max, product, params: { event } }){
-		if (all && !event){
+	startListening({ device, until, max, product, org, params: { event } }){
+		// The API has org-wide and product/device streams, but no route that
+		// combines an org with a product or a device.
+		if (org && (product || device)){
 			return this.showUsageError(
-				'`event` parameter is required when `--all` flag is set'
+				'`--org` cannot be combined with `--product` or `--device`'
 			);
 		}
 
@@ -23,20 +25,18 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 
 		const msg = ['Subscribing to'];
 
-		if (!device && !product && !all){
+		if (!device && !product && !org){
 			device = 'mine';
 		}
 
 		if (event){
 			msg.push(`"${event}"`);
-		} else if (all){
-			msg.push('public events');
 		} else {
 			msg.push('all events');
 		}
 
-		if (all){
-			msg.push('from the firehose (all devices) and my personal stream (my devices)');
+		if (org){
+			msg.push(`from organization ${org}'s stream`);
 		} else if (device && product){
 			msg.push(`from product ${product} device ${device}'s stream`);
 		} else if (product){
@@ -60,7 +60,7 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 		}
 
 		const { api } = this._particleApi();
-		const fetchStream = api.getEventStream({ deviceId: device, name: event, product });
+		const fetchStream = api.getEventStream({ deviceId: device, name: event, product, org });
 		return this.ui.showBusySpinnerUntilResolved('Fetching event stream...', fetchStream)
 			.then(stream => {
 				this.ui.stdout.write(os.EOL);
@@ -91,3 +91,4 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 		};
 	}
 };
+

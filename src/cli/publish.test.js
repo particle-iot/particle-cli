@@ -17,6 +17,8 @@ describe('Publish Command-Line Interface', () => {
 			const argv = commandProcessor.parse(root, ['publish', 'my-event']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ event: 'my-event', data: undefined });
+			expect(argv.product).to.equal(undefined);
+			expect(argv.org).to.equal(undefined);
 		});
 
 		it('Parses optional arguments', () => {
@@ -30,6 +32,14 @@ describe('Publish Command-Line Interface', () => {
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ event: 'my-event', data: undefined });
 			expect(argv.product).to.equal('12345');
+		});
+
+		it('Parses `--org`', () => {
+			const argv = commandProcessor.parse(root, ['publish', 'my-event', 'my-data', '--org', 'my-org']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ event: 'my-event', data: 'my-data' });
+			expect(argv.org).to.equal('my-org');
+			expect(argv.product).to.equal(undefined);
 		});
 
 		it('Errors when required `device` argument is missing', () => {
@@ -56,10 +66,12 @@ describe('Publish Command-Line Interface', () => {
 					'',
 					'Options:',
 					'  --product  Publish to the given Product ID or Slug\'s stream  [string]',
+					'  --org      Specify the organization slug (e.g. my-org)  [string]',
 					'',
 					'Examples:',
-					'  particle publish temp 25.0                  Publish a temp event to your private event stream',
+					'  particle publish temp 25.0                  Publish a temp event to your event stream',
 					'  particle publish temp 25.0 --product 12345  Publish a temp event to your product 12345\'s event stream',
+					'  particle publish temp 25.0 --org my-org     Publish a temp event to every product in organization my-org',
 					''
 				].join('\n'));
 			});

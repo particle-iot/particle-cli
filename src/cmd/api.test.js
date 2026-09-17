@@ -246,6 +246,66 @@ describe('ParticleApi', () => {
 		});
 	});
 
+	describe('getEventStream', () => {
+		it('opens the user stream when no scope is given', async () => {
+			const stub = sandbox.stub(particleApi.api, 'getEventStream').resolves({ body: 'stream' });
+
+			await particleApi.getEventStream({ deviceId: 'mine', name: 'led' });
+
+			expect(stub).to.have.been.calledWithMatch({ deviceId: 'mine', name: 'led', auth: 'test-token' });
+			expect(stub.firstCall.args[0].org).to.equal(undefined);
+		});
+
+		it('forwards a product scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'getEventStream').resolves({ body: 'stream' });
+
+			await particleApi.getEventStream({ name: 'led', product: 'my-product' });
+
+			expect(stub).to.have.been.calledWithMatch({ product: 'my-product' });
+		});
+
+		it('forwards an org scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'getEventStream').resolves({ body: 'stream' });
+
+			await particleApi.getEventStream({ name: 'led', org: 'my-org' });
+
+			expect(stub).to.have.been.calledWithMatch({ org: 'my-org', name: 'led' });
+		});
+	});
+	describe('publishEvent', () => {
+		it('publishes an event to the user stream', async () => {
+			const stub = sandbox.stub(particleApi.api, 'publishEvent').resolves({ body: { ok: true } });
+
+			await particleApi.publishEvent({ name: 'temp', data: '25.0' });
+
+			expect(stub).to.have.been.calledWithMatch({ name: 'temp', data: '25.0', auth: 'test-token' });
+			expect(stub.firstCall.args[0]).to.not.have.property('isPrivate');
+			expect(stub.firstCall.args[0].product).to.equal(undefined);
+		});
+
+		it('forwards a product scope', async () => {
+			const stub = sandbox.stub(particleApi.api, 'publishEvent').resolves({ body: { ok: true } });
+
+			await particleApi.publishEvent({ name: 'temp', data: '25.0', product: 'my-product' });
+
+			expect(stub).to.have.been.calledWithMatch({ product: 'my-product' });
+		});
+
+		it('posts to the org events route when an org is given', async () => {
+			const publishStub = sandbox.stub(particleApi.api, 'publishEvent');
+			const postStub = sandbox.stub(particleApi.api, 'post').resolves({ body: { ok: true } });
+
+			const result = await particleApi.publishEvent({ name: 'temp', data: '25.0', org: 'my-org' });
+
+			expect(publishStub).to.not.have.been.called;
+			expect(postStub).to.have.been.calledWithMatch({
+				uri: '/v1/orgs/my-org/events',
+				auth: 'test-token',
+				data: { name: 'temp', data: '25.0' }
+			});
+			expect(result).to.deep.equal({ ok: true });
+		});
+	});
 	describe('listEnv', () => {
 		it('should call the correct API endpoint for sandbox', async () => {
 			const expectedUri = '/v1/env';
