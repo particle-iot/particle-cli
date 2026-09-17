@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.51.0 - Sep 17 2026
+* Add Sulu platform
+* Add --org parameter to publish and subscribe
+* Add Ubuntu 26.04 and Qualcomm Linux 2.0 Open to Tachyon setup
+
 # 3.50.2 - Sep 14 2026
 * Harden library install
 
