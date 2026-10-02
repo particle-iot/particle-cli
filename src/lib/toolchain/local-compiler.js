@@ -1,5 +1,4 @@
 'use strict';
-const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const execa = require('execa');
@@ -181,7 +180,8 @@ class LocalCompiler {
 		const dir = temp.mkdirSync('particle-cli-local-compile');
 		const wrapper = path.join(dir, 'particle');
 		const posix = p => p.replace(/\\/g, '/');
-		await fs.writeFile(wrapper, `#!/bin/sh${os.EOL}exec "${posix(process.execPath)}" "${posix(entry)}" "$@"${os.EOL}`, { mode: 0o755 });
+		// make runs this through sh (bash from buildtools on Windows), so LF endings even on Windows.
+		await fs.writeFile(wrapper, `#!/bin/sh\nexec "${posix(process.execPath)}" "${posix(entry)}" "$@"\n`, { mode: 0o755 });
 		this._wrapper = wrapper;
 		return wrapper;
 	}

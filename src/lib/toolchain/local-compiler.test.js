@@ -220,7 +220,10 @@ describe('Local compiler', () => {
 			expect(path.basename(wrapper)).to.equal('particle');
 			expect(script).to.include(process.execPath.replace(/\\/g, '/'));
 			expect(script).to.include(path.resolve(__dirname, '..', '..', 'index.js').replace(/\\/g, '/'));
-			expect((await fs.stat(wrapper)).mode & 0o111).to.not.equal(0);
+			expect(script).to.not.include('\r');
+			if (process.platform !== 'win32') { // Windows has no execute bits
+				expect((await fs.stat(wrapper)).mode & 0o111).to.not.equal(0);
+			}
 			expect(await compiler.cliExecutable()).to.equal(wrapper);
 		});
 
