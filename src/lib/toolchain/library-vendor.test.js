@@ -58,7 +58,7 @@ describe('Library vendoring before a local compile', () => {
 		expect(runs).to.eql([{ name: 'neopixel', version: '1.0.3', vendored: true, adapters: false, dir: projectDir }]);
 		expect(api.getLibraryClient).to.have.been.calledOnce;
 		expect(await fs.pathExists(path.join(projectDir, 'lib', 'neopixel', 'library.properties'))).to.equal(true);
-		expect(ui.stdout.write).to.have.been.calledWithMatch(/Installing library neopixel 1\.0\.3 to .*lib\/neopixel/);
+		expect(ui.stdout.write).to.have.been.calledWithMatch(/Installing library neopixel 1\.0\.3 to .*lib[\\/]neopixel/);
 	});
 
 	it('does nothing, and needs no token, when everything is vendored', async () => {
