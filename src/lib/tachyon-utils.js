@@ -776,6 +776,7 @@ module.exports = {
 	addManifestInfoLog,
 	addLogFooter,
 	getEDLDevice,
+	initFiles,
 	prepareFlashFiles,
 	getTachyonInfo,
 	promptWifiNetworks,
