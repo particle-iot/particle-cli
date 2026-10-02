@@ -3,21 +3,34 @@ const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs-extra');
 const nock = require('nock');
+const archiver = require('archiver');
 const { expect, sinon } = require('../../../test/setup');
-const { PATH_TMP_DIR, PATH_FIXTURES_DIR } = require('../../../test/lib/env');
+const { PATH_TMP_DIR } = require('../../../test/lib/env');
 const UI = require('../ui');
 const { ToolchainInstaller, RECEIPT_FILE, formatSize } = require('./installer');
 
-const TARBALL = path.join(PATH_FIXTURES_DIR, 'toolchain', 'buildscripts-fake.tar.gz');
+const FAKE_MAKEFILE = '# fake buildscripts Makefile for tests\nversion = 0.0.1\ncompile-user:\n\t@echo compiled\n';
 const HOST = 'https://binaries.particle.io';
 const URL_PATH = '/buildscripts/buildscripts-v0.0.1.tar.gz';
+
+function fakeTarball() {
+	return new Promise((resolve, reject) => {
+		const chunks = [];
+		const archive = archiver('tar', { gzip: true });
+		archive.on('data', (chunk) => chunks.push(chunk));
+		archive.on('end', () => resolve(Buffer.concat(chunks)));
+		archive.on('error', reject);
+		archive.append(FAKE_MAKEFILE, { name: 'Makefile' });
+		archive.finalize();
+	});
+}
 
 describe('Toolchain installer', () => {
 	const toolchainDir = path.join(PATH_TMP_DIR, 'toolchains-under-test');
 	let tarball, sha256, dependency, ui, installer;
 
 	before(async () => {
-		tarball = await fs.readFile(TARBALL);
+		tarball = await fakeTarball();
 		sha256 = crypto.createHash('sha256').update(tarball).digest('hex');
 	});
 
