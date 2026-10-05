@@ -216,6 +216,48 @@ describe('Local compiler', () => {
 			});
 		});
 
+		describe('spinner', () => {
+			const CLEAR_LINE = '\u001b[2K\u001b[1G';
+			const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+			let written;
+
+			beforeEach(() => {
+				written = '';
+				ui.stdout.on('data', chunk => {
+					written += chunk;
+				});
+				exec.callsFake(fakeMake({
+					exitCode: 0,
+					onRun: async () => {
+						await delay(150);
+						await fs.outputFile(path.join(projectDir, 'target', '6.4.1', 'argon', 'blinky.bin'), 'bin');
+					}
+				}));
+			});
+
+			it('spins with the elapsed time while make is silent on a terminal, then clears its line', async () => {
+				ui.stdout.isTTY = true;
+				await compiler.compile({ projectDir, platformId: 12, platformName: 'argon' });
+				expect(written).to.include('Compiling... 0s');
+				expect(written).to.include(`${CLEAR_LINE}make output\n`);
+				expect(written.endsWith(CLEAR_LINE)).to.equal(true);
+				const settled = written;
+				await delay(150);
+				expect(written).to.equal(settled);
+			});
+
+			it('does not spin when stdout is not a terminal', async () => {
+				await compiler.compile({ projectDir, platformId: 12, platformName: 'argon' });
+				expect(written).to.equal('make output\n');
+			});
+
+			it('does not spin with verbose output', async () => {
+				ui.stdout.isTTY = true;
+				await compiler.compile({ projectDir, platformId: 12, platformName: 'argon', verbose: true });
+				expect(written).to.equal('make output\n');
+			});
+		});
+
 		it('prefers the bundle when the Makefile produced one', async () => {
 			exec.callsFake(fakeMake({
 				exitCode: 0,

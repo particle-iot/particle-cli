@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const execa = require('execa');
 const temp = require('temp').track();
+const { Spinner } = require('cli-spinner');
 const UI = require('../ui');
 const { fetchManifest, hostFor, displayName } = require('./manifest');
 const { ToolchainInstaller } = require('./installer');
@@ -80,7 +81,7 @@ class LocalCompiler {
 		if (!verbose && !(await this.isDeviceOsBuilt({ dependencies, platform }))) {
 			this._write(`Building Device OS ${toolchain.version} for ${platform.name} for the first time. This takes a few minutes with no output; later compiles reuse it. Use -vv to see the make output.`);
 		}
-		await this.run(execOptions);
+		await this.run(execOptions, { spin: !verbose });
 
 		const artifact = await this.artifactFor({ projectDir, version: toolchain.version, platformName: platform.name });
 		return { ...artifact, version: toolchain.version };
@@ -133,16 +134,39 @@ class LocalCompiler {
 		};
 	}
 
-	/** Runs make, streaming its output; a non-zero exit becomes an error. */
-	async run({ command, args, options }) {
+	/**
+	 * Runs make, streaming its output; a non-zero exit becomes an error.
+	 * With `spin` on a terminal, a spinner with the elapsed time fills the silences of make -s.
+	 */
+	async run({ command, args, options }, { spin = false } = {}) {
 		const child = this.exec(command, args, { ...options, reject: false, stdin: 'ignore' });
+		const spinner = spin && !this.ui.quiet && this.ui.stdout.isTTY ? new MakeSpinner(this.ui.stdout) : null;
+		const forward = stream => chunk => {
+			if (spinner) {
+				spinner.pause();
+			}
+			stream.write(chunk);
+			if (spinner) {
+				spinner.resumeAfter(chunk);
+			}
+		};
 		if (child.stdout && !this.ui.quiet) {
-			child.stdout.pipe(this.ui.stdout);
+			child.stdout.on('data', forward(this.ui.stdout));
 		}
 		if (child.stderr) {
-			child.stderr.pipe(this.ui.stderr);
+			child.stderr.on('data', forward(this.ui.stderr));
 		}
-		const result = await child;
+		let result;
+		try {
+			if (spinner) {
+				spinner.resume();
+			}
+			result = await child;
+		} finally {
+			if (spinner) {
+				spinner.pause();
+			}
+		}
 		if (result.failed || result.exitCode !== 0) {
 			throw new Error(`make exited with code ${result.exitCode}`);
 		}
@@ -211,6 +235,46 @@ class LocalCompiler {
 			this.ui.write(message);
 		}
 	}
+}
+
+/** A "Compiling" spinner with the elapsed time that clears its line whenever make writes. */
+class MakeSpinner {
+	constructor(stream) {
+		const startedAt = Date.now();
+		this.spinner = new Spinner({
+			stream,
+			text: '%s Compiling...',
+			onTick: (message) => {
+				this.spinner.clearLine(stream);
+				stream.write(`${message} ${formatElapsed(Date.now() - startedAt)}`);
+			}
+		});
+	}
+
+	resume() {
+		if (!this.spinner.isSpinning()) {
+			this.spinner.start();
+		}
+	}
+
+	pause() {
+		if (this.spinner.isSpinning()) {
+			this.spinner.stop(true);
+		}
+	}
+
+	/** Restarts only after a whole line, so the spinner never overwrites a partial one. */
+	resumeAfter(chunk) {
+		if (String(chunk).endsWith('\n')) {
+			this.resume();
+		}
+	}
+}
+
+function formatElapsed(ms) {
+	const seconds = Math.floor(ms / 1000);
+	const minutes = Math.floor(seconds / 60);
+	return minutes ? `${minutes}m ${String(seconds % 60).padStart(2, '0')}s` : `${seconds}s`;
 }
 
 module.exports = {
