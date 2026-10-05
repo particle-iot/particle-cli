@@ -372,7 +372,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 		const destination = result.isBundle
 			? (bundleFilename || `${utilities.filenameNoExt(filename)}.zip`)
 			: filename;
-		await fs.copy(result.filename, destination);
+		// write a new file like the cloud download does: make leaves the .bin executable and fs.copy would keep that
+		await fs.writeFile(destination, await fs.readFile(result.filename));
 
 		this.ui.stdout.write(`${os.EOL}Compile succeeded.${os.EOL}${os.EOL}`);
 		return {

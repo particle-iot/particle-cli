@@ -1002,6 +1002,26 @@ describe('Cloud Commands', () => {
 			expect(cloud.ui.stdout.write).to.have.been.calledWithMatch(/Compile succeeded\./);
 		});
 
+		it('saves the binary as a regular file even though make leaves it executable', async function () {
+			if (process.platform === 'win32') {
+				this.skip(); // Windows has no execute bits
+			}
+			compile.callsFake(async ({ projectDir: dir }) => {
+				const filename = path.join(dir, 'target', '6.4.1', 'argon', `${path.basename(dir)}.bin`);
+				await fs.outputFile(filename, 'compiled', { mode: 0o755 });
+				await fs.chmod(filename, 0o755);
+				return { filename, isBundle: false, version: '6.4.1' };
+			});
+			const filename = path.join(outDir, 'app.bin');
+			await cloud._compileLocal({
+				files: [projectDir],
+				fileMapping: { basePath: process.cwd(), map: {} },
+				platformId: 12,
+				filename
+			});
+			expect((await fs.stat(filename)).mode & 0o111).to.equal(0);
+		});
+
 		it('vendors the project libraries before running make', async () => {
 			const vendor = sandbox.stub(cloud, '_vendorLibraries').resolves([{ name: 'neopixel', version: '1.0.3' }]);
 			await cloud._compileLocal({
