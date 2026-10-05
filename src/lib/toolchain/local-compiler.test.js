@@ -190,6 +190,32 @@ describe('Local compiler', () => {
 			expect(exec.firstCall.args[2]).to.include({ reject: false, stdin: 'ignore' });
 		});
 
+		describe('first Device OS build notice', () => {
+			const notice = 'Building Device OS 6.4.1 for argon for the first time. This takes a few minutes with no output; later compiles reuse it. Use -vv to see the make output.';
+			const builtWiring = () => fs.ensureDir(path.join(toolchainDir, 'deviceOS', '6.4.1', 'build', 'target', 'wiring', 'platform-12-m'));
+			const binary = () => fs.outputFile(path.join(projectDir, 'target', '6.4.1', 'argon', 'blinky.bin'), 'bin');
+
+			beforeEach(() => {
+				exec.callsFake(fakeMake({ exitCode: 0, onRun: binary }));
+			});
+
+			it('warns before the first build for a Device OS version and platform', async () => {
+				await compiler.compile({ projectDir, platformId: 12, platformName: 'argon' });
+				expect(ui.write).to.have.been.calledWith(notice);
+			});
+
+			it('stays quiet once that platform is built', async () => {
+				await builtWiring();
+				await compiler.compile({ projectDir, platformId: 12, platformName: 'argon' });
+				expect(ui.write).to.not.have.been.calledWith(notice);
+			});
+
+			it('stays quiet with verbose output, where make shows its progress', async () => {
+				await compiler.compile({ projectDir, platformId: 12, platformName: 'argon', verbose: true });
+				expect(ui.write).to.not.have.been.calledWith(notice);
+			});
+		});
+
 		it('prefers the bundle when the Makefile produced one', async () => {
 			exec.callsFake(fakeMake({
 				exitCode: 0,

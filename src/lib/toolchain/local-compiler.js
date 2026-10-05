@@ -77,6 +77,9 @@ class LocalCompiler {
 		const execOptions = this.buildExecOptions({ dependencies, platform, projectDir, cliPath, target, assetOtaDir, verbose });
 
 		this._write('');
+		if (!verbose && !(await this.isDeviceOsBuilt({ dependencies, platform }))) {
+			this._write(`Building Device OS ${toolchain.version} for ${platform.name} for the first time. This takes a few minutes with no output; later compiles reuse it. Use -vv to see the make output.`);
+		}
 		await this.run(execOptions);
 
 		const artifact = await this.artifactFor({ projectDir, version: toolchain.version, platformName: platform.name });
@@ -184,6 +187,17 @@ class LocalCompiler {
 		await fs.writeFile(wrapper, `#!/bin/sh\nexec "${posix(process.execPath)}" "${posix(entry)}" "$@"\n`, { mode: 0o755 });
 		this._wrapper = wrapper;
 		return wrapper;
+	}
+
+	/**
+	 * make -s is silent while it builds the Device OS libraries a user part links against.
+	 * They are built once per version and platform, under <deviceOS>/build/target/<lib>/platform-<id>-m.
+	 */
+	async isDeviceOsBuilt({ dependencies, platform }) {
+		const [firmware] = dependencies;
+		const wiringDir = path.join(this.installer.dirFor(firmware), 'build', 'target', 'wiring');
+		const entries = await fs.readdir(wiringDir).catch(() => []);
+		return entries.some(entry => entry === `platform-${platform.id}` || entry.startsWith(`platform-${platform.id}-`));
 	}
 
 	/** buildtools ships its own bash on Windows; the manifest may say where. */
