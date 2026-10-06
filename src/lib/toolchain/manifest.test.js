@@ -11,7 +11,8 @@ const {
 	hostFor,
 	displayName,
 	MANIFEST_URL,
-	MANIFEST_CACHE_KEY
+	MANIFEST_CACHE_KEY,
+	MANIFEST_MAX_AGE_MS
 } = require('./manifest');
 
 const FIXTURE = path.join(PATH_FIXTURES_DIR, 'toolchain', 'manifest.json');
@@ -141,6 +142,28 @@ describe('Toolchain manifest', () => {
 				.get('/toolchain-manager/manifest.json').reply(304);
 			const manifest = await fetchManifest({ cache });
 			expect(manifest.toolchainForVersion('2.3.1')).to.be.an('object');
+		});
+
+		it('uses a cache younger than 12 hours without a request', async () => {
+			cache.set(MANIFEST_CACHE_KEY, { etag: '"abc"', data: json, fetchedAt: Date.now() - MANIFEST_MAX_AGE_MS + 60000 });
+			const manifest = await fetchManifest({ cache });
+			expect(manifest.toolchainForVersion('6.4.1')).to.be.an('object');
+			expect(nock.isDone()).to.equal(true);
+		});
+
+		it('asks the server once the cache is older than 12 hours, and a 304 renews it', async () => {
+			cache.set(MANIFEST_CACHE_KEY, { etag: '"abc"', data: json, fetchedAt: Date.now() - MANIFEST_MAX_AGE_MS - 1 });
+			const scope = nock('https://binaries.particle.io').get('/toolchain-manager/manifest.json').reply(304);
+			await fetchManifest({ cache });
+			expect(scope.isDone()).to.equal(true);
+			expect(Date.now() - cache.get(MANIFEST_CACHE_KEY).fetchedAt).to.be.below(5000);
+		});
+
+		it('asks the server despite a fresh cache when maxAgeMs is 0', async () => {
+			cache.set(MANIFEST_CACHE_KEY, { etag: '"abc"', data: json, fetchedAt: Date.now() });
+			const scope = nock('https://binaries.particle.io').get('/toolchain-manager/manifest.json').reply(304);
+			await fetchManifest({ cache, maxAgeMs: 0 });
+			expect(scope.isDone()).to.equal(true);
 		});
 
 		it('falls back to the cache when offline', async () => {

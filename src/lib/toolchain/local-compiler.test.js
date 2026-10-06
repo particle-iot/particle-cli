@@ -80,6 +80,25 @@ describe('Local compiler', () => {
 			expect(installer.ensureInstalled).to.have.been.calledWith(dependencies, { label: 'Local toolchain for Device OS 6.4.1 (argon)' });
 		});
 
+		it('trusts the cached manifest when it knows the requested version', async () => {
+			const fetchManifest = sinon.stub().resolves(manifest);
+			compiler.fetchManifest = fetchManifest;
+			await compiler.resolve({ version: '6.4.1', platformId: 12, platformName: 'argon' });
+			expect(fetchManifest).to.have.been.calledOnceWithExactly();
+		});
+
+		it('asks the server again when the cached manifest predates the requested version', async () => {
+			const data = await fs.readJson(path.join(PATH_FIXTURES_DIR, 'toolchain', 'manifest.json'));
+			const stale = new ToolchainManifest({ ...data, toolchains: data.toolchains.filter(t => t.version !== '6.4.1') });
+			const fetchManifest = sinon.stub();
+			fetchManifest.onFirstCall().resolves(stale);
+			fetchManifest.onSecondCall().resolves(manifest);
+			compiler.fetchManifest = fetchManifest;
+			const { toolchain } = await compiler.resolve({ version: '6.4.1', platformId: 12, platformName: 'argon' });
+			expect(toolchain.version).to.equal('6.4.1');
+			expect(fetchManifest.secondCall).to.have.been.calledWithExactly({ maxAgeMs: 0 });
+		});
+
 		it('rejects a platform the manifest does not know', async () => {
 			await expect(compiler.resolve({ platformId: 42, platformName: 'tachyon' }))
 				.to.be.rejectedWith('The local toolchain does not support tachyon; use --compiler cloud');

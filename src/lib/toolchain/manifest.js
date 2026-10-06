@@ -8,6 +8,9 @@ const ParticleCache = require('../particle-cache');
 const MANIFEST_URL = 'https://binaries.particle.io/toolchain-manager/manifest.json';
 const MANIFEST_CACHE_KEY = 'toolchain-manifest';
 const MANIFEST_TIMEOUT_MS = 4000;
+// Workbench's TTL. Within it a local compile makes no network request: offline, an aborted
+// request would still leave its DNS lookup pending and keep the CLI from exiting.
+const MANIFEST_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 // The dependency kinds a local compile needs, in the order the environment is
 // built from them. `debuggers` (openocd) is deliberately left out.
@@ -116,22 +119,27 @@ class ToolchainManifest {
 }
 
 /**
- * Fetches the manifest, using the cached copy when the server says it is
- * unchanged or cannot be reached. Throws only when there is neither.
+ * Fetches the manifest, using the cached copy when it is younger than `maxAgeMs`,
+ * or when the server says it is unchanged or cannot be reached. Throws only when there is neither.
  * @param {object} [opts]
  * @param {ParticleCache} [opts.cache]
  * @param {string} [opts.url]
  * @param {number} [opts.timeoutMs]
+ * @param {number} [opts.maxAgeMs] 0 always asks the server
  * @returns {Promise<ToolchainManifest>}
  */
-async function fetchManifest({ cache = new ParticleCache(), url = MANIFEST_URL, timeoutMs = MANIFEST_TIMEOUT_MS } = {}) {
+async function fetchManifest({ cache = new ParticleCache(), url = MANIFEST_URL, timeoutMs = MANIFEST_TIMEOUT_MS, maxAgeMs = MANIFEST_MAX_AGE_MS } = {}) {
 	const cached = cache.get(MANIFEST_CACHE_KEY);
+	if (cached && cached.fetchedAt && Date.now() - cached.fetchedAt < maxAgeMs) {
+		return new ToolchainManifest(cached.data);
+	}
 	const headers = cached && cached.etag ? { 'If-None-Match': cached.etag } : {};
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 	try {
 		const response = await fetch(url, { headers, signal: controller.signal });
 		if (response.status === 304 && cached) {
+			cache.set(MANIFEST_CACHE_KEY, { ...cached, fetchedAt: Date.now() });
 			return new ToolchainManifest(cached.data);
 		}
 		if (!response.ok) {
@@ -154,6 +162,7 @@ async function fetchManifest({ cache = new ParticleCache(), url = MANIFEST_URL, 
 module.exports = {
 	MANIFEST_URL,
 	MANIFEST_CACHE_KEY,
+	MANIFEST_MAX_AGE_MS,
 	DEPENDENCY_KINDS,
 	ToolchainManifest,
 	fetchManifest,

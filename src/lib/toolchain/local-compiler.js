@@ -40,7 +40,11 @@ class LocalCompiler {
 	 * @returns {Promise<{ toolchain: object, dependencies: object[], platform: object }>}
 	 */
 	async resolve({ version, platformId, platformName }) {
-		const manifest = await this.fetchManifest();
+		let manifest = await this.fetchManifest();
+		if (!this._knows(manifest, { version, platformId, platformName })) {
+			// the cached copy may predate a new Device OS release or platform
+			manifest = await this.fetchManifest({ maxAgeMs: 0 });
+		}
 		const platform = manifest.platform(platformId);
 		if (!platform) {
 			throw new Error(`The local toolchain does not support ${platformName}; use --compiler cloud`);
@@ -228,6 +232,18 @@ class LocalCompiler {
 	_windowsBash(tools) {
 		const declared = tools.paths && tools.paths.bash && tools.paths.bash.path;
 		return path.join(this.installer.rootFor(tools), declared || 'bin/bash.exe');
+	}
+
+	_knows(manifest, { version, platformId, platformName }) {
+		if (!manifest.platform(platformId)) {
+			return false;
+		}
+		try {
+			manifest.resolveToolchain({ version, platformId, platformName });
+			return true;
+		} catch (_error) {
+			return false;
+		}
 	}
 
 	_write(message) {
