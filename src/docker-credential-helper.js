@@ -41,7 +41,8 @@ async function isTokenValid(apiHost, config) {
 	const url = `https://${apiHost}/v1/access_tokens/current`;
 	const res = await fetch(url, {
 		headers: {
-			Authorization: `Bearer ${config.access_token}`
+			Authorization: `Bearer ${config.access_token}`,
+			'X-Particle-Tool': `${pkg.name}@${pkg.version}`
 		},
 		agent: getProxyAgent(url)
 	});
