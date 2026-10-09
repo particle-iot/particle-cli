@@ -248,6 +248,17 @@ describe('LogicFunction', () => {
 			expect(malformedLogicFunctions).to.have.lengthOf(1);
 			expect(malformedLogicFunctions[0].name).to.equal('lf2');
 		});
+		it('names malformed Logic Functions by file name when a parent directory contains a dot', async () => {
+			const dir = path.join(PATH_TMP_DIR, 'my.project');
+			await fs.ensureDir(dir);
+			await fs.writeFile(path.join(dir, 'lf2.logic.json'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
+
+			const fromDir = await LogicFunction.listFromDisk({ filepath: dir });
+			const fromFile = await LogicFunction.listFromDisk({ filepath: path.join(dir, 'lf2.logic.json') });
+
+			expect(fromDir.malformedLogicFunctions.map(lf => lf.name)).to.eql(['lf2']);
+			expect(fromFile.malformedLogicFunctions.map(lf => lf.name)).to.eql(['lf2']);
+		});
 		it('fails if the path does not exist', async () => {
 			try {
 				await LogicFunction.listFromDisk({ filepath: '/path/does/not/exist' });
