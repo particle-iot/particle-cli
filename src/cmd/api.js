@@ -8,6 +8,7 @@ const ParticleCmds = require('particle-commands');
 const { getProxyAgent } = require('../lib/http-proxy');
 const log = require('../lib/log');
 const settings = require('../../settings');
+const pkg = require('../../package.json');
 const authErrors = require('../lib/auth-errors');
 const { classifyAuthError, wrapClientErrors } = authErrors;
 
@@ -23,6 +24,7 @@ module.exports = class ParticleApi {
 			// Honors settings.proxyUrl + HTTPS_PROXY/HTTP_PROXY/NO_PROXY env vars.
 			httpAgent: getProxyAgent(baseUrl, { proxyUrl: settings.proxyUrl })
 		});
+		this.api.setContext('tool', { name: pkg.name, version: pkg.version });
 		this.accessToken = options.accessToken;
 	}
 

@@ -1,6 +1,7 @@
 'use strict';
 const { expect } = require('../../test/setup');
 const sinon = require('sinon');
+const nock = require('nock');
 const ParticleApi = require('./api');
 
 describe('ParticleApi', () => {
@@ -14,6 +15,26 @@ describe('ParticleApi', () => {
 
 	afterEach(() => {
 		sandbox.restore();
+	});
+
+	describe('X-Particle-Tool header', () => {
+		afterEach(() => {
+			nock.cleanAll();
+		});
+
+		it('is sent on requests', async () => {
+			const { name, version } = require('../../package.json');
+			const api = new ParticleApi('https://api.particle.io', { accessToken: 'test-token' });
+			const scope = nock('https://api.particle.io', {
+				reqheaders: { 'x-particle-tool': `${name}@${version}` }
+			})
+				.get('/v1/devices/abc')
+				.reply(200, { id: 'abc' });
+
+			await api.getDevice({ deviceId: 'abc' });
+
+			scope.done();
+		});
 	});
 
 	describe('getDevice', () => {
