@@ -1,4 +1,5 @@
 'use strict';
+const fs = require('fs');
 const path = require('path');
 const PATH_REPO_DIR = path.join(__dirname, '..', '..');
 const PATH_TEST_DIR = path.join(PATH_REPO_DIR, 'test');
@@ -21,6 +22,9 @@ const PATH_CLI_CONFIG_JSON = path.join(PATH_PARTICLE_DIR, 'e2e.config.json');
 const PATH_FIXTURES_THIRDPARTY_OTA_DIR = path.join(PATH_TEST_DIR, '__fixtures__', 'third_party_ota');
 const PATH_FIXTURES_LOGIC_FUNCTIONS = path.join(PATH_TEST_DIR, '__fixtures__', 'logic_functions');
 const PATH_FIXTURES_ENV = path.join(PATH_TEST_DIR, '__fixtures__', 'env');
+// settings.findHomePath() skips a HOME that does not exist and falls back to the
+// repo root, so unit tests would write .particle/ there without this.
+fs.mkdirSync(PATH_HOME_DIR, { recursive: true });
 process.env.HOME = PATH_HOME_DIR;
 require('dotenv').config({ path: path.join(PATH_TEST_DIR, '.env') });
 

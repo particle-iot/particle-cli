@@ -238,12 +238,14 @@ describe('Cloud Command-Line Interface', () => {
 					'Options:',
 					'  --target          The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
 					'  --followSymlinks  Follow symlinks when collecting files  [boolean]',
+					'  --compiler        Where to compile the source code. local uses the toolchain under ~/.particle/toolchains, downloading it when missing  [string] [choices: "cloud", "local"] [default: "cloud"]',
 					'  --product         Target a device within the given Product ID or Slug  [string]',
 					'',
 					'Examples:',
 					'  particle cloud flash blue                                      Compile the source code in the current directory in the cloud and flash to device `blue`',
 					'  particle cloud flash green tinker                              Flash the default `tinker` app to device `green`',
 					'  particle cloud flash red blink.ino                             Compile `blink.ino` in the cloud and flash to device `red`',
+					'  particle cloud flash red --compiler local                      Compile the source code in the current directory on this machine and flash to device `red` over the air',
 					'  particle cloud flash orange firmware.bin                       Flash a pre-compiled `firmware.bin` binary to device `orange`',
 					'  particle cloud flash 0123456789abcdef01234567 --product 12345  Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`',
 					''
@@ -260,6 +262,7 @@ describe('Cloud Command-Line Interface', () => {
 			expect(argv.target).to.equal(undefined);
 			expect(argv.followSymlinks).to.equal(false);
 			expect(argv.saveTo).to.equal(undefined);
+			expect(argv.compiler).to.equal('cloud');
 		});
 
 		it('Errors when required `device` argument is missing', () => {
@@ -284,12 +287,19 @@ describe('Cloud Command-Line Interface', () => {
 		});
 
 		it('Parses options', () => {
-			const argv = commandProcessor.parse(root, ['cloud', 'compile', 'argon', 'blink.ino', '--followSymlinks', '--target', '2.0.0', '--saveTo', './path/to/my.bin']);
+			const argv = commandProcessor.parse(root, ['cloud', 'compile', 'argon', 'blink.ino', '--followSymlinks', '--target', '2.0.0', '--saveTo', './path/to/my.bin', '--compiler', 'local']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ deviceType: 'argon', files: ['blink.ino'] });
 			expect(argv.target).to.equal('2.0.0');
 			expect(argv.followSymlinks).to.equal(true);
 			expect(argv.saveTo).to.equal('./path/to/my.bin');
+			expect(argv.compiler).to.equal('local');
+		});
+
+		it('Rejects an unknown compiler', () => {
+			const argv = commandProcessor.parse(root, ['cloud', 'compile', 'argon', '--compiler', 'nope']);
+			expect(argv.clierror).to.include('Invalid values:');
+			expect(argv.clierror).to.include('Argument: compiler, Given: "nope", Choices: "cloud", "local"');
 		});
 
 		it('Includes help', () => {
@@ -303,6 +313,7 @@ describe('Cloud Command-Line Interface', () => {
 					'Options:',
 					'  --target          The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
 					'  --followSymlinks  Follow symlinks when collecting files  [boolean]',
+					'  --compiler        Where to compile the source code. local uses the toolchain under ~/.particle/toolchains, downloading it when missing  [string] [choices: "cloud", "local"] [default: "cloud"]',
 					'  --saveTo          Filename for the compiled binary  [string]',
 					'',
 					'Examples:',

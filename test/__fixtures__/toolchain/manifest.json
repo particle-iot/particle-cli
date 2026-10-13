@@ -1,0 +1,70 @@
+{
+	"version": "1.0.0",
+	"toolchains": [
+		{
+			"version": "6.5.0",
+			"platforms": [12, 13, 32],
+			"firmware": "deviceOS@6.5.0",
+			"compilers": "gcc-arm@10.2.1",
+			"tools": "buildtools@1.1.1",
+			"scripts": "buildscripts@1.17.2",
+			"debuggers": "openocd@0.12.0-particle.2",
+			"release_state": "preview",
+			"default": false,
+			"default_platforms": []
+		},
+		{
+			"version": "6.4.1",
+			"platforms": [12, 13, 32],
+			"firmware": "deviceOS@6.4.1",
+			"compilers": "gcc-arm@10.2.1",
+			"tools": "buildtools@1.1.1",
+			"scripts": "buildscripts@1.17.2",
+			"debuggers": "openocd@0.12.0-particle.2",
+			"release_state": "ga",
+			"default": true,
+			"default_platforms": [12, 32]
+		},
+		{
+			"version": "2.3.1",
+			"platforms": [6, 8, 10, 12, 13],
+			"firmware": "deviceOS@2.3.1",
+			"compilers": "gcc-arm@10.2.1",
+			"tools": "buildtools@1.1.1",
+			"scripts": "buildscripts@1.17.2",
+			"debuggers": "openocd@0.11.0-particle.4",
+			"release_state": "lts",
+			"default": false,
+			"default_platforms": [6, 8, 10]
+		}
+	],
+	"platforms": [
+		{ "id": 6, "name": "photon", "generation": 2, "baseMcu": "stm32f2xx" },
+		{ "id": 8, "name": "p1", "generation": 2, "baseMcu": "stm32f2xx" },
+		{ "id": 10, "name": "electron", "generation": 2, "baseMcu": "stm32f2xx" },
+		{ "id": 12, "name": "argon", "generation": 3, "baseMcu": "nRF52840" },
+		{ "id": 13, "name": "boron", "generation": 3, "baseMcu": "nRF52840" },
+		{ "id": 32, "name": "p2", "generation": 3, "baseMcu": "rtl872x" }
+	],
+	"firmware": [
+		{ "name": "deviceOS", "version": "6.5.0", "main": ".", "url": "https://binaries.particle.io/device-os/v6.5.0.tar.gz", "sha256": "aa" },
+		{ "name": "deviceOS", "version": "6.4.1", "main": ".", "url": "https://binaries.particle.io/device-os/v6.4.1.tar.gz", "sha256": "bb" },
+		{ "name": "deviceOS", "version": "2.3.1", "main": ".", "url": "https://binaries.particle.io/device-os/v2.3.1.tar.gz", "sha256": "cc" }
+	],
+	"compilers": {
+		"darwin": { "x64": [{ "name": "gcc-arm", "version": "10.2.1", "main": "./bin", "url": "https://binaries.particle.io/gcc-arm/darwin/x64/gcc-arm-v10.2.1.tar.gz", "sha256": "dd" }], "x86": [] },
+		"linux": { "x64": [{ "name": "gcc-arm", "version": "10.2.1", "main": "./bin", "url": "https://binaries.particle.io/gcc-arm/linux/x64/gcc-arm-v10.2.1.tar.gz", "sha256": "dd" }], "x86": [] },
+		"windows": { "x64": [{ "name": "gcc-arm", "version": "10.2.1", "main": "./bin", "url": "https://binaries.particle.io/gcc-arm/windows/x64/gcc-arm-v10.2.1.tar.gz", "sha256": "dd" }], "x86": [] }
+	},
+	"tools": {
+		"darwin": { "x64": [{ "name": "buildtools", "version": "1.1.1", "main": ".", "url": "https://binaries.particle.io/buildtools/darwin/x64/buildtools-v1.1.1.tar.gz", "sha256": "ee", "paths": { "make": { "type": "exec", "path": "./make" } } }], "x86": [] },
+		"linux": { "x64": [{ "name": "buildtools", "version": "1.1.1", "main": ".", "url": "https://binaries.particle.io/buildtools/linux/x64/buildtools-v1.1.1.tar.gz", "sha256": "ee" }], "x86": [] },
+		"windows": { "x64": [{ "name": "buildtools", "version": "1.1.1", "main": ".", "url": "https://binaries.particle.io/buildtools/windows/x64/buildtools-v1.1.1.tar.gz", "sha256": "ee", "paths": { "bin": { "type": "dir", "path": "./bin" }, "make": { "type": "exec", "path": "./bin/make.exe" }, "bash": { "type": "exec", "path": "./bin/bash.exe" } } }], "x86": [] }
+	},
+	"scripts": {
+		"darwin": { "x64": [{ "name": "buildscripts", "version": "1.17.2", "main": ".", "url": "https://binaries.particle.io/buildscripts/buildscripts-v1.17.2.tar.gz", "sha256": "ff" }], "x86": [] },
+		"linux": { "x64": [{ "name": "buildscripts", "version": "1.17.2", "main": ".", "url": "https://binaries.particle.io/buildscripts/buildscripts-v1.17.2.tar.gz", "sha256": "ff" }], "x86": [] },
+		"windows": { "x64": [{ "name": "buildscripts", "version": "1.17.2", "main": ".", "url": "https://binaries.particle.io/buildscripts/buildscripts-v1.17.2.tar.gz", "sha256": "ff" }], "x86": [] }
+	},
+	"debuggers": { "darwin": { "x64": [], "x86": [] }, "linux": { "x64": [], "x86": [] }, "windows": { "x64": [], "x86": [] } }
+}

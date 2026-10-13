@@ -1,5 +1,6 @@
 'use strict';
 const utilities = require('../lib/utilities');
+const { compilerOption } = require('./compiler-option');
 
 module.exports = ({ commandProcessor, root }) => {
 	const cloud = commandProcessor.createCategory(root, 'cloud', 'Access Particle cloud functionality');
@@ -11,7 +12,8 @@ module.exports = ({ commandProcessor, root }) => {
 		'followSymlinks': {
 			boolean: true,
 			description: 'Follow symlinks when collecting files'
-		}
+		},
+		...compilerOption()
 	};
 
 	commandProcessor.createCommand(cloud, 'list', 'Display a list of your devices, as well as their variables and functions', {
@@ -78,6 +80,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device `blue`',
 			'$0 $command green tinker': 'Flash the default `tinker` app to device `green`',
 			'$0 $command red blink.ino': 'Compile `blink.ino` in the cloud and flash to device `red`',
+			'$0 $command red --compiler local': 'Compile the source code in the current directory on this machine and flash to device `red` over the air',
 			'$0 $command orange firmware.bin': 'Flash a pre-compiled `firmware.bin` binary to device `orange`',
 			'$0 $command 0123456789abcdef01234567 --product 12345': 'Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`'
 		}
@@ -90,7 +93,8 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Filename for the compiled binary'
 			}
 		}),
-		tokenExpiryThresholdMs: 15 * 60 * 1000,   // cloud compile can run several minutes
+		// cloud compile can run several minutes; a local compile needs no login
+		tokenExpiryThresholdMs: (args) => (args.compiler === 'local' ? undefined : 15 * 60 * 1000),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).compileCode(args);

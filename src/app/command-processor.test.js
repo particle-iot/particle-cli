@@ -598,6 +598,22 @@ describe('runWithAuthMiddleware', () => {
 		expect(verifyFreshTokenMiddleware).to.have.been.calledWithMatch({ thresholdMs: 1000, relogin: true });
 	});
 
+	it('lets tokenExpiryThresholdMs be a function of argv and skips auth when it returns nothing', async () => {
+		const handler = sandbox.stub().resolves('ok');
+		const tokenExpiryThresholdMs = sandbox.stub().returns(undefined);
+		const argv = { compiler: 'local' };
+		const result = await runWithAuthMiddleware({ handler, tokenExpiryThresholdMs }, argv);
+		expect(result).to.equal('ok');
+		expect(tokenExpiryThresholdMs).to.have.been.calledWith(argv);
+		expect(verifyFreshTokenMiddleware).to.not.have.been.called;
+	});
+
+	it('uses the threshold a function returns', async () => {
+		const handler = sandbox.stub().resolves('ok');
+		await runWithAuthMiddleware({ handler, tokenExpiryThresholdMs: () => 1000, relogin: false }, {});
+		expect(verifyFreshTokenMiddleware).to.have.been.calledWith({ thresholdMs: 1000, relogin: false });
+	});
+
 	it('converts a handler InvalidTokenError into MissingTokenError and clears local state', async () => {
 		const handler = sandbox.stub().rejects(new InvalidTokenError('revoked'));
 		let caught;
