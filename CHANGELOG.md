@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.52.0 - Oct 14 2026
+* Add --compiler option on `compile` and `flash` commands to allow local compiling.
+
 # 3.51.0 - Sep 17 2026
 * Add Sulu platform
 * Add --org parameter to publish and subscribe
