@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.52.1 - Oct 15 2026
+* Send X-Particle-Tool header on requests to particle api
+
 # 3.52.0 - Oct 14 2026
 * Add --compiler option on `compile` and `flash` commands to allow local compiling.
 
