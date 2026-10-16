@@ -8,12 +8,13 @@ const ParticleCmds = require('particle-commands');
 const { getProxyAgent } = require('../lib/http-proxy');
 const log = require('../lib/log');
 const settings = require('../../settings');
+const pkg = require('../../package.json');
 const authErrors = require('../lib/auth-errors');
 const { classifyAuthError, wrapClientErrors } = authErrors;
 
 
 module.exports = class ParticleApi {
-	constructor(baseUrl, options){
+	constructor(baseUrl, options, env = process.env){
 		this.api = new Particle({
 			baseUrl: baseUrl,
 			clientId: options.clientId || 'particle-cli',
@@ -22,6 +23,11 @@ module.exports = class ParticleApi {
 			debug: this._debug.bind(this),
 			// Honors settings.proxyUrl + HTTPS_PROXY/HTTP_PROXY/NO_PROXY env vars.
 			httpAgent: getProxyAgent(baseUrl, { proxyUrl: settings.proxyUrl })
+		});
+		this.api.setContext('tool', {
+			name: pkg.name,
+			version: pkg.version,
+			components: parseToolComponents(env.PARTICLE_TOOL_COMPONENTS)
 		});
 		this.accessToken = options.accessToken;
 	}
@@ -732,6 +738,24 @@ function getEnvUri({ sandbox, org, productId, deviceId }) {
 		throw new Error('One of sandbox, org, productId, or deviceId must be provided');
 	}
 	return uri;
+}
+
+/**
+ * Parses a comma-separated list of `name@version` entries (version optional), e.g.
+ * `workbench@1.16.50`, set by tools that run the CLI on a user's behalf.
+ * @param {string} [value]
+ * @returns {Array<{ name: string, version?: string }>}
+ */
+function parseToolComponents(value = '') {
+	return value.split(',')
+		.map(entry => entry.trim())
+		.filter(Boolean)
+		.map(entry => {
+			const at = entry.lastIndexOf('@');
+			return at > 0
+				? { name: entry.slice(0, at), version: entry.slice(at + 1) }
+				: { name: entry };
+		});
 }
 
 module.exports.AuthenticationError = authErrors.AuthenticationError;

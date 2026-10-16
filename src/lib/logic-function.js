@@ -79,7 +79,7 @@ class LogicFunction {
 				logicFunctions.push(lf);
 			} catch (error) {
 				malformedLogicFunctions.push({
-					name: path.basename(filepath.substring(0, filepath.indexOf('.'))),
+					name: path.basename(filepath).split('.')[0],
 					error: error.message
 				});
 			}
@@ -97,7 +97,7 @@ class LogicFunction {
 					logicFunctions.push(lf);
 				} catch (error) {
 					malformedLogicFunctions.push({
-						name: path.basename(file.substring(0, file.indexOf('.'))),
+						name: path.basename(file).split('.')[0],
 						error: error.message
 					});
 				}

@@ -1,6 +1,7 @@
 'use strict';
 const { expect } = require('../../test/setup');
 const sinon = require('sinon');
+const nock = require('nock');
 const ParticleApi = require('./api');
 
 describe('ParticleApi', () => {
@@ -14,6 +15,36 @@ describe('ParticleApi', () => {
 
 	afterEach(() => {
 		sandbox.restore();
+	});
+
+	describe('X-Particle-Tool header', () => {
+		afterEach(() => {
+			nock.cleanAll();
+		});
+
+		const { name, version } = require('../../package.json');
+
+		async function expectToolHeader(env, expected) {
+			const api = new ParticleApi('https://api.particle.io', { accessToken: 'test-token' }, env);
+			const scope = nock('https://api.particle.io', { reqheaders: { 'x-particle-tool': expected } })
+				.get('/v1/devices/abc')
+				.reply(200, { id: 'abc' });
+
+			await api.getDevice({ deviceId: 'abc' });
+
+			scope.done();
+		}
+
+		it('is sent on requests', async () => {
+			await expectToolHeader({}, `${name}@${version}`);
+		});
+
+		it('appends components from PARTICLE_TOOL_COMPONENTS', async () => {
+			await expectToolHeader(
+				{ PARTICLE_TOOL_COMPONENTS: 'workbench@1.16.50, @scope/thing@2.0.0, bare' },
+				`${name}@${version}, workbench@1.16.50, @scope/thing@2.0.0, bare`
+			);
+		});
 	});
 
 	describe('getDevice', () => {
