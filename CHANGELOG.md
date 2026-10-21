@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.52.2 - Oct 21 2026
+* Update bundled root certificate trust store.
+
 # 3.52.1 - Oct 15 2026
 * Send X-Particle-Tool header on requests to particle api
 
