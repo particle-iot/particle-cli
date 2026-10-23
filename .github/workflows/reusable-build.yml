@@ -61,8 +61,9 @@ jobs:
           tag: v2.1.5-procursus7
       - name: Build linux x64
         run: npm run build -- --target node22-linux-x64 -o build/particle-cli-linux-x64
+      # On an x64 runner pkg makes arm64 bytecode with the linuxstatic Node, which the linux-arm64 Node rejects at startup
       - name: Build linux arm64
-        run: npm run build -- --target node22-linux-arm64 -o build/particle-cli-linux-arm64
+        run: npx pkg . --no-bytecode --public --public-packages "*" --target node22-linux-arm64 -o build/particle-cli-linux-arm64
       - name: Build linux armv7
         run: npm run build -- --target node22-linuxstatic-armv7 -o build/particle-cli-linuxstatic-armv7
 
