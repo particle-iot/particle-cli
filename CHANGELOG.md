@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.52.3 - Oct 23 2026
+* Update pkg bundle version due linux issue with node engine version.
+
 # 3.52.2 - Oct 21 2026
 * Update bundled root certificate trust store.
 
