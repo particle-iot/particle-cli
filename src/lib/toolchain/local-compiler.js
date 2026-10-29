@@ -1,4 +1,5 @@
 'use strict';
+const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const execa = require('execa');
@@ -10,6 +11,9 @@ const { ToolchainInstaller } = require('./installer');
 
 const BUILD_TARGETS = ['compile-user', 'compile-all', 'clean-user', 'clean-all'];
 const WHITESPACE = /\s/;
+const EXIT_CANNOT_EXECUTE = 126;
+const ROSETTA_MISSING = 'Local compile on Apple Silicon runs the x86_64 toolchain under Rosetta 2, which is not installed.' + os.EOL +
+	'Install it with `softwareupdate --install-rosetta` and retry, or use --compiler cloud';
 
 /**
  * Compiles a project with the toolchain Workbench installs: `make -f <buildscripts
@@ -31,7 +35,24 @@ class LocalCompiler {
 		this.installer = installer || new ToolchainInstaller({ ui });
 		this.fetchManifest = fetchManifestFn;
 		this.exec = exec;
-		this.host = hostFor(host);
+		this.hostMachine = { platform: os.platform(), arch: os.arch(), ...host };
+		this.host = hostFor(this.hostMachine);
+	}
+
+	/**
+	 * Only x64 toolchains exist, so an arm64 Mac needs Rosetta 2 to run them. Checked
+	 * before anything is downloaded; without Rosetta, make fails with "Bad CPU type".
+	 * An x64 CLI on Apple Silicon already runs under Rosetta and reports x64.
+	 */
+	async ensureHostCanRunToolchain() {
+		if (!this._isAppleSilicon() || this._rosettaChecked) {
+			return;
+		}
+		const result = await this.exec('/usr/bin/arch', ['-x86_64', '/usr/bin/true'], { reject: false, stdin: 'ignore' });
+		if (result.failed || result.exitCode !== 0) {
+			throw new Error(ROSETTA_MISSING);
+		}
+		this._rosettaChecked = true;
 	}
 
 	/**
@@ -40,6 +61,7 @@ class LocalCompiler {
 	 * @returns {Promise<{ toolchain: object, dependencies: object[], platform: object }>}
 	 */
 	async resolve({ version, platformId, platformName }) {
+		await this.ensureHostCanRunToolchain();
 		let manifest = await this.fetchManifest();
 		if (!this._knows(manifest, { version, platformId, platformName })) {
 			// the cached copy may predate a new Device OS release or platform
@@ -171,6 +193,10 @@ class LocalCompiler {
 				spinner.pause();
 			}
 		}
+		if (result.exitCode === EXIT_CANNOT_EXECUTE && this._isAppleSilicon()) {
+			// "Bad CPU type in executable": the probe passed but an x86_64 binary still could not run
+			throw new Error(ROSETTA_MISSING);
+		}
 		if (result.failed || result.exitCode !== 0) {
 			throw new Error(`make exited with code ${result.exitCode}`);
 		}
@@ -226,6 +252,10 @@ class LocalCompiler {
 		const wiringDir = path.join(this.installer.dirFor(firmware), 'build', 'target', 'wiring');
 		const entries = await fs.readdir(wiringDir).catch(() => []);
 		return entries.some(entry => entry === `platform-${platform.id}` || entry.startsWith(`platform-${platform.id}-`));
+	}
+
+	_isAppleSilicon() {
+		return this.hostMachine.platform === 'darwin' && this.hostMachine.arch === 'arm64';
 	}
 
 	/** buildtools ships its own bash on Windows; the manifest may say where. */

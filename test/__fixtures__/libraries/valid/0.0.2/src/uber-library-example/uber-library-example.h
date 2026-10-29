@@ -1,1 +1,1 @@
-#include "../uber-library-example.h"
+#include "../test-library-publish.h"
