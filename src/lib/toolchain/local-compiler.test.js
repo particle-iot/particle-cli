@@ -70,6 +70,49 @@ describe('Local compiler', () => {
 			.to.throw('Local compile is not available for linux/arm64; use --compiler cloud');
 	});
 
+	describe('Rosetta on Apple Silicon', () => {
+		function appleSiliconCompiler() {
+			return new LocalCompiler({
+				ui, installer, exec, fetchManifest: async () => manifest, host: { platform: 'darwin', arch: 'arm64' }
+			});
+		}
+
+		it('probes Rosetta once before installing anything', async () => {
+			exec.resolves({ exitCode: 0, failed: false });
+			const appleSilicon = appleSiliconCompiler();
+			await appleSilicon.resolve({ platformId: 12, platformName: 'argon' });
+			await appleSilicon.resolve({ platformId: 12, platformName: 'argon' });
+			expect(exec).to.have.been.calledOnceWith('/usr/bin/arch', ['-x86_64', '/usr/bin/true']);
+			expect(installer.ensureInstalled).to.have.been.calledTwice;
+		});
+
+		it('asks to install Rosetta when it is missing, without downloading', async () => {
+			exec.resolves({ exitCode: 1, failed: true });
+			await expect(appleSiliconCompiler().resolve({ platformId: 12, platformName: 'argon' }))
+				.to.be.rejectedWith('Install it with `softwareupdate --install-rosetta` and retry, or use --compiler cloud');
+			expect(installer.ensureInstalled).to.not.have.been.called;
+		});
+
+		it('does not probe on other hosts', async () => {
+			await compiler.resolve({ platformId: 12, platformName: 'argon' });
+			expect(exec).to.not.have.been.called;
+		});
+
+		it('explains a make that cannot execute (exit 126) as missing Rosetta', async () => {
+			const appleSilicon = appleSiliconCompiler();
+			exec.callsFake(fakeMake({ exitCode: 126 }));
+			await expect(appleSilicon.run({ command: 'make', args: [], options: {} }))
+				.to.be.rejectedWith('Rosetta 2, which is not installed');
+		});
+
+		it('keeps exit 126 as a plain make failure on other hosts', async () => {
+			exec.callsFake(fakeMake({ exitCode: 126 }));
+			await expect(compiler.run({ command: 'make', args: [], options: {} }))
+				.to.be.rejectedWith('make exited with code 126');
+		});
+
+	});
+
 	describe('resolve', () => {
 		it('picks the default toolchain, prints it and installs what is missing', async () => {
 			const { toolchain, dependencies, platform } = await compiler.resolve({ platformId: 12, platformName: 'argon' });
