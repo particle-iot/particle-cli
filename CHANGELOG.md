@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.52.4 - Oct 29 2026
+* Show a better message when Silicon Apple devices cannot compile with local compiler when there is no Rossetta installed
+
+
 # 3.52.3 - Oct 23 2026
 * Update pkg bundle version due linux issue with node engine version.
 
