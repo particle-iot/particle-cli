@@ -54,7 +54,7 @@
       },
       "devDependencies": {
         "@types/cli-table": "^0.3.1",
-        "@yao-pkg/pkg": "^6.23.0",
+        "@yao-pkg/pkg": "^6.25.0",
         "chai": "^4.2.0",
         "chai-as-promised": "^7.1.1",
         "doctoc": "^1.4.0",
@@ -1317,9 +1317,9 @@
       "license": "BSD-3-Clause"
     },
     "node_modules/@roberts_lando/vfs": {
-      "version": "0.3.3",
-      "resolved": "https://registry.npmjs.org/@roberts_lando/vfs/-/vfs-0.3.3.tgz",
-      "integrity": "sha512-YjkxVSLw5WMZQoARaryRAjcxA+GbBzWMJdwYZX5oLUt9cC/gew9as4Dn7tcLzPp7BPoR221VpTZ+78TRPawnjg==",
+      "version": "0.4.0",
+      "resolved": "https://registry.npmjs.org/@roberts_lando/vfs/-/vfs-0.4.0.tgz",
+      "integrity": "sha512-8gk53fJyCgTHEqJcMnwcuSyJA12w42uP2LWBL8Zfnzu7s/A7how1HBN+xbU5d6Hwqa5al16++TcnZ1lIYd+ImQ==",
       "dev": true,
       "license": "MIT",
       "engines": {
@@ -2081,9 +2081,9 @@
       "license": "ISC"
     },
     "node_modules/@yao-pkg/pkg": {
-      "version": "6.23.0",
-      "resolved": "https://registry.npmjs.org/@yao-pkg/pkg/-/pkg-6.23.0.tgz",
-      "integrity": "sha512-+d8iqRcmDxPpTE5fbSmsn1rShktIKvMcQGcFhwLdH15A4g2fBcRVLXppeQmu9fbF98bhYXjCOj6UTf3odXxWiA==",
+      "version": "6.25.0",
+      "resolved": "https://registry.npmjs.org/@yao-pkg/pkg/-/pkg-6.25.0.tgz",
+      "integrity": "sha512-32lat6kncPb9YqNTkri4Lz6KEISpKs2jT925XZuU8bwlhA/PI1hJ/jO5yk2LjBPHf9vUmwdSMscxmOuu9XC0dA==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
@@ -2091,8 +2091,8 @@
         "@babel/parser": "^7.23.0",
         "@babel/traverse": "^7.23.0",
         "@babel/types": "^7.23.0",
-        "@roberts_lando/vfs": "^0.3.3",
-        "@yao-pkg/pkg-fetch": "3.6.6",
+        "@roberts_lando/vfs": "^0.4.0",
+        "@yao-pkg/pkg-fetch": "3.6.7",
         "esbuild": "^0.28.1",
         "into-stream": "^9.1.0",
         "multistream": "^4.1.0",
@@ -2115,9 +2115,9 @@
       }
     },
     "node_modules/@yao-pkg/pkg-fetch": {
-      "version": "3.6.6",
-      "resolved": "https://registry.npmjs.org/@yao-pkg/pkg-fetch/-/pkg-fetch-3.6.6.tgz",
-      "integrity": "sha512-Nu9ytHewcV6FuH4WvdpYZxz2XwiP2p30jlPBzbvwsS3OPYN7RRTyGrXhcmhS59O3AdXz/LW+4bozhV3alN+MEA==",
+      "version": "3.6.7",
+      "resolved": "https://registry.npmjs.org/@yao-pkg/pkg-fetch/-/pkg-fetch-3.6.7.tgz",
+      "integrity": "sha512-uEeU5druVgHffruTAXzW6nf0wHfREWlCq5LBtQ4hCdLBDbwTteuym5NrxREur3EgNcqFRenEi6Rivwo723PkHg==",
       "dev": true,
       "license": "MIT",
       "dependencies": {
