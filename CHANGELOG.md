@@ -1,8 +1,10 @@
 # Changelog
 
+# 3.52.5 - Nov 04 2026
+* Bump @yao-pkg/pkg to bundle Node 22.23.4, which distrusts eMudhra root certs and includes the Brotli fix (CVE-2026-111497)
+
 # 3.52.4 - Oct 29 2026
 * Show a better message when Silicon Apple devices cannot compile with local compiler when there is no Rossetta installed
-
 
 # 3.52.3 - Oct 23 2026
 * Update pkg bundle version due linux issue with node engine version.
