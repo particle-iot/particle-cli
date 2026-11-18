@@ -1,0 +1,6065 @@
+{
+	"[]": {
+		"_": [],
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"version": false,
+		"command": [
+			"$0",
+			null
+		]
+	},
+	"[\"--version\"]": {
+		"_": [],
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"version": true,
+		"command": [
+			"$0",
+			null
+		]
+	},
+	"[\"help\"]": {
+		"_": [
+			"help"
+		],
+		"params": {
+			"command": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"help",
+			"$0"
+		]
+	},
+	"[\"help\",\"flash\"]": {
+		"_": [
+			"help"
+		],
+		"params": {
+			"command": [
+				"flash"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"help",
+			"$0"
+		]
+	},
+	"[\"flash\",\"0123456789abcdef01234567\",\"tinker\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "0123456789abcdef01234567",
+			"binary": "0123456789abcdef01234567",
+			"files": [
+				"tinker"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"12345\",\"firmware.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "12345",
+			"binary": "12345",
+			"files": [
+				"firmware.bin"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"00123\",\"firmware.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "00123",
+			"binary": "00123",
+			"files": [
+				"firmware.bin"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"1e3\",\"firmware.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "1e3",
+			"binary": "1e3",
+			"files": [
+				"firmware.bin"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"0x10\",\"firmware.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "0x10",
+			"binary": "0x10",
+			"files": [
+				"firmware.bin"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"my_device\",\"tinker\",\"--product\",\"00123\"]": {
+		"_": [
+			"flash",
+			"my_device",
+			"tinker"
+		],
+		"application-only": false,
+		"clierror": {
+			"message": "Unknown argument 'product'",
+			"data": [
+				"product"
+			]
+		},
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"port": "[undefined]",
+		"product": 123,
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": null
+	},
+	"[\"flash\",\"my_device\",\"tinker\",\"--product=12345\"]": {
+		"_": [
+			"flash",
+			"my_device",
+			"tinker"
+		],
+		"application-only": false,
+		"clierror": {
+			"message": "Unknown argument 'product'",
+			"data": [
+				"product"
+			]
+		},
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"port": "[undefined]",
+		"product": 12345,
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": null
+	},
+	"[\"flash\",\"--local\",\"firmware.bin\",\"--target\",\"5.5.0\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"device": "firmware.bin",
+			"binary": "firmware.bin",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "5.5.0",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--usb\",\"firmware.bin\",\"--no-local\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "firmware.bin",
+			"binary": "firmware.bin",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": true,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--local\",\"--local\",\"firmware.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"device": "firmware.bin",
+			"binary": "firmware.bin",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--yes\",\"false\",\"my_device\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "my_device",
+			"binary": "my_device",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"-vvv\",\"-q\",\"my_device\",\"tinker\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "my_device",
+			"binary": "my_device",
+			"files": [
+				"tinker"
+			]
+		},
+		"port": "[undefined]",
+		"q": 1,
+		"quiet": 1,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 3,
+		"verbose": 3,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--verbose\",\"--verbose\",\"my_device\",\"tinker\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "my_device",
+			"binary": "my_device",
+			"files": [
+				"tinker"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 2,
+		"verbose": 2,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"my_device\",\"tinker\",\"--\",\"--not-an-option\",\"extra\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "my_device",
+			"binary": "my_device",
+			"files": [
+				"tinker",
+				"--not-an-option",
+				"extra"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"call\",\"my_device\",\"digitalwrite\",\"D7=HIGH\"]": {
+		"_": [
+			"call"
+		],
+		"params": {
+			"device": "my_device",
+			"function": "digitalwrite",
+			"argument": "D7=HIGH"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"$0"
+		]
+	},
+	"[\"call\",\"my_device\",\"setValue\",\"-1\"]": {
+		"_": [
+			"call"
+		],
+		"params": {
+			"device": "my_device",
+			"function": "setValue",
+			"argument": "-1"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"$0"
+		]
+	},
+	"[\"call\",\"my_device\",\"setValue\",\"--\",\"-1\"]": {
+		"_": [
+			"call"
+		],
+		"params": {
+			"device": "my_device",
+			"function": "setValue",
+			"argument": "-1"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"$0"
+		]
+	},
+	"[\"call\",\"my_device\",\"echo\",\"hello world, with = and \\\"quotes\\\"\"]": {
+		"_": [
+			"call"
+		],
+		"params": {
+			"device": "my_device",
+			"function": "echo",
+			"argument": "hello world, with = and \"quotes\""
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"$0"
+		]
+	},
+	"[\"publish\",\"temp\",\"23.50\",\"--private\"]": {
+		"_": [
+			"publish",
+			"temp",
+			"23.50"
+		],
+		"clierror": {
+			"message": "Unknown argument 'private'",
+			"data": [
+				"private"
+			]
+		},
+		"org": "[undefined]",
+		"private": true,
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"publish\",\"temp\",\"0012\",\"--product\",\"12345\"]": {
+		"_": [
+			"publish"
+		],
+		"org": "[undefined]",
+		"params": {
+			"event": "temp",
+			"data": "0012"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"publish",
+			"$0"
+		]
+	},
+	"[\"publish\",\"event\",\"--public\",\"--private\"]": {
+		"_": [
+			"publish",
+			"event"
+		],
+		"clierror": {
+			"message": "Unknown arguments 'public, private'",
+			"data": [
+				"public",
+				"private"
+			]
+		},
+		"org": "[undefined]",
+		"private": true,
+		"product": "[undefined]",
+		"public": true,
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"subscribe\",\"temp\",\"--device\",\"0123456789abcdef01234567\",\"--max\",\"5\",\"--until\",\"data\"]": {
+		"_": [
+			"subscribe"
+		],
+		"device": "0123456789abcdef01234567",
+		"max": 5,
+		"org": "[undefined]",
+		"params": {
+			"event": "temp"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"until": "data",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"subscribe",
+			"$0"
+		]
+	},
+	"[\"subscribe\",\"--all\"]": {
+		"_": [
+			"subscribe"
+		],
+		"all": true,
+		"clierror": {
+			"message": "Unknown argument 'all'",
+			"data": [
+				"all"
+			]
+		},
+		"device": "[undefined]",
+		"max": "[undefined]",
+		"org": "[undefined]",
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"until": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"variable\",\"get\",\"my_device\",\"temperature\",\"--time\"]": {
+		"_": [
+			"variable",
+			"get"
+		],
+		"params": {
+			"device": "my_device",
+			"variableName": "temperature"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"time": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"variable"
+		]
+	},
+	"[\"variable\",\"monitor\",\"my_device\",\"temperature\",\"--delay\",\"1000.5\"]": {
+		"_": [
+			"variable",
+			"monitor"
+		],
+		"delay": 1000.5,
+		"params": {
+			"device": "my_device",
+			"variableName": "temperature"
+		},
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"monitor",
+			"variable"
+		]
+	},
+	"[\"list\",\"online\"]": {
+		"_": [
+			"list"
+		],
+		"params": {
+			"filter": "online"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"$0"
+		]
+	},
+	"[\"list\",\"--json\"]": {
+		"_": [
+			"list"
+		],
+		"clierror": {
+			"message": "Unknown argument 'json'",
+			"data": [
+				"json"
+			]
+		},
+		"json": true,
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"usb\",\"list\",\"--ids-only\",\"--exclude-dfu\"]": {
+		"_": [
+			"usb",
+			"list"
+		],
+		"exclude-dfu": true,
+		"ids-only": true,
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"usb"
+		]
+	},
+	"[\"usb\",\"setup-done\",\"--reset\"]": {
+		"_": [
+			"usb",
+			"setup-done"
+		],
+		"all": false,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"reset": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"setup-done",
+			"usb"
+		]
+	},
+	"[\"serial\",\"monitor\",\"--follow\",\"--port\",\"/dev/tty.usbmodem1101\"]": {
+		"_": [
+			"serial",
+			"monitor"
+		],
+		"follow": true,
+		"params": {},
+		"port": "/dev/tty.usbmodem1101",
+		"q": 0,
+		"quiet": 0,
+		"timestamp": false,
+		"utc": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"monitor",
+			"serial"
+		]
+	},
+	"[\"compile\",\"argon\",\".\",\"--target\",\"5.8.0\",\"--saveTo\",\"out.bin\"]": {
+		"_": [
+			"compile"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"deviceType": "argon",
+			"files": [
+				"."
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "out.bin",
+		"target": "5.8.0",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"compile",
+			"$0"
+		]
+	},
+	"[\"compile\",\"p2\",\"src/\",\"lib/\",\"--followSymlinks\"]": {
+		"_": [
+			"compile"
+		],
+		"compiler": "cloud",
+		"followSymlinks": true,
+		"params": {
+			"deviceType": "p2",
+			"files": [
+				"src/",
+				"lib/"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"compile",
+			"$0"
+		]
+	},
+	"[\"cloud\",\"login\",\"--username\",\"user@example.com\",\"--password\",\"123456\"]": {
+		"_": [
+			"cloud",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "123456",
+		"params": {},
+		"password": "123456",
+		"q": 0,
+		"quiet": 0,
+		"sso": false,
+		"t": "[undefined]",
+		"u": "user@example.com",
+		"username": "user@example.com",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"login\",\"--token\",\"0123456789abcdef0123456789abcdef01234567\"]": {
+		"_": [
+			"cloud",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sso": false,
+		"t": "0123456789abcdef0123456789abcdef01234567",
+		"token": "0123456789abcdef0123456789abcdef01234567",
+		"u": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"cloud"
+		]
+	},
+	"[\"login\",\"--sso\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sso": true,
+		"t": "[undefined]",
+		"u": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"$0"
+		]
+	},
+	"[\"token\",\"create\",\"--expires-in\",\"3600\"]": {
+		"_": [
+			"token",
+			"create"
+		],
+		"expires-in": 3600,
+		"never-expires": false,
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"token"
+		]
+	},
+	"[\"token\",\"create\",\"--never-expires\"]": {
+		"_": [
+			"token",
+			"create"
+		],
+		"expires-in": "[undefined]",
+		"never-expires": true,
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"token"
+		]
+	},
+	"[\"config\",\"proxyUrl\",\"http://proxy:8080\"]": {
+		"_": [
+			"config",
+			"proxyUrl",
+			"http://proxy:8080"
+		],
+		"clierror": {
+			"message": "No such command 'config proxyUrl http://proxy:8080'",
+			"data": [
+				"config",
+				"proxyUrl",
+				"http://proxy:8080"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"config\",\"identify\"]": {
+		"_": [
+			"config",
+			"identify"
+		],
+		"clierror": {
+			"message": "No such command 'config identify'",
+			"data": [
+				"config",
+				"identify"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"keys\",\"new\",\"mykey\",\"--protocol\",\"udp\"]": {
+		"_": [
+			"keys",
+			"new",
+			"mykey"
+		],
+		"clierror": {
+			"message": "Unknown argument 'protocol'",
+			"data": [
+				"protocol"
+			]
+		},
+		"protocol": "udp",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"library\",\"search\",\"neo pixel\"]": {
+		"_": [
+			"library",
+			"search"
+		],
+		"json": false,
+		"params": {
+			"name": "neo pixel"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"search",
+			"library"
+		]
+	},
+	"[\"library\",\"add\",\"neopixel@1.0.0\"]": {
+		"_": [
+			"library",
+			"add"
+		],
+		"params": {
+			"name": "neopixel@1.0.0"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"add",
+			"library"
+		]
+	},
+	"[\"product\",\"device\",\"add\",\"12345\",\"0123456789abcdef01234567\"]": {
+		"_": [
+			"product",
+			"device",
+			"add"
+		],
+		"file": "[undefined]",
+		"params": {
+			"product": "12345",
+			"deviceID": "0123456789abcdef01234567"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"add",
+			"device"
+		]
+	},
+	"[\"product\",\"device\",\"add\",\"12345\",\"--file\",\"devices.txt\"]": {
+		"_": [
+			"product",
+			"device",
+			"add"
+		],
+		"f": "devices.txt",
+		"file": "devices.txt",
+		"params": {
+			"product": "12345"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"add",
+			"device"
+		]
+	},
+	"[\"function\",\"call\",\"my_device\",\"fn\",\"arg\",\"--product\",\"12345\"]": {
+		"_": [
+			"function",
+			"call"
+		],
+		"params": {
+			"device": "my_device",
+			"function": "fn",
+			"argument": "arg"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"function"
+		]
+	},
+	"[\"webhook\",\"create\",\"event\",\"https://example.com/hook\",\"--requestType\",\"POST\"]": {
+		"_": [
+			"webhook",
+			"create",
+			"event",
+			"https://example.com/hook"
+		],
+		"clierror": {
+			"message": "Unknown argument 'requestType'",
+			"data": [
+				"requestType"
+			]
+		},
+		"org": "[undefined]",
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"requestType": "POST",
+		"type": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"nope\",\"--x\"]": {
+		"_": [
+			"nope"
+		],
+		"clierror": {
+			"message": "No such command 'nope'",
+			"data": [
+				"nope"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"version": false,
+		"x": true,
+		"command": null
+	},
+	"[\"flash\",\"--unknown-flag\",\"my_device\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"clierror": {
+			"message": "Unknown argument 'unknown-flag'",
+			"data": [
+				"unknown-flag"
+			]
+		},
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"unknown-flag": "my_device",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": null
+	},
+	"[\"--interactive\",\"list\"]": {
+		"_": [],
+		"clierror": {
+			"message": "Unknown argument 'interactive'",
+			"data": [
+				"interactive"
+			]
+		},
+		"interactive": "list",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"version": false,
+		"command": null
+	},
+	"[\"update-cli\",\"--disable-automatic-updates\"]": {
+		"_": [
+			"update-cli"
+		],
+		"clierror": {
+			"message": "Unknown argument 'disable-automatic-updates'",
+			"data": [
+				"disable-automatic-updates"
+			]
+		},
+		"disable-automatic-updates": true,
+		"disable-updates": false,
+		"enable-updates": false,
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"version": "[undefined]",
+		"command": null
+	},
+	"[\"update-cli\",\"--version\",\"3.0.0\"]": {
+		"_": [
+			"update-cli"
+		],
+		"disable-updates": false,
+		"enable-updates": false,
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"version": "3.0.0",
+		"command": [
+			"update-cli",
+			"$0"
+		]
+	},
+	"[\"list\"]": {
+		"_": [
+			"list"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"$0"
+		]
+	},
+	"[\"flash\",\"my_device\",\"tinker\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "my_device",
+			"binary": "my_device",
+			"files": [
+				"tinker"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"call\",\"my_device_name\",\"digitalwrite\",\"D7=HIGH\"]": {
+		"_": [
+			"call"
+		],
+		"params": {
+			"device": "my_device_name",
+			"function": "digitalwrite",
+			"argument": "D7=HIGH"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"$0"
+		]
+	},
+	"[\"container\",\"run\",\"my_tachyon\"]": {
+		"_": [
+			"container",
+			"run"
+		],
+		"blueprintDir": "[undefined]",
+		"clierror": {
+			"message": "Command parameters 'my_tachyon' are not expected here.",
+			"data": [
+				"my_tachyon"
+			]
+		},
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"container\",\"push\",\"my_tachyon\"]": {
+		"_": [
+			"container",
+			"push"
+		],
+		"amd64": false,
+		"blueprintDir": "[undefined]",
+		"clierror": {
+			"message": "Command parameters 'my_tachyon' are not expected here.",
+			"data": [
+				"my_tachyon"
+			]
+		},
+		"device": "[undefined]",
+		"instance": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"container\",\"list\"]": {
+		"_": [
+			"container",
+			"list"
+		],
+		"blueprintDir": "[undefined]",
+		"device": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"container"
+		]
+	},
+	"[\"container\",\"remove\",\"--instance\",\"hello-world_12345\"]": {
+		"_": [
+			"container",
+			"remove"
+		],
+		"blueprintDir": "[undefined]",
+		"device": "[undefined]",
+		"instance": "hello-world_12345",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"remove",
+			"container"
+		]
+	},
+	"[\"container\",\"configure-docker\"]": {
+		"_": [
+			"container",
+			"configure-docker"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"configure-docker",
+			"container"
+		]
+	},
+	"[\"binary\",\"inspect\",\"firmware.bin\"]": {
+		"_": [
+			"binary",
+			"inspect"
+		],
+		"params": {
+			"filename": "firmware.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"inspect",
+			"binary"
+		]
+	},
+	"[\"binary\",\"enable-device-protection\",\"bootloader.bin\"]": {
+		"_": [
+			"binary",
+			"enable-device-protection"
+		],
+		"params": {
+			"file": "bootloader.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"enable-device-protection",
+			"binary"
+		]
+	},
+	"[\"binary\",\"list-assets\",\"app-with-assets.bin\"]": {
+		"_": [
+			"binary",
+			"list-assets"
+		],
+		"params": {
+			"file": "app-with-assets.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list-assets",
+			"binary"
+		]
+	},
+	"[\"binary\",\"strip-assets\",\"app-with-assets.bin\"]": {
+		"_": [
+			"binary",
+			"strip-assets"
+		],
+		"params": {
+			"file": "app-with-assets.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"strip-assets",
+			"binary"
+		]
+	},
+	"[\"bundle\",\"myApp.bin\"]": {
+		"_": [
+			"bundle"
+		],
+		"assets": "[undefined]",
+		"env": "[undefined]",
+		"params": {
+			"appBinary": "myApp.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"bundle",
+			"$0"
+		]
+	},
+	"[\"bundle\",\"myApp.bin\",\"--env\",\"env.json\"]": {
+		"_": [
+			"bundle"
+		],
+		"assets": "[undefined]",
+		"env": "env.json",
+		"params": {
+			"appBinary": "myApp.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"bundle",
+			"$0"
+		]
+	},
+	"[\"bundle\",\"myApp.bin\",\"--assets\",\"/path/to/assets\"]": {
+		"_": [
+			"bundle"
+		],
+		"assets": "/path/to/assets",
+		"env": "[undefined]",
+		"params": {
+			"appBinary": "myApp.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"bundle",
+			"$0"
+		]
+	},
+	"[\"bundle\",\"myApp.bin\",\"--assets\",\"/path/to/project.properties\"]": {
+		"_": [
+			"bundle"
+		],
+		"assets": "/path/to/project.properties",
+		"env": "[undefined]",
+		"params": {
+			"appBinary": "myApp.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"bundle",
+			"$0"
+		]
+	},
+	"[\"bundle\",\"myApp.bin\",\"--assets\",\"/path/\",\"--saveTo\",\"myApp.zip\"]": {
+		"_": [
+			"bundle"
+		],
+		"assets": "/path/",
+		"env": "[undefined]",
+		"params": {
+			"appBinary": "myApp.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "myApp.zip",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"bundle",
+			"$0"
+		]
+	},
+	"[\"bundle\",\"myApp.bin\",\"--saveTo\",\"myApp.zip\"]": {
+		"_": [
+			"bundle"
+		],
+		"assets": "[undefined]",
+		"env": "[undefined]",
+		"params": {
+			"appBinary": "myApp.bin"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "myApp.zip",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"bundle",
+			"$0"
+		]
+	},
+	"[\"cloud\",\"claim\",\"123456789\"]": {
+		"_": [
+			"cloud",
+			"claim"
+		],
+		"params": {
+			"deviceID": "123456789"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"claim",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"remove\",\"0123456789ABCDEFGHI\"]": {
+		"_": [
+			"cloud",
+			"remove"
+		],
+		"params": {
+			"device": "0123456789ABCDEFGHI"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"remove",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"name\",\"red\",\"green\"]": {
+		"_": [
+			"cloud",
+			"name"
+		],
+		"params": {
+			"device": "red",
+			"name": "green"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"name",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"flash\",\"blue\"]": {
+		"_": [
+			"cloud",
+			"flash"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"device": "blue",
+			"files": []
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"flash",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"flash\",\"green\",\"tinker\"]": {
+		"_": [
+			"cloud",
+			"flash"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"device": "green",
+			"files": [
+				"tinker"
+			]
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"flash",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"flash\",\"red\",\"blink.ino\"]": {
+		"_": [
+			"cloud",
+			"flash"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"device": "red",
+			"files": [
+				"blink.ino"
+			]
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"flash",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"flash\",\"red\",\"--compiler\",\"local\"]": {
+		"_": [
+			"cloud",
+			"flash"
+		],
+		"compiler": "local",
+		"followSymlinks": false,
+		"params": {
+			"device": "red",
+			"files": []
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"flash",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"flash\",\"orange\",\"firmware.bin\"]": {
+		"_": [
+			"cloud",
+			"flash"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"device": "orange",
+			"files": [
+				"firmware.bin"
+			]
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"flash",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"flash\",\"0123456789abcdef01234567\",\"--product\",\"12345\"]": {
+		"_": [
+			"cloud",
+			"flash"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"device": "0123456789abcdef01234567",
+			"files": []
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"flash",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"compile\",\"photon\"]": {
+		"_": [
+			"cloud",
+			"compile"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"deviceType": "photon",
+			"files": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"compile",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"compile\",\"electron\",\"project\",\"--saveTo\",\"electron.bin\"]": {
+		"_": [
+			"cloud",
+			"compile"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"deviceType": "electron",
+			"files": [
+				"project"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "electron.bin",
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"compile",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"nyan\",\"blue\"]": {
+		"_": [
+			"cloud",
+			"nyan"
+		],
+		"params": {
+			"device": "blue"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"nyan",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"nyan\",\"blue\",\"off\"]": {
+		"_": [
+			"cloud",
+			"nyan"
+		],
+		"params": {
+			"device": "blue",
+			"onOff": "off"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"nyan",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"nyan\",\"blue\",\"--product\",\"12345\"]": {
+		"_": [
+			"cloud",
+			"nyan"
+		],
+		"params": {
+			"device": "blue"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"nyan",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"login\"]": {
+		"_": [
+			"cloud",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sso": false,
+		"t": "[undefined]",
+		"u": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"login\",\"--username\",\"user@example.com\",\"--password\",\"test\"]": {
+		"_": [
+			"cloud",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "test",
+		"params": {},
+		"password": "test",
+		"q": 0,
+		"quiet": 0,
+		"sso": false,
+		"t": "[undefined]",
+		"u": "user@example.com",
+		"username": "user@example.com",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"login\",\"--token\",\"<my-api-token>\"]": {
+		"_": [
+			"cloud",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sso": false,
+		"t": "<my-api-token>",
+		"token": "<my-api-token>",
+		"u": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"cloud"
+		]
+	},
+	"[\"cloud\",\"login\",\"--sso\"]": {
+		"_": [
+			"cloud",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sso": true,
+		"t": "[undefined]",
+		"u": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"cloud"
+		]
+	},
+	"[\"config\",\"env\",\"list\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"env",
+			"list"
+		],
+		"device": "[undefined]",
+		"json": false,
+		"org": "[undefined]",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"list\",\"--org\",\"<slug>\"]": {
+		"_": [
+			"config",
+			"env",
+			"list"
+		],
+		"device": "[undefined]",
+		"json": false,
+		"org": "<slug>",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"list\",\"--product\",\"<productId>\"]": {
+		"_": [
+			"config",
+			"env",
+			"list"
+		],
+		"device": "[undefined]",
+		"json": false,
+		"org": "[undefined]",
+		"params": {},
+		"product": "<productId>",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"list\",\"--device\",\"<deviceId>\"]": {
+		"_": [
+			"config",
+			"env",
+			"list"
+		],
+		"device": "<deviceId>",
+		"json": false,
+		"org": "[undefined]",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"set\",\"<name>\",\"<value>\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"env",
+			"set"
+		],
+		"device": "[undefined]",
+		"org": "[undefined]",
+		"params": {
+			"name": "<name>",
+			"value": "<value>"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"set\",\"<name=value>\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"env",
+			"set"
+		],
+		"device": "[undefined]",
+		"org": "[undefined]",
+		"params": {
+			"name": "<name=value>"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"set\",\"<name>\",\"<value>\",\"--org\",\"<slug>\"]": {
+		"_": [
+			"config",
+			"env",
+			"set"
+		],
+		"device": "[undefined]",
+		"org": "<slug>",
+		"params": {
+			"name": "<name>",
+			"value": "<value>"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"set\",\"<name=value>\",\"--product\",\"<productId>\"]": {
+		"_": [
+			"config",
+			"env",
+			"set"
+		],
+		"device": "[undefined]",
+		"org": "[undefined]",
+		"params": {
+			"name": "<name=value>"
+		},
+		"product": "<productId>",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"set\",\"<name>\",\"<value>\",\"--device\",\"<deviceId>\"]": {
+		"_": [
+			"config",
+			"env",
+			"set"
+		],
+		"device": "<deviceId>",
+		"org": "[undefined]",
+		"params": {
+			"name": "<name>",
+			"value": "<value>"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"delete\",\"<name>\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"env",
+			"delete"
+		],
+		"device": "[undefined]",
+		"org": "[undefined]",
+		"params": {
+			"name": "<name>"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"delete\",\"<name>\",\"--org\",\"<slug>\"]": {
+		"_": [
+			"config",
+			"env",
+			"delete"
+		],
+		"device": "[undefined]",
+		"org": "<slug>",
+		"params": {
+			"name": "<name>"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"delete\",\"<name>\",\"--product\",\"<productId>\"]": {
+		"_": [
+			"config",
+			"env",
+			"delete"
+		],
+		"device": "[undefined]",
+		"org": "[undefined]",
+		"params": {
+			"name": "<name>"
+		},
+		"product": "<productId>",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"env"
+		]
+	},
+	"[\"config\",\"env\",\"delete\",\"<name>\",\"--device\",\"<deviceId>\"]": {
+		"_": [
+			"config",
+			"env",
+			"delete"
+		],
+		"device": "<deviceId>",
+		"org": "[undefined]",
+		"params": {
+			"name": "<name>"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"env"
+		]
+	},
+	"[\"config\",\"secrets\",\"list\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"list"
+		],
+		"json": false,
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"list\",\"--org\",\"<slug>\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"list"
+		],
+		"json": false,
+		"org": "<slug>",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"get\",\"<name>\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"get"
+		],
+		"org": "[undefined]",
+		"params": {
+			"name": "<name>"
+		},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"get\",\"<name>\",\"--org\",\"<slug>\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"get"
+		],
+		"org": "<slug>",
+		"params": {
+			"name": "<name>"
+		},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"set\",\"<name>\",\"<value>\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"set"
+		],
+		"org": "[undefined]",
+		"params": {
+			"name": "<name>",
+			"value": "<value>"
+		},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"set\",\"<name=value>\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"set"
+		],
+		"org": "[undefined]",
+		"params": {
+			"name": "<name=value>"
+		},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"set\",\"<name>\",\"<value>\",\"--org\",\"<slug>\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"set"
+		],
+		"org": "<slug>",
+		"params": {
+			"name": "<name>",
+			"value": "<value>"
+		},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"set\",\"<name=value>\",\"--org\",\"<slug>\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"set"
+		],
+		"org": "<slug>",
+		"params": {
+			"name": "<name=value>"
+		},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"set",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"delete\",\"<name>\",\"--sandbox\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"delete"
+		],
+		"org": "[undefined]",
+		"params": {
+			"name": "<name>"
+		},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"secrets"
+		]
+	},
+	"[\"config\",\"secrets\",\"delete\",\"<name>\",\"--org\",\"<slug>\"]": {
+		"_": [
+			"config",
+			"secrets",
+			"delete"
+		],
+		"org": "<slug>",
+		"params": {
+			"name": "<name>"
+		},
+		"q": 0,
+		"quiet": 0,
+		"sandbox": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"secrets"
+		]
+	},
+	"[\"profile\",\"company\"]": {
+		"_": [
+			"profile"
+		],
+		"list": false,
+		"params": {
+			"profile": "company"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"profile",
+			"$0"
+		]
+	},
+	"[\"profile\",\"particle\"]": {
+		"_": [
+			"profile"
+		],
+		"list": false,
+		"params": {
+			"profile": "particle"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"profile",
+			"$0"
+		]
+	},
+	"[\"profile\",\"set\",\"apiUrl\",\"http://localhost:9090\"]": {
+		"_": [
+			"profile"
+		],
+		"list": false,
+		"params": {
+			"profile": "set",
+			"setting": "apiUrl",
+			"value": "http://localhost:9090"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"profile",
+			"$0"
+		]
+	},
+	"[\"profile\",\"set\",\"proxyUrl\",\"http://proxy:8080\"]": {
+		"_": [
+			"profile"
+		],
+		"list": false,
+		"params": {
+			"profile": "set",
+			"setting": "proxyUrl",
+			"value": "http://proxy:8080"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"profile",
+			"$0"
+		]
+	},
+	"[\"esim\",\"provision\"]": {
+		"_": [
+			"esim",
+			"provision"
+		],
+		"binary": "[undefined]",
+		"bulk": "[undefined]",
+		"force": false,
+		"input": "[undefined]",
+		"lpa": "[undefined]",
+		"output": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"provision",
+			"esim"
+		]
+	},
+	"[\"esim\",\"enable\"]": {
+		"_": [
+			"esim",
+			"enable"
+		],
+		"clierror": {
+			"message": "Parameter 'iccid' is required.",
+			"data": "iccid"
+		},
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"esim\",\"delete\"]": {
+		"_": [
+			"esim",
+			"delete"
+		],
+		"clierror": {
+			"message": "Parameter 'iccid' is required.",
+			"data": "iccid"
+		},
+		"lpa": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"esim\",\"list\"]": {
+		"_": [
+			"esim",
+			"list"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"esim"
+		]
+	},
+	"[\"device-protection\",\"status\"]": {
+		"_": [
+			"device-protection",
+			"status"
+		],
+		"device": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"status",
+			"device-protection"
+		]
+	},
+	"[\"device-protection\",\"disable\"]": {
+		"_": [
+			"device-protection",
+			"disable"
+		],
+		"d": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"disable",
+			"device-protection"
+		]
+	},
+	"[\"device-protection\",\"enable\"]": {
+		"_": [
+			"device-protection",
+			"enable"
+		],
+		"d": "[undefined]",
+		"file": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"enable",
+			"device-protection"
+		]
+	},
+	"[\"flash\",\"red\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "red",
+			"binary": "red",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"green\",\"tinker\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "green",
+			"binary": "green",
+			"files": [
+				"tinker"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"blue\",\"app.ino\",\"--target\",\"5.0.0\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "blue",
+			"binary": "blue",
+			"files": [
+				"app.ino"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "5.0.0",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"cyan\",\"firmware.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "cyan",
+			"binary": "cyan",
+			"files": [
+				"firmware.bin"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--local\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--local\",\"<deviceId>\",\"application.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"device": "<deviceId>",
+			"binary": "<deviceId>",
+			"files": [
+				"application.bin"
+			]
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--local\",\"--target\",\"5.0.0\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "5.0.0",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--local\",\"--compiler\",\"local\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "local",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--local\",\"application.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"device": "application.bin",
+			"binary": "application.bin",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--local\",\"application.zip\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"device": "application.zip",
+			"binary": "application.zip",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--local\",\"tinker\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": true,
+		"output": "[undefined]",
+		"params": {
+			"device": "tinker",
+			"binary": "tinker",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--usb\",\"firmware.bin\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "firmware.bin",
+			"binary": "firmware.bin",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": false,
+		"target": "[undefined]",
+		"usb": true,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--tachyon\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": true,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--tachyon\",\"/path/to/unpackaged-tool-and-files\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "/path/to/unpackaged-tool-and-files",
+			"binary": "/path/to/unpackaged-tool-and-files",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": true,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--tachyon\",\"/path/to/package.zip\",\"--output\",\"/path/to/log-folder\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "/path/to/log-folder",
+		"params": {
+			"device": "/path/to/package.zip",
+			"binary": "/path/to/package.zip",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": true,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"flash\",\"--tachyon\",\"https://example.com/tachyon-package.zip\"]": {
+		"_": [
+			"flash"
+		],
+		"application-only": false,
+		"cloud": false,
+		"compiler": "cloud",
+		"factory": false,
+		"local": false,
+		"output": "[undefined]",
+		"params": {
+			"device": "https://example.com/tachyon-package.zip",
+			"binary": "https://example.com/tachyon-package.zip",
+			"files": []
+		},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"serial": false,
+		"skip-reset": false,
+		"tachyon": true,
+		"target": "[undefined]",
+		"usb": false,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"flash",
+			"$0"
+		]
+	},
+	"[\"function\",\"call\",\"coffee\",\"brew\"]": {
+		"_": [
+			"function",
+			"call"
+		],
+		"params": {
+			"device": "coffee",
+			"function": "brew"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"function"
+		]
+	},
+	"[\"function\",\"call\",\"board\",\"digitalWrite\",\"D7=HIGH\"]": {
+		"_": [
+			"function",
+			"call"
+		],
+		"params": {
+			"device": "board",
+			"function": "digitalWrite",
+			"argument": "D7=HIGH"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"function"
+		]
+	},
+	"[\"function\",\"call\",\"0123456789abcdef01234567\",\"brew\",\"--product\",\"12345\"]": {
+		"_": [
+			"function",
+			"call"
+		],
+		"params": {
+			"device": "0123456789abcdef01234567",
+			"function": "brew"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"function"
+		]
+	},
+	"[\"integration\",\"create\",\"temp\",\"https://xyz.com\"]": {
+		"_": [
+			"integration",
+			"create"
+		],
+		"org": "[undefined]",
+		"params": {
+			"eventName": "temp",
+			"filename": "temp",
+			"url": "https://xyz.com"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"integration"
+		]
+	},
+	"[\"integration\",\"create\",\"hook.json\"]": {
+		"_": [
+			"integration",
+			"create"
+		],
+		"org": "[undefined]",
+		"params": {
+			"eventName": "hook.json",
+			"filename": "hook.json"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"integration"
+		]
+	},
+	"[\"integration\",\"create\",\"gmaps.json\",\"--type\",\"GoogleMaps\"]": {
+		"_": [
+			"integration",
+			"create"
+		],
+		"org": "[undefined]",
+		"params": {
+			"eventName": "gmaps.json",
+			"filename": "gmaps.json"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "GoogleMaps",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"integration"
+		]
+	},
+	"[\"integration\",\"list\"]": {
+		"_": [
+			"integration",
+			"list"
+		],
+		"org": "[undefined]",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"integration"
+		]
+	},
+	"[\"integration\",\"list\",\"--type\",\"GoogleMaps\"]": {
+		"_": [
+			"integration",
+			"list"
+		],
+		"org": "[undefined]",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "GoogleMaps",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"integration"
+		]
+	},
+	"[\"integration\",\"delete\",\"5a8ef38cb85f8720edce631a\"]": {
+		"_": [
+			"integration",
+			"delete"
+		],
+		"org": "[undefined]",
+		"params": {
+			"hookId": "5a8ef38cb85f8720edce631a"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"integration"
+		]
+	},
+	"[\"integration\",\"delete\",\"all\"]": {
+		"_": [
+			"integration",
+			"delete"
+		],
+		"org": "[undefined]",
+		"params": {
+			"hookId": "all"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"integration"
+		]
+	},
+	"[\"integration\",\"delete\",\"all\",\"--type\",\"GoogleMaps\"]": {
+		"_": [
+			"integration",
+			"delete"
+		],
+		"org": "[undefined]",
+		"params": {
+			"hookId": "all"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "GoogleMaps",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"integration"
+		]
+	},
+	"[\"library\",\"add\",\"InternetButton\"]": {
+		"_": [
+			"library",
+			"add"
+		],
+		"params": {
+			"name": "InternetButton"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"add",
+			"library"
+		]
+	},
+	"[\"logic-function\",\"list\"]": {
+		"_": [
+			"logic-function",
+			"list"
+		],
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"get\"]": {
+		"_": [
+			"logic-function",
+			"get"
+		],
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"get\",\"--name\",\"<name>\"]": {
+		"_": [
+			"logic-function",
+			"get"
+		],
+		"id": "[undefined]",
+		"name": "<name>",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"get\",\"--id\",\"<id>\"]": {
+		"_": [
+			"logic-function",
+			"get"
+		],
+		"id": "<id>",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"create\"]": {
+		"_": [
+			"logic-function",
+			"create"
+		],
+		"description": "[undefined]",
+		"force": false,
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"create\",\"--name\",\"<name>\"]": {
+		"_": [
+			"logic-function",
+			"create"
+		],
+		"description": "[undefined]",
+		"force": false,
+		"name": "<name>",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"execute\",\"--data\",\"<data>\"]": {
+		"_": [
+			"logic-function",
+			"execute"
+		],
+		"data": "<data>",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"payload": "[undefined]",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"execute",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"execute\",\"--productId\",\"<productId>\"]": {
+		"_": [
+			"logic-function",
+			"execute"
+		],
+		"clierror": {
+			"message": "Unknown argument 'productId'",
+			"data": [
+				"productId"
+			]
+		},
+		"data": "[undefined]",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"payload": "[undefined]",
+		"productId": "<productId>",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"logic-function\",\"execute\",\"--deviceId\",\"<deviceId>\"]": {
+		"_": [
+			"logic-function",
+			"execute"
+		],
+		"clierror": {
+			"message": "Unknown argument 'deviceId'",
+			"data": [
+				"deviceId"
+			]
+		},
+		"data": "[undefined]",
+		"deviceId": "<deviceId>",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"payload": "[undefined]",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"logic-function\",\"execute\",\"--payload\",\"{\",\"event\",\":\",\"{\",\"product_id\",\":\",\"<productId>,\",\"device_id\",\":\",\"<deviceId>\",\",\",\"event_data\",\":\",\"<test data>\",\",\",\"event_name\",\":\\\"<event_test_name>\\\"}}\"]": {
+		"_": [
+			"logic-function",
+			"execute"
+		],
+		"clierror": {
+			"message": "Command parameters ': { product_id : <productId>, device_id : <deviceId> , event_data : <test data> , event_name :\"<event_test_name>\"}}' are not expected here.",
+			"data": [
+				":",
+				"{",
+				"product_id",
+				":",
+				"<productId>,",
+				"device_id",
+				":",
+				"<deviceId>",
+				",",
+				"event_data",
+				":",
+				"<test data>",
+				",",
+				"event_name",
+				":\"<event_test_name>\"}}"
+			]
+		},
+		"data": "[undefined]",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {
+			"filepath": "event"
+		},
+		"payload": "{",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"logic-function\",\"execute\",\"--payload\",\"/path/payload.json\"]": {
+		"_": [
+			"logic-function",
+			"execute"
+		],
+		"data": "[undefined]",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"payload": "/path/payload.json",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"execute",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"deploy\",\"--data\",\"<data>\"]": {
+		"_": [
+			"logic-function",
+			"deploy"
+		],
+		"data": "<data>",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"force": false,
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"payload": "[undefined]",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"deploy",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"deploy\",\"--productId\",\"<productId>\"]": {
+		"_": [
+			"logic-function",
+			"deploy"
+		],
+		"clierror": {
+			"message": "Unknown argument 'productId'",
+			"data": [
+				"productId"
+			]
+		},
+		"data": "[undefined]",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"force": false,
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"payload": "[undefined]",
+		"productId": "<productId>",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"logic-function\",\"deploy\",\"--deviceId\",\"<deviceId>\"]": {
+		"_": [
+			"logic-function",
+			"deploy"
+		],
+		"clierror": {
+			"message": "Unknown argument 'deviceId'",
+			"data": [
+				"deviceId"
+			]
+		},
+		"data": "[undefined]",
+		"deviceId": "<deviceId>",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"force": false,
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"payload": "[undefined]",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"logic-function\",\"deploy\",\"--payload\",\"{\",\"event\",\":\",\"{\",\"product_id\",\":\",\"<productId>,\",\"device_id\",\":\",\"<deviceId>\",\",\",\"event_data\",\":\",\"<test data>\",\",\",\"event_name\",\":\\\"<event_test_name>\\\"}}\"]": {
+		"_": [
+			"logic-function",
+			"deploy"
+		],
+		"clierror": {
+			"message": "Command parameters ': { product_id : <productId>, device_id : <deviceId> , event_data : <test data> , event_name :\"<event_test_name>\"}}' are not expected here.",
+			"data": [
+				":",
+				"{",
+				"product_id",
+				":",
+				"<productId>,",
+				"device_id",
+				":",
+				"<deviceId>",
+				",",
+				"event_data",
+				":",
+				"<test data>",
+				",",
+				"event_name",
+				":\"<event_test_name>\"}}"
+			]
+		},
+		"data": "[undefined]",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"force": false,
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {
+			"filepath": "event"
+		},
+		"payload": "{",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"logic-function\",\"deploy\",\"--payload\",\"/path/payload.json\"]": {
+		"_": [
+			"logic-function",
+			"deploy"
+		],
+		"data": "[undefined]",
+		"device_id": "[undefined]",
+		"event_name": "[undefined]",
+		"force": false,
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"payload": "/path/payload.json",
+		"product_id": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"deploy",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"disable\"]": {
+		"_": [
+			"logic-function",
+			"disable"
+		],
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"disable",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"disable\",\"--name\",\"<name>\"]": {
+		"_": [
+			"logic-function",
+			"disable"
+		],
+		"id": "[undefined]",
+		"name": "<name>",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"disable",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"disable\",\"--id\",\"<id>\"]": {
+		"_": [
+			"logic-function",
+			"disable"
+		],
+		"id": "<id>",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"disable",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"enable\"]": {
+		"_": [
+			"logic-function",
+			"enable"
+		],
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"enable",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"enable\",\"--name\",\"<name>\"]": {
+		"_": [
+			"logic-function",
+			"enable"
+		],
+		"id": "[undefined]",
+		"name": "<name>",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"enable",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"enable\",\"--id\",\"<id>\"]": {
+		"_": [
+			"logic-function",
+			"enable"
+		],
+		"id": "<id>",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"enable",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"delete\"]": {
+		"_": [
+			"logic-function",
+			"delete"
+		],
+		"force": false,
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"delete\",\"--name\",\"<name>\"]": {
+		"_": [
+			"logic-function",
+			"delete"
+		],
+		"force": false,
+		"id": "[undefined]",
+		"name": "<name>",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"delete\",\"--id\",\"<id>\"]": {
+		"_": [
+			"logic-function",
+			"delete"
+		],
+		"force": false,
+		"id": "<id>",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"logs\"]": {
+		"_": [
+			"logic-function",
+			"logs"
+		],
+		"id": "[undefined]",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"logs",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"logs\",\"--name\",\"<name>\"]": {
+		"_": [
+			"logic-function",
+			"logs"
+		],
+		"id": "[undefined]",
+		"name": "<name>",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"logs",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"logs\",\"--id\",\"<id>\"]": {
+		"_": [
+			"logic-function",
+			"logs"
+		],
+		"id": "<id>",
+		"name": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"logs",
+			"logic-function"
+		]
+	},
+	"[\"logic-function\",\"logs\",\"--name\",\"<name>\",\"--saveTo\",\"/path/to/file.txt\"]": {
+		"_": [
+			"logic-function",
+			"logs"
+		],
+		"id": "[undefined]",
+		"name": "<name>",
+		"org": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "/path/to/file.txt",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"logs",
+			"logic-function"
+		]
+	},
+	"[\"preprocess\",\"app.ino\"]": {
+		"_": [
+			"preprocess"
+		],
+		"name": "[undefined]",
+		"params": {
+			"file": "app.ino"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"preprocess",
+			"$0"
+		]
+	},
+	"[\"preprocess\",\"-\",\"--name\",\"app.ino\",\"--saveTo\",\"-\"]": {
+		"_": [
+			"preprocess"
+		],
+		"name": "app.ino",
+		"params": {
+			"file": "-"
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "-",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"preprocess",
+			"$0"
+		]
+	},
+	"[\"product\",\"device\",\"list\",\"12345\"]": {
+		"_": [
+			"product",
+			"device",
+			"list"
+		],
+		"groups": "[undefined]",
+		"json": false,
+		"limit": "[undefined]",
+		"name": "[undefined]",
+		"page": "[undefined]",
+		"params": {
+			"product": "12345"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"device"
+		]
+	},
+	"[\"product\",\"device\",\"list\",\"12345\",\"0123456789abcdef01234567\"]": {
+		"_": [
+			"product",
+			"device",
+			"list"
+		],
+		"groups": "[undefined]",
+		"json": false,
+		"limit": "[undefined]",
+		"name": "[undefined]",
+		"page": "[undefined]",
+		"params": {
+			"product": "12345",
+			"device": "0123456789abcdef01234567"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"device"
+		]
+	},
+	"[\"product\",\"device\",\"list\",\"12345\",\"--groups\",\"foo\",\"bar\"]": {
+		"_": [
+			"product",
+			"device",
+			"list"
+		],
+		"g": [
+			"foo",
+			"bar"
+		],
+		"groups": [
+			"foo",
+			"bar"
+		],
+		"json": false,
+		"limit": "[undefined]",
+		"name": "[undefined]",
+		"page": "[undefined]",
+		"params": {
+			"product": "12345"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"device"
+		]
+	},
+	"[\"product\",\"device\",\"add\",\"12345\",\"--file\",\"./path/to/device_ids.txt\"]": {
+		"_": [
+			"product",
+			"device",
+			"add"
+		],
+		"f": "./path/to/device_ids.txt",
+		"file": "./path/to/device_ids.txt",
+		"params": {
+			"product": "12345"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"add",
+			"device"
+		]
+	},
+	"[\"product\",\"device\",\"remove\",\"12345\",\"0123456789abcdef01234567\"]": {
+		"_": [
+			"product",
+			"device",
+			"remove"
+		],
+		"params": {
+			"product": "12345",
+			"deviceID": "0123456789abcdef01234567"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"remove",
+			"device"
+		]
+	},
+	"[\"project\",\"ai\"]": {
+		"_": [
+			"project",
+			"ai"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"ai",
+			"project"
+		]
+	},
+	"[\"project\",\"ai\",\"my_project\"]": {
+		"_": [
+			"project",
+			"ai"
+		],
+		"params": {
+			"dir": "my_project"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"ai",
+			"project"
+		]
+	},
+	"[\"publish\",\"temp\",\"25.0\"]": {
+		"_": [
+			"publish"
+		],
+		"org": "[undefined]",
+		"params": {
+			"event": "temp",
+			"data": "25.0"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"publish",
+			"$0"
+		]
+	},
+	"[\"publish\",\"temp\",\"25.0\",\"--product\",\"12345\"]": {
+		"_": [
+			"publish"
+		],
+		"org": "[undefined]",
+		"params": {
+			"event": "temp",
+			"data": "25.0"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"publish",
+			"$0"
+		]
+	},
+	"[\"publish\",\"temp\",\"25.0\",\"--org\",\"my-org\"]": {
+		"_": [
+			"publish"
+		],
+		"org": "my-org",
+		"params": {
+			"event": "temp",
+			"data": "25.0"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"publish",
+			"$0"
+		]
+	},
+	"[\"serial\",\"monitor\"]": {
+		"_": [
+			"serial",
+			"monitor"
+		],
+		"follow": false,
+		"params": {},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"timestamp": false,
+		"utc": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"monitor",
+			"serial"
+		]
+	},
+	"[\"serial\",\"monitor\",\"--follow\"]": {
+		"_": [
+			"serial",
+			"monitor"
+		],
+		"follow": true,
+		"params": {},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"timestamp": false,
+		"utc": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"monitor",
+			"serial"
+		]
+	},
+	"[\"serial\",\"monitor\",\"--timestamp\"]": {
+		"_": [
+			"serial",
+			"monitor"
+		],
+		"follow": false,
+		"params": {},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"timestamp": true,
+		"utc": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"monitor",
+			"serial"
+		]
+	},
+	"[\"serial\",\"monitor\",\"--timestamp\",\"--utc\"]": {
+		"_": [
+			"serial",
+			"monitor"
+		],
+		"follow": false,
+		"params": {},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"timestamp": true,
+		"utc": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"monitor",
+			"serial"
+		]
+	},
+	"[\"serial\",\"wifi\"]": {
+		"_": [
+			"serial",
+			"wifi"
+		],
+		"file": "[undefined]",
+		"params": {},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"wifi",
+			"serial"
+		]
+	},
+	"[\"serial\",\"wifi\",\"--file\",\"credentials.json\"]": {
+		"_": [
+			"serial",
+			"wifi"
+		],
+		"file": "credentials.json",
+		"params": {},
+		"port": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"wifi",
+			"serial"
+		]
+	},
+	"[\"subscribe\"]": {
+		"_": [
+			"subscribe"
+		],
+		"device": "[undefined]",
+		"max": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"until": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"subscribe",
+			"$0"
+		]
+	},
+	"[\"subscribe\",\"update\"]": {
+		"_": [
+			"subscribe"
+		],
+		"device": "[undefined]",
+		"max": "[undefined]",
+		"org": "[undefined]",
+		"params": {
+			"event": "update"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"until": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"subscribe",
+			"$0"
+		]
+	},
+	"[\"subscribe\",\"--product\",\"12345\"]": {
+		"_": [
+			"subscribe"
+		],
+		"device": "[undefined]",
+		"max": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"until": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"subscribe",
+			"$0"
+		]
+	},
+	"[\"subscribe\",\"--org\",\"my-org\"]": {
+		"_": [
+			"subscribe"
+		],
+		"device": "[undefined]",
+		"max": "[undefined]",
+		"org": "my-org",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"until": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"subscribe",
+			"$0"
+		]
+	},
+	"[\"subscribe\",\"--device\",\"blue\"]": {
+		"_": [
+			"subscribe"
+		],
+		"device": "blue",
+		"max": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"until": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"subscribe",
+			"$0"
+		]
+	},
+	"[\"subscribe\",\"--until\",\"data\"]": {
+		"_": [
+			"subscribe"
+		],
+		"device": "[undefined]",
+		"max": "[undefined]",
+		"org": "[undefined]",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"until": "data",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"subscribe",
+			"$0"
+		]
+	},
+	"[\"subscribe\",\"--max\",\"4\"]": {
+		"_": [
+			"subscribe"
+		],
+		"device": "[undefined]",
+		"max": 4,
+		"org": "[undefined]",
+		"params": {},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"until": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"subscribe",
+			"$0"
+		]
+	},
+	"[\"tachyon\",\"setup\"]": {
+		"_": [
+			"tachyon",
+			"setup"
+		],
+		"board": "[undefined]",
+		"distro_version": "[undefined]",
+		"load_config": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"region": "[undefined]",
+		"save_config": "[undefined]",
+		"skip_cli": false,
+		"skip_flashing_os": false,
+		"timezone": "[undefined]",
+		"v": 0,
+		"variant": "[undefined]",
+		"verbose": 0,
+		"version": "[undefined]",
+		"command": [
+			"setup",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"download-package\",\"--region\"]": {
+		"thrown": "Not enough arguments following: region"
+	},
+	"[\"tachyon\",\"download-package\",\"--region\",\"NA\",\"--version\",\"1.0.0\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"download-package"
+		],
+		"board": "[undefined]",
+		"distro_version": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"region": "NA",
+		"v": 0,
+		"variant": "[undefined]",
+		"verbose": 0,
+		"version": "1.0.0",
+		"command": [
+			"download-package",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"clean-cache\",\"--region\",\"NA\",\"--version\",\"1.0.0\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"clean-cache"
+		],
+		"all": false,
+		"board": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"region": "NA",
+		"v": 0,
+		"variant": "[undefined]",
+		"verbose": 0,
+		"version": "1.0.0",
+		"command": [
+			"clean-cache",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"clean-cache\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"clean-cache"
+		],
+		"all": true,
+		"board": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"region": "[undefined]",
+		"v": 0,
+		"variant": "[undefined]",
+		"verbose": 0,
+		"version": "[undefined]",
+		"command": [
+			"clean-cache",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"backup\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"backup"
+		],
+		"log-dir": "[undefined]",
+		"output-dir": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"backup",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"backup\",\"--output-dir\",\"/path/to/backup\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"backup"
+		],
+		"log-dir": "[undefined]",
+		"output-dir": "/path/to/backup",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"backup",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"backup\",\"--log-dir\",\"/path/to/log\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"backup"
+		],
+		"log-dir": "/path/to/log",
+		"output-dir": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"backup",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"restore\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"restore"
+		],
+		"filepath": "[undefined]",
+		"input-dir": "[undefined]",
+		"log-dir": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"restore",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"restore\",\"--input-dir\",\"/path/to/input\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"restore"
+		],
+		"filepath": "[undefined]",
+		"input-dir": "/path/to/input",
+		"log-dir": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"restore",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"restore\",\"--log-dir\",\"/path/to/log\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"restore"
+		],
+		"filepath": "[undefined]",
+		"input-dir": "[undefined]",
+		"log-dir": "/path/to/log",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"restore",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"identify\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"identify"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"identify",
+			"tachyon"
+		]
+	},
+	"[\"tachyon\",\"factory-restore\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"tachyon",
+			"factory-restore"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"factory-restore",
+			"tachyon"
+		]
+	},
+	"[\"update\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"update"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"update",
+			"$0"
+		]
+	},
+	"[\"update\",\"red\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"update"
+		],
+		"params": {
+			"device": "red"
+		},
+		"q": 0,
+		"quiet": 0,
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"update",
+			"$0"
+		]
+	},
+	"[\"update\",\"--target\",\"5.0.0\",\"blue\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"update"
+		],
+		"params": {
+			"device": "blue"
+		},
+		"q": 0,
+		"quiet": 0,
+		"target": "5.0.0",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"update",
+			"$0"
+		]
+	},
+	"[\"variable\",\"get\",\"basement\",\"temperature\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"variable",
+			"get"
+		],
+		"params": {
+			"device": "basement",
+			"variableName": "temperature"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"variable"
+		]
+	},
+	"[\"variable\",\"get\",\"0123456789abcdef01234567\",\"temperature\",\"--product\",\"12345\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"variable",
+			"get"
+		],
+		"params": {
+			"device": "0123456789abcdef01234567",
+			"variableName": "temperature"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"variable"
+		]
+	},
+	"[\"variable\",\"get\",\"all\",\"temperature\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"variable",
+			"get"
+		],
+		"params": {
+			"device": "all",
+			"variableName": "temperature"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"variable"
+		]
+	},
+	"[\"variable\",\"monitor\",\"up\",\"temp\",\"--delay\",\"2000\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"variable",
+			"monitor"
+		],
+		"delay": 2000,
+		"params": {
+			"device": "up",
+			"variableName": "temp"
+		},
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"monitor",
+			"variable"
+		]
+	},
+	"[\"wifi\",\"add\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"add"
+		],
+		"file": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"add",
+			"wifi"
+		]
+	},
+	"[\"wifi\",\"add\",\"--file\",\"credentials.json\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"add"
+		],
+		"file": "credentials.json",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"add",
+			"wifi"
+		]
+	},
+	"[\"wifi\",\"join\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"join"
+		],
+		"file": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"ssid": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"join",
+			"wifi"
+		]
+	},
+	"[\"wifi\",\"join\",\"--file\",\"credentials.json\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"join"
+		],
+		"file": "credentials.json",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"ssid": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"join",
+			"wifi"
+		]
+	},
+	"[\"wifi\",\"join\",\"--ssid\",\"<SSID>\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"join"
+		],
+		"file": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"ssid": "<SSID>",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"join",
+			"wifi"
+		]
+	},
+	"[\"wifi\",\"clear\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"clear"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"clear",
+			"wifi"
+		]
+	},
+	"[\"wifi\",\"list\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"list"
+		],
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"list",
+			"wifi"
+		]
+	},
+	"[\"wifi\",\"remove\",\"ssid\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"remove"
+		],
+		"clierror": {
+			"message": "Command parameters 'ssid' are not expected here.",
+			"data": [
+				"ssid"
+			]
+		},
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"ssid": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"wifi\",\"current\",\"ssid\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"wifi",
+			"current"
+		],
+		"clierror": {
+			"message": "Command parameters 'ssid' are not expected here.",
+			"data": [
+				"ssid"
+			]
+		},
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": null
+	},
+	"[\"usb\",\"start-listening\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"start-listening"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"start-listening",
+			"usb"
+		]
+	},
+	"[\"usb\",\"start-listening\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"start-listening"
+		],
+		"all": true,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"start-listening",
+			"usb"
+		]
+	},
+	"[\"usb\",\"listen\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"listen"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"listen",
+			"usb"
+		]
+	},
+	"[\"usb\",\"listen\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"listen"
+		],
+		"all": true,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"listen",
+			"usb"
+		]
+	},
+	"[\"usb\",\"stop-listening\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"stop-listening"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"stop-listening",
+			"usb"
+		]
+	},
+	"[\"usb\",\"stop-listening\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"stop-listening"
+		],
+		"all": true,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"stop-listening",
+			"usb"
+		]
+	},
+	"[\"usb\",\"safe-mode\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"safe-mode"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"safe-mode",
+			"usb"
+		]
+	},
+	"[\"usb\",\"safe-mode\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"safe-mode"
+		],
+		"all": true,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"safe-mode",
+			"usb"
+		]
+	},
+	"[\"usb\",\"dfu\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"dfu"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"dfu",
+			"usb"
+		]
+	},
+	"[\"usb\",\"dfu\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"dfu"
+		],
+		"all": true,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"dfu",
+			"usb"
+		]
+	},
+	"[\"usb\",\"reset\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"reset"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"reset",
+			"usb"
+		]
+	},
+	"[\"usb\",\"reset\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"reset"
+		],
+		"all": true,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"reset",
+			"usb"
+		]
+	},
+	"[\"usb\",\"setup-done\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"setup-done"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"reset": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"setup-done",
+			"usb"
+		]
+	},
+	"[\"usb\",\"setup-done\",\"--reset\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"setup-done"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"reset": true,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"setup-done",
+			"usb"
+		]
+	},
+	"[\"usb\",\"setup-done\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"setup-done"
+		],
+		"all": true,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"reset": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"setup-done",
+			"usb"
+		]
+	},
+	"[\"usb\",\"cloud-status\",\"blue\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"cloud-status"
+		],
+		"params": {
+			"device": "blue"
+		},
+		"q": 0,
+		"quiet": 0,
+		"timeout": 60000,
+		"until": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"cloud-status",
+			"usb"
+		]
+	},
+	"[\"usb\",\"cloud-status\",\"red\",\"--until\",\"connected\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"cloud-status"
+		],
+		"params": {
+			"device": "red"
+		},
+		"q": 0,
+		"quiet": 0,
+		"timeout": 60000,
+		"until": "connected",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"cloud-status",
+			"usb"
+		]
+	},
+	"[\"usb\",\"network-interfaces\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"network-interfaces"
+		],
+		"all": false,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"network-interfaces",
+			"usb"
+		]
+	},
+	"[\"usb\",\"network-interfaces\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"network-interfaces"
+		],
+		"all": true,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"network-interfaces",
+			"usb"
+		]
+	},
+	"[\"usb\",\"network-interfaces\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"network-interfaces"
+		],
+		"all": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"network-interfaces",
+			"usb"
+		]
+	},
+	"[\"usb\",\"env\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"env"
+		],
+		"all": false,
+		"json": false,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"env",
+			"usb"
+		]
+	},
+	"[\"usb\",\"env\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"env"
+		],
+		"all": true,
+		"json": false,
+		"params": {
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"env",
+			"usb"
+		]
+	},
+	"[\"usb\",\"env\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"env"
+		],
+		"all": false,
+		"json": false,
+		"params": {
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"env",
+			"usb"
+		]
+	},
+	"[\"usb\",\"send-request\",\"{\\\"op\\\":\\\"status\\\"}\",\"my_device\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"send-request"
+		],
+		"all": false,
+		"params": {
+			"payload": "{\"op\":\"status\"}",
+			"devices": [
+				"my_device"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"silent": false,
+		"timeout": 60000,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"send-request",
+			"usb"
+		]
+	},
+	"[\"usb\",\"send-request\",\"{\\\"op\\\":\\\"status\\\"}\",\"--all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"usb",
+			"send-request"
+		],
+		"all": true,
+		"params": {
+			"payload": "{\"op\":\"status\"}",
+			"devices": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"silent": false,
+		"timeout": 60000,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"send-request",
+			"usb"
+		]
+	},
+	"[\"login\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sso": false,
+		"t": "[undefined]",
+		"u": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"$0"
+		]
+	},
+	"[\"login\",\"--username\",\"user@example.com\",\"--password\",\"test\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "test",
+		"params": {},
+		"password": "test",
+		"q": 0,
+		"quiet": 0,
+		"sso": false,
+		"t": "[undefined]",
+		"u": "user@example.com",
+		"username": "user@example.com",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"$0"
+		]
+	},
+	"[\"login\",\"--token\",\"<my-api-token>\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"login"
+		],
+		"otp": "[undefined]",
+		"p": "[undefined]",
+		"params": {},
+		"q": 0,
+		"quiet": 0,
+		"sso": false,
+		"t": "<my-api-token>",
+		"token": "<my-api-token>",
+		"u": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"login",
+			"$0"
+		]
+	},
+	"[\"nyan\",\"blue\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"nyan"
+		],
+		"params": {
+			"device": "blue"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"nyan",
+			"$0"
+		]
+	},
+	"[\"nyan\",\"blue\",\"off\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"nyan"
+		],
+		"params": {
+			"device": "blue",
+			"onOff": "off"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"nyan",
+			"$0"
+		]
+	},
+	"[\"nyan\",\"blue\",\"--product\",\"12345\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"nyan"
+		],
+		"params": {
+			"device": "blue"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"nyan",
+			"$0"
+		]
+	},
+	"[\"call\",\"coffee\",\"brew\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"call"
+		],
+		"params": {
+			"device": "coffee",
+			"function": "brew"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"$0"
+		]
+	},
+	"[\"call\",\"board\",\"digitalWrite\",\"D7=HIGH\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"call"
+		],
+		"params": {
+			"device": "board",
+			"function": "digitalWrite",
+			"argument": "D7=HIGH"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"$0"
+		]
+	},
+	"[\"call\",\"0123456789abcdef01234567\",\"brew\",\"--product\",\"12345\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"call"
+		],
+		"params": {
+			"device": "0123456789abcdef01234567",
+			"function": "brew"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"call",
+			"$0"
+		]
+	},
+	"[\"get\",\"basement\",\"temperature\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"get"
+		],
+		"params": {
+			"device": "basement",
+			"variableName": "temperature"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"$0"
+		]
+	},
+	"[\"get\",\"0123456789abcdef01234567\",\"temperature\",\"--product\",\"12345\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"get"
+		],
+		"params": {
+			"device": "0123456789abcdef01234567",
+			"variableName": "temperature"
+		},
+		"product": "12345",
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"$0"
+		]
+	},
+	"[\"get\",\"all\",\"temperature\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"get"
+		],
+		"params": {
+			"device": "all",
+			"variableName": "temperature"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"get",
+			"$0"
+		]
+	},
+	"[\"monitor\",\"up\",\"temp\",\"--delay\",\"2000\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"monitor"
+		],
+		"delay": 2000,
+		"params": {
+			"device": "up",
+			"variableName": "temp"
+		},
+		"q": 0,
+		"quiet": 0,
+		"time": false,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"monitor",
+			"$0"
+		]
+	},
+	"[\"compile\",\"photon\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"compile"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"deviceType": "photon",
+			"files": []
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "[undefined]",
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"compile",
+			"$0"
+		]
+	},
+	"[\"compile\",\"electron\",\"project\",\"--saveTo\",\"electron.bin\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"compile"
+		],
+		"compiler": "cloud",
+		"followSymlinks": false,
+		"params": {
+			"deviceType": "electron",
+			"files": [
+				"project"
+			]
+		},
+		"q": 0,
+		"quiet": 0,
+		"saveTo": "electron.bin",
+		"target": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"compile",
+			"$0"
+		]
+	},
+	"[\"device\",\"add\",\"123456789\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"device",
+			"add"
+		],
+		"params": {
+			"deviceID": "123456789"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"add",
+			"device"
+		]
+	},
+	"[\"device\",\"remove\",\"0123456789ABCDEFGHI\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"device",
+			"remove"
+		],
+		"params": {
+			"device": "0123456789ABCDEFGHI"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"yes": false,
+		"command": [
+			"remove",
+			"device"
+		]
+	},
+	"[\"device\",\"rename\",\"red\",\"green\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"device",
+			"rename"
+		],
+		"params": {
+			"device": "red",
+			"name": "green"
+		},
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"rename",
+			"device"
+		]
+	},
+	"[\"webhook\",\"create\",\"temp\",\"https://xyz.com\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"webhook",
+			"create"
+		],
+		"org": "[undefined]",
+		"params": {
+			"eventName": "temp",
+			"filename": "temp",
+			"url": "https://xyz.com"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"webhook"
+		]
+	},
+	"[\"webhook\",\"create\",\"hook.json\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"webhook",
+			"create"
+		],
+		"org": "[undefined]",
+		"params": {
+			"eventName": "hook.json",
+			"filename": "hook.json"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "[undefined]",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"webhook"
+		]
+	},
+	"[\"webhook\",\"create\",\"gmaps.json\",\"--type\",\"GoogleMaps\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"webhook",
+			"create"
+		],
+		"org": "[undefined]",
+		"params": {
+			"eventName": "gmaps.json",
+			"filename": "gmaps.json"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"type": "GoogleMaps",
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"create",
+			"webhook"
+		]
+	},
+	"[\"webhook\",\"delete\",\"5a8ef38cb85f8720edce631a\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"webhook",
+			"delete"
+		],
+		"org": "[undefined]",
+		"params": {
+			"hookId": "5a8ef38cb85f8720edce631a"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"webhook"
+		]
+	},
+	"[\"webhook\",\"delete\",\"all\"]": {
+		"_": [
+			"tachyon",
+			"download-package",
+			"webhook",
+			"delete"
+		],
+		"org": "[undefined]",
+		"params": {
+			"hookId": "all"
+		},
+		"product": "[undefined]",
+		"q": 0,
+		"quiet": 0,
+		"v": 0,
+		"verbose": 0,
+		"command": [
+			"delete",
+			"webhook"
+		]
+	}
+}
