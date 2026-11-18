@@ -105,6 +105,12 @@
     "glob@>=9.0.0 <14.0.2": "^14.0.2",
     "yargs": {
       "yargs-parser": "^5.0.1"
+    },
+    "external-editor": {
+      "tmp": "^0.2.7"
+    },
+    "particle-library-manager": {
+      "tmp": "^0.2.7"
     }
   },
   "engines": {
