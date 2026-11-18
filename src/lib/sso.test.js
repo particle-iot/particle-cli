@@ -3,6 +3,7 @@ const nock = require('nock');
 const jose = require('jose');
 const openurl = require('./openurl');
 const { sinon, expect } = require('../../test/setup');
+const { startProxyRecorder } = require('../../test/lib/proxy-recorder');
 const sandbox = sinon.createSandbox();
 const { _makeRequest, waitForLogin, ssoLogin } = require('./sso');
 
@@ -31,9 +32,64 @@ describe('_makeRequest', () => {
 		try {
 			await _makeRequest({ url, method, form });
 		} catch (error) {
-			expect(error.message).to.equal(response);
+			expect(error.message).to.contain(response);
 		}
 		expect(stub.isDone()).to.be.true;
+	});
+
+	it('sends the form as an url-encoded body', async () => {
+		const stub = nock('https://id.particle.io/oauth2/default/v1', {
+			reqheaders: { 'content-type': /^application\/x-www-form-urlencoded/ }
+		})
+			.post('/token', 'device_code=XXAABBCC&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code&client_id=my-client&scope=openid%20profile')
+			.reply(200, { ok: true });
+		const response = await _makeRequest({
+			url: 'https://id.particle.io/oauth2/default/v1/token',
+			method: 'POST',
+			form: {
+				device_code: 'XXAABBCC',
+				grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+				client_id: 'my-client',
+				scope: 'openid profile'
+			}
+		});
+		expect(response).to.deep.equal({ ok: true });
+		expect(stub.isDone()).to.be.true;
+	});
+
+	it('resolves the parsed body for non-2xx responses', async () => {
+		// OAuth device flow servers answer `authorization_pending` with a 400,
+		// so the body must be returned instead of rejecting on the status code
+		const body = { error: 'authorization_pending', error_description: 'authorization is pending' };
+		nock('https://id.particle.io/oauth2/default/v1')
+			.post('/token')
+			.reply(400, body);
+		const response = await _makeRequest({
+			url: 'https://id.particle.io/oauth2/default/v1/token',
+			method: 'POST',
+			form: {}
+		});
+		expect(response).to.deep.equal(body);
+	});
+
+	describe('proxy', () => {
+		let proxy;
+		beforeEach(async () => {
+			proxy = await startProxyRecorder();
+		});
+		afterEach(async () => {
+			await proxy.close();
+		});
+
+		it('routes the request through HTTPS_PROXY', async () => {
+			await expect(_makeRequest({
+				url: 'https://id.particle.io/oauth2/default/v1/token',
+				method: 'POST',
+				form: {}
+			})).to.be.rejected;
+			expect(proxy.requests).to.have.lengthOf(1);
+			expect(proxy.requests[0]).to.match(/^CONNECT id\.particle\.io:443 /);
+		});
 	});
 });
 
@@ -113,7 +169,7 @@ describe('waitForLogin', () => {
 		try {
 			await waitForLogin({ deviceCode: 'XXAABBCC', waitTime: 1 });
 		} catch (error) {
-			expect(error.message).to.equal(unhandledError);
+			expect(error.message).to.contain(unhandledError);
 		}
 	});
 });

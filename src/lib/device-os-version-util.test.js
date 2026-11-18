@@ -6,6 +6,7 @@ const { downloadDeviceOsVersionBinaries } = require('./device-os-version-util');
 const nock = require('nock');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const UI = require('./ui');
+const { startProxyRecorder } = require('../../test/lib/proxy-recorder');
 
 
 
@@ -105,6 +106,90 @@ describe('downloadDeviceOsVersionBinaries', () => {
 		const data = await downloadDeviceOsVersionBinaries({ api, platformId: 6, version: '2.3.1', ui });
 
 		expect(fs.statSync(data[0]).size).to.equal(largeBinary.length);
+	});
+
+	describe('downloading a module', () => {
+		const binaryDir = () => path.join(PATH_TMP_DIR, '.particle/device-os-flash/binaries/2.3.1/photon');
+		const apiWithModule = () => ({
+			getDeviceOsVersions: sinon.stub().resolves({
+				version: '2.3.1',
+				base_url: 'https://api.particle.io/v1/firmware/device-os/v2.3.1',
+				modules: [
+					{ filename: 'photon-system-part1@2.3.1.bin', prefixInfo: { moduleFunction: 'system-part' } }
+				]
+			})
+		});
+
+		it('writes the exact downloaded bytes', async () => {
+			nock('https://api.particle.io/v1/firmware/device-os/v2.3.1')
+				.intercept('/photon-system-part1@2.3.1.bin', 'GET')
+				.reply(200, binary);
+
+			const data = await downloadDeviceOsVersionBinaries({ api: apiWithModule(), platformId: 6, version: '2.3.1', ui });
+
+			expect(data).to.eql([path.join(binaryDir(), 'photon-system-part1@2.3.1.bin')]);
+			expect((await fs.readFile(data[0])).equals(binary)).to.be.true;
+		});
+
+		it('follows redirects', async () => {
+			nock('https://api.particle.io/v1/firmware/device-os/v2.3.1')
+				.intercept('/photon-system-part1@2.3.1.bin', 'GET')
+				.reply(302, '', { Location: 'https://binaries.particle.io/device-os/photon-system-part1@2.3.1.bin' });
+			nock('https://binaries.particle.io')
+				.intercept('/device-os/photon-system-part1@2.3.1.bin', 'GET')
+				.reply(200, binary);
+
+			const data = await downloadDeviceOsVersionBinaries({ api: apiWithModule(), platformId: 6, version: '2.3.1', ui });
+
+			expect((await fs.readFile(data[0])).equals(binary)).to.be.true;
+		});
+
+		it('fails with the status code and leaves no partial file when the server errors', async () => {
+			nock('https://api.particle.io/v1/firmware/device-os/v2.3.1')
+				.intercept('/photon-system-part1@2.3.1.bin', 'GET')
+				.reply(500, 'internal error');
+
+			await expect(downloadDeviceOsVersionBinaries({ api: apiWithModule(), platformId: 6, version: '2.3.1', ui }))
+				.to.be.rejectedWith('Failed to download file: 500');
+			expect(fs.existsSync(path.join(binaryDir(), 'photon-system-part1@2.3.1.bin'))).to.be.false;
+		});
+
+		it('reports a missing version when the server answers 404', async () => {
+			nock('https://api.particle.io/v1/firmware/device-os/v2.3.1')
+				.intercept('/photon-system-part1@2.3.1.bin', 'GET')
+				.reply(404);
+
+			await expect(downloadDeviceOsVersionBinaries({ api: apiWithModule(), platformId: 6, version: '2.3.1', ui }))
+				.to.be.rejectedWith('Device OS version not found for platform: 6 version: 2.3.1');
+			expect(fs.existsSync(path.join(binaryDir(), 'photon-system-part1@2.3.1.bin'))).to.be.false;
+		});
+
+		it('fails and leaves no partial file when the network request fails', async () => {
+			nock('https://api.particle.io/v1/firmware/device-os/v2.3.1')
+				.intercept('/photon-system-part1@2.3.1.bin', 'GET')
+				.replyWithError('socket hang up');
+
+			await expect(downloadDeviceOsVersionBinaries({ api: apiWithModule(), platformId: 6, version: '2.3.1', ui }))
+				.to.be.rejectedWith('socket hang up');
+			expect(fs.existsSync(path.join(binaryDir(), 'photon-system-part1@2.3.1.bin'))).to.be.false;
+		});
+
+		describe('proxy', () => {
+			let proxy;
+			beforeEach(async () => {
+				proxy = await startProxyRecorder();
+			});
+			afterEach(async () => {
+				await proxy.close();
+			});
+
+			it('routes the request through HTTPS_PROXY', async () => {
+				await expect(downloadDeviceOsVersionBinaries({ api: apiWithModule(), platformId: 6, version: '2.3.1', ui }))
+					.to.be.rejected;
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT api\.particle\.io:443 /);
+			});
+		});
 	});
 
 	it('should fail if the platform is not supported by the requested version', async() => {
