@@ -72,8 +72,8 @@
     "safe-buffer": "^5.2.0",
     "semver": "^7.5.2",
     "serialport": "~10.4.0",
-    "sha512crypt-node": "^1.0.2",
     "temp": "^0.9.4",
+    "unixcrypt": "^1.2.0",
     "unzipper": "^0.12.3",
     "uuid": "^11.1.0",
     "verror": "^1.10.0",
@@ -101,9 +101,6 @@
     "strip-ansi": "^7.1.2"
   },
   "overrides": {
-    "sha512crypt-node": {
-      "mocha": "$mocha"
-    },
     "@particle/unpack-file": {
       "tar": "^7.5.23"
     }

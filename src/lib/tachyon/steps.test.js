@@ -140,11 +140,11 @@ describe('tachyon setup steps', () => {
 	});
 });
 
-// The Tachyon system password is hashed with sha512crypt-node into the
-// /etc/shadow format. Pin the library to the reference vectors from the
-// SHA-crypt specification so dependency changes can't silently alter hashes.
+// The Tachyon system password is hashed into the /etc/shadow format with
+// SHA-512 crypt. Pin the library to the reference vectors from the SHA-crypt
+// specification so dependency changes can't silently alter hashes.
 describe('tachyon system password hash (sha512crypt)', () => {
-	const { sha512crypt } = require('sha512crypt-node');
+	const { encrypt: sha512crypt } = require('unixcrypt');
 
 	it('matches the SHA-crypt reference vector', () => {
 		expect(sha512crypt('Hello world!', '$6$saltstring'))
@@ -174,11 +174,20 @@ describe('tachyon system password hash (sha512crypt)', () => {
 			expect(crypto.randomBytes).to.have.been.calledOnceWith(12);
 		});
 
-		it('hashes passwords with spaces, symbols and non-ascii characters', () => {
+		// Linux crypt(3) hashes the UTF-8 bytes of the password. Expected values
+		// were generated with passlib's sha512_crypt, an independent implementation
+		it('hashes the UTF-8 bytes of passwords with spaces, symbols and non-ascii characters', () => {
 			sinon.stub(crypto, 'randomBytes').returns(FIXED_SALT_BYTES);
 
 			expect(steps._generateShadowCompatibleHash('p@ss wörd!'))
-				.to.equal('$6$....ABEiM/v/RFVm$Mwhx6gZYo7NT5AwHjaZQdKRF5L5SPeFbmxYsORIkNeF7tlAQKW2LAQ/IKU3qBVgeE33yDnc0nveP2UUfUa1Ne0');
+				.to.equal('$6$....ABEiM/v/RFVm$5flAyi7E.Zsw1x0QjhTglIM4Aeekt5h72RB42vXj/nCsSryVmY8AKU.ilEZ4OrbwJZ8C4Oj8Bc82M3rGwhFeC1');
+		});
+
+		it('hashes the UTF-8 bytes of passwords outside latin-1', () => {
+			sinon.stub(crypto, 'randomBytes').returns(FIXED_SALT_BYTES);
+
+			expect(steps._generateShadowCompatibleHash('€uro 日本'))
+				.to.equal('$6$....ABEiM/v/RFVm$n9ovM6sHeqpIgEF5wHpek3XILHx0Jg3TyA8k7pjkDRDqRIYdMS2B7V0mXh63zYq/GM611jOvERFRQakrn2iFQ0');
 		});
 
 		it('uses a different salt on each call', () => {
