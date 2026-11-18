@@ -100,6 +100,11 @@
     "sinon-chai": "^3.3.0",
     "strip-ansi": "^7.1.2"
   },
+  "overrides": {
+    "sha512crypt-node": {
+      "mocha": "$mocha"
+    }
+  },
   "engines": {
     "node": ">=22.20",
     "npm": ">=10"
