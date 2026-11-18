@@ -139,3 +139,20 @@ describe('tachyon setup steps', () => {
 		});
 	});
 });
+
+// The Tachyon system password is hashed with sha512crypt-node into the
+// /etc/shadow format. Pin the library to the reference vectors from the
+// SHA-crypt specification so dependency changes can't silently alter hashes.
+describe('tachyon system password hash (sha512crypt)', () => {
+	const { sha512crypt } = require('sha512crypt-node');
+
+	it('matches the SHA-crypt reference vector', () => {
+		expect(sha512crypt('Hello world!', '$6$saltstring'))
+			.to.equal('$6$saltstring$svn8UoSVapNtMuq1ukKS4tPQd8iKwSMHWjl/O817G3uBnIFNjnQJuesI68u4OTLiBFdcbYEdFCoEOfaS35inz1');
+	});
+
+	it('matches the SHA-crypt reference vector with custom rounds', () => {
+		expect(sha512crypt('Hello world!', '$6$rounds=10000$saltstringsaltstring'))
+			.to.equal('$6$rounds=10000$saltstringsaltst$OW1/O6BYHV6BcXZu8QVeXbDWra3Oeqh0sbHbbMCVNSnCM/UrjmM0Dp8vOuZeHBy/YTBmSK6H9qs/y3RnOaw5v.');
+	});
+});
