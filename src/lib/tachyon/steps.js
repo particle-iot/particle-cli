@@ -616,5 +616,6 @@ module.exports = {
 	createConfigBlobStep,
 	verifyConfigPartitionStep,
 	flashOSAndConfigStep,
-	setupCompletedStep
+	setupCompletedStep,
+	_generateShadowCompatibleHash
 };
