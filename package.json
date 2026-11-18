@@ -111,6 +111,11 @@
     },
     "particle-library-manager": {
       "tmp": "^0.2.7"
+    },
+    "particle-usb": {
+      "@particle/device-os-protobuf": "^4.1.1",
+      "protobufjs": "^8.8.1",
+      "ip-address": "^10.7.6"
     }
   },
   "engines": {
