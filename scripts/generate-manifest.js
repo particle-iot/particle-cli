@@ -5,7 +5,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const crypto = require('crypto');
 const semver = require('semver');
-const request = require('request');
+const fetch = require('node-fetch');
 
 const buildDir = process.argv[2] || './build';
 const version = packageInfo.version;
@@ -104,17 +104,16 @@ async function generateInstallerManifest(version, buildDir) {
 	fs.writeFileSync(installerManifestPath, JSON.stringify(manifest, null, 2));
 }
 async function downloadCurrentManifestInstaller(url) {
-	return new Promise((resolve, reject) => {
-		request({ url: url, json: true }, (error, response, body) => {
-			if (error) {
-				reject(new Error(`Error making request: ${error.message}`));
-			} else if (response.statusCode !== 200) {
-				resolve(null);
-			} else {
-				resolve(body);
-			}
-		});
-	});
+	let response;
+	try {
+		response = await fetch(url, { headers: { accept: 'application/json' } });
+	} catch (error) {
+		throw new Error(`Error making request: ${error.message}`);
+	}
+	if (response.status !== 200) {
+		return null;
+	}
+	return response.json();
 }
 
 async function moveFile(source, target) {
