@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs-extra');
 const nock = require('nock');
-const archiver = require('archiver');
+const { TarArchive } = require('archiver');
 const { expect, sinon } = require('../../../test/setup');
 const { PATH_TMP_DIR } = require('../../../test/lib/env');
 const UI = require('../ui');
@@ -16,7 +16,7 @@ const URL_PATH = '/buildscripts/buildscripts-v0.0.1.tar.gz';
 function fakeTarball() {
 	return new Promise((resolve, reject) => {
 		const chunks = [];
-		const archive = archiver('tar', { gzip: true });
+		const archive = new TarArchive({ gzip: true });
 		archive.on('data', (chunk) => chunks.push(chunk));
 		archive.on('end', () => resolve(Buffer.concat(chunks)));
 		archive.on('error', reject);
