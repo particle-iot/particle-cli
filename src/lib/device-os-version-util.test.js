@@ -190,6 +190,27 @@ describe('downloadDeviceOsVersionBinaries', () => {
 				expect(proxy.requests[0]).to.match(/^CONNECT api\.particle\.io:443 /);
 			});
 		});
+
+		describe('profile proxyUrl', () => {
+			const settings = require('../../settings');
+			const originalProxyUrl = settings.proxyUrl;
+			let proxy;
+			beforeEach(async () => {
+				proxy = await startProxyRecorder({ setEnv: false });
+				settings.proxyUrl = proxy.url;
+			});
+			afterEach(async () => {
+				settings.proxyUrl = originalProxyUrl;
+				await proxy.close();
+			});
+
+			it('routes the request through the profile proxyUrl', async () => {
+				await expect(downloadDeviceOsVersionBinaries({ api: apiWithModule(), platformId: 6, version: '2.3.1', ui }))
+					.to.be.rejected;
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT api\.particle\.io:443 /);
+			});
+		});
 	});
 
 	it('should fail if the platform is not supported by the requested version', async() => {

@@ -4,6 +4,7 @@ const jose = require('jose');
 const openurl = require('./openurl');
 const { sinon, expect } = require('../../test/setup');
 const { startProxyRecorder } = require('../../test/lib/proxy-recorder');
+const settings = require('../../settings');
 const sandbox = sinon.createSandbox();
 const { _makeRequest, waitForLogin, ssoLogin } = require('./sso');
 
@@ -73,22 +74,55 @@ describe('_makeRequest', () => {
 	});
 
 	describe('proxy', () => {
-		let proxy;
-		beforeEach(async () => {
-			proxy = await startProxyRecorder();
+		const request = () => _makeRequest({
+			url: 'https://id.particle.io/oauth2/default/v1/token',
+			method: 'POST',
+			form: {}
 		});
+		const originalProxyUrl = settings.proxyUrl;
+		const proxies = [];
+		const startProxy = async (options) => {
+			const proxy = await startProxyRecorder(options);
+			proxies.push(proxy);
+			return proxy;
+		};
+
 		afterEach(async () => {
-			await proxy.close();
+			settings.proxyUrl = originalProxyUrl;
+			// close in reverse order so each one restores the env it found
+			while (proxies.length) {
+				await proxies.pop().close();
+			}
 		});
 
 		it('routes the request through HTTPS_PROXY', async () => {
-			await expect(_makeRequest({
-				url: 'https://id.particle.io/oauth2/default/v1/token',
-				method: 'POST',
-				form: {}
-			})).to.be.rejected;
+			const proxy = await startProxy();
+
+			await expect(request()).to.be.rejected;
+
 			expect(proxy.requests).to.have.lengthOf(1);
 			expect(proxy.requests[0]).to.match(/^CONNECT id\.particle\.io:443 /);
+		});
+
+		it('routes the request through the profile proxyUrl', async () => {
+			const proxy = await startProxy({ setEnv: false });
+			settings.proxyUrl = proxy.url;
+
+			await expect(request()).to.be.rejected;
+
+			expect(proxy.requests).to.have.lengthOf(1);
+			expect(proxy.requests[0]).to.match(/^CONNECT id\.particle\.io:443 /);
+		});
+
+		it('prefers the profile proxyUrl over HTTPS_PROXY', async () => {
+			const profileProxy = await startProxy({ setEnv: false });
+			const envProxy = await startProxy();
+			settings.proxyUrl = profileProxy.url;
+
+			await expect(request()).to.be.rejected;
+
+			expect(profileProxy.requests).to.have.lengthOf(1);
+			expect(envProxy.requests).to.have.lengthOf(0);
 		});
 	});
 });

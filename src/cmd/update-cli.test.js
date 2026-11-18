@@ -158,6 +158,24 @@ describe('Update CLI Command', () => {
 				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
 			});
 		});
+		describe('profile proxyUrl', () => {
+			const originalProxyUrl = settings.proxyUrl;
+			let proxy;
+			beforeEach(async () => {
+				proxy = await startProxyRecorder({ setEnv: false });
+				settings.proxyUrl = proxy.url;
+			});
+			afterEach(async () => {
+				settings.proxyUrl = originalProxyUrl;
+				await proxy.close();
+			});
+			it('routes the request through the profile proxyUrl', async () => {
+				const update = new UpdateCLI();
+				await expect(update.downloadManifest()).to.be.rejectedWith('We were unable to check for updates Please try again later');
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			});
+		});
 	});
 
 	describe('downloadCLI', () => {
@@ -282,6 +300,31 @@ describe('Update CLI Command', () => {
 				await proxy.close();
 			});
 			it('routes the request through HTTPS_PROXY', async () => {
+				const update = new UpdateCLI();
+				const buildDetails = {
+					url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz',
+					sha256: '9cb63cb779e8c571db3199b783a36cc43cd9e7c076beeb496c39e9cc06196dc5'
+				};
+				sinon.stub(update, 'getBuildDetailsFromManifest').returns(buildDetails);
+				sinon.stub(update, 'unzipFile').resolves('/path/to/cli/particle-cli-1.2.3-linux-x64');
+				await expect(update.downloadCLI(buildDetails)).to.be.rejectedWith('Failed to download or verify the CLI, please try again later');
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			});
+		});
+
+		describe('profile proxyUrl', () => {
+			const originalProxyUrl = settings.proxyUrl;
+			let proxy;
+			beforeEach(async () => {
+				proxy = await startProxyRecorder({ setEnv: false });
+				settings.proxyUrl = proxy.url;
+			});
+			afterEach(async () => {
+				settings.proxyUrl = originalProxyUrl;
+				await proxy.close();
+			});
+			it('routes the request through the profile proxyUrl', async () => {
 				const update = new UpdateCLI();
 				const buildDetails = {
 					url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz',
