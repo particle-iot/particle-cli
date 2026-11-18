@@ -103,6 +103,9 @@
   "overrides": {
     "sha512crypt-node": {
       "mocha": "$mocha"
+    },
+    "@particle/unpack-file": {
+      "tar": "^7.5.23"
     }
   },
   "engines": {
