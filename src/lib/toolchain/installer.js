@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs-extra');
 const temp = require('temp').track();
 const fetch = require('node-fetch');
-const { unpackTarGz } = require('@particle/unpack-file');
+const tar = require('tar');
 const settings = require('../../../settings');
 const UI = require('../ui');
 const { displayName } = require('./manifest');
@@ -94,7 +94,7 @@ class ToolchainInstaller {
 			await fs.remove(root);
 			await fs.ensureDir(root);
 			await this.ui.showBusySpinnerUntilResolved(`Extracting ${displayName(dependency)} ...`,
-				unpackTarGz(tmpFile, root));
+				tar.x({ file: tmpFile, cwd: root, unlink: true }));
 			await fs.writeJson(this.receiptFor(dependency), {
 				name: dependency.name,
 				version: dependency.version,
