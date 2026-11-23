@@ -3,6 +3,7 @@ const settings = require('../../settings');
 const fs = require('fs-extra');
 const path = require('path');
 const fetch = require('node-fetch');
+const { getProxyAgent } = require('./http-proxy');
 const UI = require('./ui');
 const crypto = require('crypto');
 const { delay } = require('./utilities');
@@ -39,7 +40,7 @@ class DownloadManager {
 		const metadataUrl = `${settings.tachyonMeta}/${type}-${encodeURIComponent(version)}.json`;
 
 		try {
-			const response = await fetch(metadataUrl);
+			const response = await fetch(metadataUrl, { agent: getProxyAgent(metadataUrl, { proxyUrl: settings.proxyUrl }) });
 			if (!response.ok) {
 				if (response.status === 404) {
 					throw new Error('Version file not found. Please check the version number and try again.');
@@ -131,7 +132,7 @@ class DownloadManager {
 
 	async _validateCacheLimit({ url, currentFileName, alwaysCleanCache = false }) {
 		const maxCacheSizeGB = parseFloat(settings.tachyonCacheLimitGB);
-		const fileHeaders = await fetch(url, { method: 'HEAD' });
+		const fileHeaders = await fetch(url, { method: 'HEAD', agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl }) });
 
 		const contentLength = parseInt(fileHeaders.headers.get('content-length') || '0', 10);
 		// get the size of the download directory
@@ -208,7 +209,7 @@ class DownloadManager {
 		const controller = new AbortController();
 		const timeoutId = setTimeout(() => controller.abort(), timeout);
 		try {
-			const response = await fetch(url, { headers, signal: controller.signal });
+			const response = await fetch(url, { headers, signal: controller.signal, agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl }) });
 			clearTimeout(timeoutId);
 			if (!response.ok && response.status !== 206) {
 				throw new Error(`Unexpected response status: ${response.status}`);

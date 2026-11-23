@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs-extra');
 const temp = require('temp').track();
 const fetch = require('node-fetch');
+const { getProxyAgent } = require('../http-proxy');
 const tar = require('tar');
 const settings = require('../../../settings');
 const UI = require('../ui');
@@ -137,7 +138,7 @@ class ToolchainInstaller {
 			watchdog = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
 		};
 		try {
-			const response = await fetch(dependency.url, { signal: controller.signal });
+			const response = await fetch(dependency.url, { signal: controller.signal, agent: getProxyAgent(dependency.url, { proxyUrl: settings.proxyUrl }) });
 			if (!response.ok) {
 				throw new Error(`HTTP ${response.status} from ${dependency.url}`);
 			}
@@ -186,7 +187,7 @@ class ToolchainInstaller {
 
 	async _contentLength(url) {
 		try {
-			const response = await fetch(url, { method: 'HEAD' });
+			const response = await fetch(url, { method: 'HEAD', agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl }) });
 			return parseInt(response.headers.get('content-length') || '0', 10);
 		} catch (_error) {
 			return 0;

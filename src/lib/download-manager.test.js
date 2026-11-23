@@ -6,6 +6,8 @@ const fs = require('fs-extra');
 const path = require('path');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const UI = require('./ui');
+const settings = require('../../settings');
+const { startProxyRecorder } = require('../../test/lib/proxy-recorder');
 
 describe('DownloadManager', () => {
 	const originalEnv = process.env;
@@ -205,6 +207,51 @@ describe('DownloadManager', () => {
 			expect(fs.existsSync(tempFilePath)).to.be.false;
 			const content = fs.readFileSync(finalFilePath, 'utf8');
 			expect(content).to.equal(fileContent);
+		});
+	});
+
+	describe('proxy', () => {
+		const url = 'https://example.com/file.bin';
+		const originalProxyUrl = settings.proxyUrl;
+		let downloadManager, proxy;
+
+		beforeEach(() => {
+			const ui = sinon.createStubInstance(UI, { write: sinon.stub(), error: sinon.stub(), createProgressBar: sinon.stub() });
+			downloadManager = new DownloadManager(ui);
+		});
+
+		afterEach(async () => {
+			settings.proxyUrl = originalProxyUrl;
+			await proxy.close();
+		});
+
+		const makeRequests = async () => {
+			const progressFilePath = path.join(downloadManager.downloadDir, 'file.bin.progress');
+			const finalFilePath = path.join(downloadManager.downloadDir, 'file.bin');
+			await expect(downloadManager.fetchManifest({ version: 'stable' })).to.be.rejected;
+			// the HEAD only reads content-length, so the proxy's 502 doesn't fail it
+			await downloadManager._validateCacheLimit({ url, currentFileName: 'file.bin' });
+			await expect(downloadManager._attemptDownload(url, 'file.bin', progressFilePath, finalFilePath, 5000)).to.be.rejected;
+		};
+
+		const expectProxied = () => {
+			expect(proxy.requests).to.have.lengthOf(3);
+			expect(proxy.requests[0]).to.match(/^CONNECT linux-dist\.particle\.io:443 /);
+			expect(proxy.requests[1]).to.match(/^CONNECT example\.com:443 /);
+			expect(proxy.requests[2]).to.match(/^CONNECT example\.com:443 /);
+		};
+
+		it('routes the manifest, HEAD and download requests through HTTPS_PROXY', async () => {
+			proxy = await startProxyRecorder();
+			await makeRequests();
+			expectProxied();
+		});
+
+		it('routes the manifest, HEAD and download requests through the profile proxyUrl', async () => {
+			proxy = await startProxyRecorder({ setEnv: false });
+			settings.proxyUrl = proxy.url;
+			await makeRequests();
+			expectProxied();
 		});
 	});
 

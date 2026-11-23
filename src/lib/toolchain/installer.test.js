@@ -7,6 +7,8 @@ const { TarArchive } = require('archiver');
 const { expect, sinon } = require('../../../test/setup');
 const { PATH_TMP_DIR } = require('../../../test/lib/env');
 const UI = require('../ui');
+const settings = require('../../../settings');
+const { startProxyRecorder } = require('../../../test/lib/proxy-recorder');
 const { ToolchainInstaller, RECEIPT_FILE, formatSize } = require('./installer');
 
 const FAKE_MAKEFILE = '# fake buildscripts Makefile for tests\nversion = 0.0.1\ncompile-user:\n\t@echo compiled\n';
@@ -215,4 +217,39 @@ describe('Toolchain installer', () => {
 		expect(formatSize(425 * 1024 * 1024)).to.equal('425 MB');
 		expect(formatSize(1.8 * 1024 * 1024 * 1024)).to.equal('1.8 GB');
 	});
+	describe('proxy', () => {
+		const originalProxyUrl = settings.proxyUrl;
+		let proxy;
+
+		afterEach(async () => {
+			settings.proxyUrl = originalProxyUrl;
+			await proxy.close();
+		});
+
+		const makeRequests = async () => {
+			expect(await installer._contentLength(dependency.url)).to.equal(0);
+			await expect(installer._download(dependency, path.join(toolchainDir, 'download.tmp'))).to.be.rejected;
+		};
+
+		const expectProxied = () => {
+			expect(proxy.requests).to.have.lengthOf(2);
+			for (const request of proxy.requests) {
+				expect(request).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			}
+		};
+
+		it('routes the HEAD and download requests through HTTPS_PROXY', async () => {
+			proxy = await startProxyRecorder();
+			await makeRequests();
+			expectProxied();
+		});
+
+		it('routes the HEAD and download requests through the profile proxyUrl', async () => {
+			proxy = await startProxyRecorder({ setEnv: false });
+			settings.proxyUrl = proxy.url;
+			await makeRequests();
+			expectProxied();
+		});
+	});
+
 });
