@@ -8,6 +8,8 @@ const nock = require('nock');
 const log = require('../lib/log');
 const pkg = require('../../package');
 const os = require('os');
+const crypto = require('crypto');
+const { startProxyRecorder } = require('../../test/lib/proxy-recorder');
 
 describe('Update CLI Command', () => {
 	beforeEach(() => {
@@ -115,6 +117,65 @@ describe('Update CLI Command', () => {
 			await expect(update.downloadManifest()).to.be.rejectedWith('We were unable to check for updates Please try again later');
 			expect(log.error).to.have.been.calledWith('Unexpected token \'i\', "invalid json" is not valid JSON');
 		});
+		it('throws a version specific error if a specific manifest version is not found', async () => {
+			nock('https://binaries.particle.io')
+				.intercept('/particle-cli/manifest-9.9.9.json', 'GET')
+				.reply(403);
+			const update = new UpdateCLI();
+			await expect(update.downloadManifest('9.9.9')).to.be.rejectedWith('We were unable to check for updates: Version 9.9.9 not found');
+			expect(log.error).to.have.been.calledWith('Failed to download manifest: Status Code 403');
+		});
+		it('throws an error if the network request fails', async () => {
+			nock('https://binaries.particle.io')
+				.intercept('/particle-cli/manifest.json', 'GET')
+				.replyWithError('getaddrinfo ENOTFOUND binaries.particle.io');
+			const update = new UpdateCLI();
+			await expect(update.downloadManifest()).to.be.rejectedWith('We were unable to check for updates Please try again later');
+			expect(log.error).to.have.been.calledWith(sinon.match('getaddrinfo ENOTFOUND binaries.particle.io'));
+		});
+		it('follows redirects', async () => {
+			nock('https://binaries.particle.io')
+				.intercept('/particle-cli/manifest.json', 'GET')
+				.reply(302, '', { Location: 'https://binaries.particle.io/particle-cli/manifest-4.1.0.json' })
+				.intercept('/particle-cli/manifest-4.1.0.json', 'GET')
+				.reply(200, manifestData);
+			const update = new UpdateCLI();
+			const manifest = await update.downloadManifest();
+			expect(manifest).to.deep.equal(JSON.parse(manifestData));
+		});
+		describe('proxy', () => {
+			let proxy;
+			beforeEach(async () => {
+				proxy = await startProxyRecorder();
+			});
+			afterEach(async () => {
+				await proxy.close();
+			});
+			it('routes the request through HTTPS_PROXY', async () => {
+				const update = new UpdateCLI();
+				await expect(update.downloadManifest()).to.be.rejectedWith('We were unable to check for updates Please try again later');
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			});
+		});
+		describe('profile proxyUrl', () => {
+			const originalProxyUrl = settings.proxyUrl;
+			let proxy;
+			beforeEach(async () => {
+				proxy = await startProxyRecorder({ setEnv: false });
+				settings.proxyUrl = proxy.url;
+			});
+			afterEach(async () => {
+				settings.proxyUrl = originalProxyUrl;
+				await proxy.close();
+			});
+			it('routes the request through the profile proxyUrl', async () => {
+				const update = new UpdateCLI();
+				await expect(update.downloadManifest()).to.be.rejectedWith('We were unable to check for updates Please try again later');
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			});
+		});
 	});
 
 	describe('downloadCLI', () => {
@@ -172,6 +233,109 @@ describe('Update CLI Command', () => {
 				.reply(200, 'binary data');
 			await expect(update.downloadCLI(buildDetails)).to.be.rejectedWith('Failed to download or verify the CLI, please try again later');
 			expect(log.debug).to.have.been.calledWith('Failed during download or verification: Error: Hash mismatch');
+		});
+
+		it('writes the exact downloaded bytes before unzipping', async () => {
+			const update = new UpdateCLI();
+			const payload = Buffer.from([0x1f, 0x8b, 0x00, 0xff, 0x10, 0x80, 0x7f, 0x00]);
+			const buildDetails = {
+				url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz',
+				sha256: crypto.createHash('sha256').update(payload).digest('hex')
+			};
+			sinon.stub(update, 'getBuildDetailsFromManifest').returns(buildDetails);
+			let written;
+			sinon.stub(update, 'unzipFile').callsFake(async (gzPath, outPath) => {
+				written = await fs.readFile(gzPath);
+				return outPath;
+			});
+
+			nock('https://binaries.particle.io')
+				.intercept('/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz', 'GET')
+				.reply(200, payload);
+			const cliPath = await update.downloadCLI(buildDetails);
+			expect(cliPath).to.equal(path.join(os.tmpdir(), 'particle-cli-1.2.3-linux-x64'));
+			expect(written.equals(payload)).to.be.true;
+		});
+
+		it('follows redirects', async () => {
+			const update = new UpdateCLI();
+			const buildDetails = {
+				url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz',
+				sha256: '9cb63cb779e8c571db3199b783a36cc43cd9e7c076beeb496c39e9cc06196dc5'
+			};
+			sinon.stub(update, 'getBuildDetailsFromManifest').returns(buildDetails);
+			sinon.stub(update, 'unzipFile').resolves('/path/to/cli/particle-cli-1.2.3-linux-x64');
+
+			nock('https://binaries.particle.io')
+				.intercept('/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz', 'GET')
+				.reply(301, '', { Location: 'https://binaries.particle.io/cli/mirror/particle-cli-1.2.3-linux-x64.gz' })
+				.intercept('/cli/mirror/particle-cli-1.2.3-linux-x64.gz', 'GET')
+				.reply(200, 'binary data');
+			const cliPath = await update.downloadCLI(buildDetails);
+			expect(cliPath).to.equal('/path/to/cli/particle-cli-1.2.3-linux-x64');
+		});
+
+		it('throws an error if the network request fails', async () => {
+			const update = new UpdateCLI();
+			const buildDetails = {
+				url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz',
+				sha256: '9cb63cb779e8c571db3199b783a36cc43cd9e7c076beeb496c39e9cc06196dc5'
+			};
+			sinon.stub(update, 'getBuildDetailsFromManifest').returns(buildDetails);
+			sinon.stub(update, 'unzipFile').resolves('/path/to/cli/particle-cli-1.2.3-linux-x64');
+
+			nock('https://binaries.particle.io')
+				.intercept('/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz', 'GET')
+				.replyWithError('socket hang up');
+			await expect(update.downloadCLI(buildDetails)).to.be.rejectedWith('Failed to download or verify the CLI, please try again later');
+			expect(update.unzipFile).to.not.have.been.called;
+		});
+
+		describe('proxy', () => {
+			let proxy;
+			beforeEach(async () => {
+				proxy = await startProxyRecorder();
+			});
+			afterEach(async () => {
+				await proxy.close();
+			});
+			it('routes the request through HTTPS_PROXY', async () => {
+				const update = new UpdateCLI();
+				const buildDetails = {
+					url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz',
+					sha256: '9cb63cb779e8c571db3199b783a36cc43cd9e7c076beeb496c39e9cc06196dc5'
+				};
+				sinon.stub(update, 'getBuildDetailsFromManifest').returns(buildDetails);
+				sinon.stub(update, 'unzipFile').resolves('/path/to/cli/particle-cli-1.2.3-linux-x64');
+				await expect(update.downloadCLI(buildDetails)).to.be.rejectedWith('Failed to download or verify the CLI, please try again later');
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			});
+		});
+
+		describe('profile proxyUrl', () => {
+			const originalProxyUrl = settings.proxyUrl;
+			let proxy;
+			beforeEach(async () => {
+				proxy = await startProxyRecorder({ setEnv: false });
+				settings.proxyUrl = proxy.url;
+			});
+			afterEach(async () => {
+				settings.proxyUrl = originalProxyUrl;
+				await proxy.close();
+			});
+			it('routes the request through the profile proxyUrl', async () => {
+				const update = new UpdateCLI();
+				const buildDetails = {
+					url: 'https://binaries.particle.io/cli/manifest/1.2.3/particle-cli-1.2.3-linux-x64.gz',
+					sha256: '9cb63cb779e8c571db3199b783a36cc43cd9e7c076beeb496c39e9cc06196dc5'
+				};
+				sinon.stub(update, 'getBuildDetailsFromManifest').returns(buildDetails);
+				sinon.stub(update, 'unzipFile').resolves('/path/to/cli/particle-cli-1.2.3-linux-x64');
+				await expect(update.downloadCLI(buildDetails)).to.be.rejectedWith('Failed to download or verify the CLI, please try again later');
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			});
 		});
 	});
 

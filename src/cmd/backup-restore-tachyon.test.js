@@ -68,6 +68,32 @@ describe('BackupRestoreTachyonCommand', () => {
 		sinon.restore();
 	});
 
+	describe('backup archive', () => {
+		it('can be extracted by restore with every file intact', async () => {
+			const { compressDir } = require('../lib/utilities');
+			const source = path.join(dir, 'source');
+			const files = {
+				'nvdata.bin': Buffer.from(Array.from({ length: 70000 }, (_, i) => (i * 31) % 256)),
+				'backup-metadata.json': JSON.stringify({ deviceId: 'e00fce68' }),
+				'nested/deeper/fsg.bin': Buffer.alloc(4096, 7)
+			};
+			for (const [name, content] of Object.entries(files)) {
+				await fs.outputFile(path.join(source, name), content);
+			}
+
+			const { zipPath } = await compressDir({ pathToCompress: source, outputDir: dir, outputFile: 'backup.zip' });
+			const extracted = await command.extractZipFile(zipPath);
+
+			try {
+				for (const [name, content] of Object.entries(files)) {
+					expect((await fs.readFile(path.join(extracted, name))).equals(Buffer.from(content)), name).to.equal(true);
+				}
+			} finally {
+				await fs.remove(extracted);
+			}
+		});
+	});
+
 	describe('backup metadata', () => {
 		it('records geometry, size and digest for every captured partition', async () => {
 			const file = path.join(dir, 'e00fce68_modemst1.backup');

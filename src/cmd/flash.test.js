@@ -8,6 +8,8 @@ const FlashCommand = require('./flash');
 const BundleCommand = require('./bundle');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const deviceOsUtils = require('../lib/device-os-version-util');
+const settings = require('../../settings');
+const { startProxyRecorder } = require('../../test/lib/proxy-recorder');
 const { firmwareTestHelper, createAssetModule, ModuleInfo, HalModuleParser } = require('binary-version-reader');
 
 describe('FlashCommand', () => {
@@ -565,6 +567,37 @@ describe('FlashCommand', () => {
 			expect(error).to.exist;
 			expect(fs.existsSync(path.join(dir, 'fail-download.zip'))).to.be.false;
 			expect(fs.existsSync(path.join(dir, 'fail-download.zip.progress'))).to.be.false;
+		});
+
+		describe('proxy', () => {
+			const originalProxyUrl = settings.proxyUrl;
+			let proxy;
+
+			beforeEach(async () => {
+				process.cwd = () => PATH_TMP_DIR;
+				sinon.stub(flash.ui, 'write');
+				sinon.stub(flash.ui, 'createProgressBar').returns(null);
+			});
+
+			afterEach(async () => {
+				settings.proxyUrl = originalProxyUrl;
+				await proxy.close();
+			});
+
+			it('routes the download through HTTPS_PROXY', async () => {
+				proxy = await startProxyRecorder();
+				await expect(flash._downloadIfUrl('https://example.com/proxied.zip')).to.be.rejected;
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT example\.com:443 /);
+			});
+
+			it('routes the download through the profile proxyUrl', async () => {
+				proxy = await startProxyRecorder({ setEnv: false });
+				settings.proxyUrl = proxy.url;
+				await expect(flash._downloadIfUrl('https://example.com/proxied.zip')).to.be.rejected;
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT example\.com:443 /);
+			});
 		});
 	});
 });

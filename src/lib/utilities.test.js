@@ -312,6 +312,56 @@ describe('Utilities', () => {
 		});
 	});
 
+	describe('compressDir', () => {
+		const crypto = require('crypto');
+		const unzip = require('unzipper');
+		const workDir = path.join(PATH_TMP_DIR, 'compress-dir-under-test');
+		const source = path.join(workDir, 'source');
+
+		beforeEach(() => {
+			fs.rmSync(workDir, { recursive: true, force: true });
+			fs.mkdirSync(path.join(source, 'nested'), { recursive: true });
+			fs.writeFileSync(path.join(source, 'a.bin'), Buffer.alloc(5000, 1));
+			fs.writeFileSync(path.join(source, 'b.json'), '{"b":true}');
+			fs.writeFileSync(path.join(source, 'nested', 'c.bin'), Buffer.alloc(10, 2));
+		});
+
+		afterEach(() => {
+			fs.rmSync(workDir, { recursive: true, force: true });
+		});
+
+		async function entriesOf(zipPath) {
+			const directory = await unzip.Open.file(zipPath);
+			return directory.files.filter((f) => f.type === 'File').map((f) => f.path).sort();
+		}
+
+		it('zips the whole directory and reports its path, size and sha256', async () => {
+			const result = await util.compressDir({ pathToCompress: source, outputDir: workDir, outputFile: 'out.zip' });
+
+			const zipPath = path.join(workDir, 'out.zip');
+			const zip = fs.readFileSync(zipPath);
+			expect(result.zipPath).to.equal(zipPath);
+			expect(result.outputFile).to.equal('out.zip');
+			expect(result.totalBytes).to.equal(zip.length);
+			expect(result.sha256).to.equal(crypto.createHash('sha256').update(zip).digest('hex'));
+			expect(await entriesOf(zipPath)).to.eql(['a.bin', 'b.json', 'nested/c.bin']);
+		});
+
+		it('produces the same archive for the same content', async () => {
+			const first = await util.compressDir({ pathToCompress: source, outputDir: workDir, outputFile: 'first.zip' });
+			fs.utimesSync(path.join(source, 'a.bin'), new Date(), new Date(Date.now() + 60000));
+			const second = await util.compressDir({ pathToCompress: source, outputDir: workDir, outputFile: 'second.zip' });
+
+			expect(second.sha256).to.equal(first.sha256);
+		});
+
+		it('only zips the files matching the pattern', async () => {
+			const { zipPath } = await util.compressDir({ pattern: '**/*.bin', pathToCompress: source, outputDir: workDir, outputFile: 'out.zip' });
+
+			expect(await entriesOf(zipPath)).to.eql(['a.bin', 'nested/c.bin']);
+		});
+	});
+
 	describe('execName', () => {
 		it('returns the script name when executed as a regular script', () => {
 			expect(util.execName({

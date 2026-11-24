@@ -139,3 +139,64 @@ describe('tachyon setup steps', () => {
 		});
 	});
 });
+
+// The Tachyon system password is hashed into the /etc/shadow format with
+// SHA-512 crypt. Pin the library to the reference vectors from the SHA-crypt
+// specification so dependency changes can't silently alter hashes.
+describe('tachyon system password hash (sha512crypt)', () => {
+	const { encrypt: sha512crypt } = require('unixcrypt');
+
+	it('matches the SHA-crypt reference vector', () => {
+		expect(sha512crypt('Hello world!', '$6$saltstring'))
+			.to.equal('$6$saltstring$svn8UoSVapNtMuq1ukKS4tPQd8iKwSMHWjl/O817G3uBnIFNjnQJuesI68u4OTLiBFdcbYEdFCoEOfaS35inz1');
+	});
+
+	it('matches the SHA-crypt reference vector with custom rounds', () => {
+		expect(sha512crypt('Hello world!', '$6$rounds=10000$saltstringsaltstring'))
+			.to.equal('$6$rounds=10000$saltstringsaltst$OW1/O6BYHV6BcXZu8QVeXbDWra3Oeqh0sbHbbMCVNSnCM/UrjmM0Dp8vOuZeHBy/YTBmSK6H9qs/y3RnOaw5v.');
+	});
+
+	describe('_generateShadowCompatibleHash', () => {
+		const crypto = require('crypto');
+		// base64 of these bytes is `++++ABEiM/v/RFVm`, which exercises the
+		// `+` -> `.` salt translation and keeps a `/`
+		const FIXED_SALT_BYTES = Buffer.from('fbefbe00112233fbff445566', 'hex');
+
+		afterEach(() => {
+			sinon.restore();
+		});
+
+		it('hashes the password with a 12 byte random salt in crypt base64', () => {
+			sinon.stub(crypto, 'randomBytes').returns(FIXED_SALT_BYTES);
+
+			expect(steps._generateShadowCompatibleHash('particle-tachyon'))
+				.to.equal('$6$....ABEiM/v/RFVm$K70swnOEFWdqlFN1OltdcepzI9NDv61uLzEefEalsgap2mFmBDqrlGaxit8aU7C2g1PA/jc.AfuxOzcxwW9Eg.');
+			expect(crypto.randomBytes).to.have.been.calledOnceWith(12);
+		});
+
+		// Linux crypt(3) hashes the UTF-8 bytes of the password. Expected values
+		// were generated with passlib's sha512_crypt, an independent implementation
+		it('hashes the UTF-8 bytes of passwords with spaces, symbols and non-ascii characters', () => {
+			sinon.stub(crypto, 'randomBytes').returns(FIXED_SALT_BYTES);
+
+			expect(steps._generateShadowCompatibleHash('p@ss wörd!'))
+				.to.equal('$6$....ABEiM/v/RFVm$5flAyi7E.Zsw1x0QjhTglIM4Aeekt5h72RB42vXj/nCsSryVmY8AKU.ilEZ4OrbwJZ8C4Oj8Bc82M3rGwhFeC1');
+		});
+
+		it('hashes the UTF-8 bytes of passwords outside latin-1', () => {
+			sinon.stub(crypto, 'randomBytes').returns(FIXED_SALT_BYTES);
+
+			expect(steps._generateShadowCompatibleHash('€uro 日本'))
+				.to.equal('$6$....ABEiM/v/RFVm$n9ovM6sHeqpIgEF5wHpek3XILHx0Jg3TyA8k7pjkDRDqRIYdMS2B7V0mXh63zYq/GM611jOvERFRQakrn2iFQ0');
+		});
+
+		it('uses a different salt on each call', () => {
+			const first = steps._generateShadowCompatibleHash('particle-tachyon');
+			const second = steps._generateShadowCompatibleHash('particle-tachyon');
+
+			expect(first).to.match(/^\$6\$[A-Za-z0-9./]{16}\$[A-Za-z0-9./]{86}$/);
+			expect(second).to.match(/^\$6\$[A-Za-z0-9./]{16}\$[A-Za-z0-9./]{86}$/);
+			expect(first).to.not.equal(second);
+		});
+	});
+});

@@ -86,7 +86,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _downloadFile(url, finalFilePath, progressFilePath) {
 		const fetch = require('node-fetch');
-		const response = await fetch(url);
+		const { getProxyAgent } = require('../lib/http-proxy');
+		const response = await fetch(url, { agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl }) });
 
 		if (!response.ok) {
 			throw new Error(`Failed to download: ${response.status} ${response.statusText}`);

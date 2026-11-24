@@ -5,7 +5,7 @@ const fs = require('fs-extra');
 const temp = require('temp').track();
 const path = require('path');
 const settings = require('../../../settings');
-const { sha512crypt } = require('sha512crypt-node');
+const { encrypt: sha512crypt } = require('unixcrypt'); // SHA-512 crypt ($6$), pure JS
 const {
 	promptWifiNetworks,
 	prepareFlashFiles,
@@ -616,5 +616,6 @@ module.exports = {
 	createConfigBlobStep,
 	verifyConfigPartitionStep,
 	flashOSAndConfigStep,
-	setupCompletedStep
+	setupCompletedStep,
+	_generateShadowCompatibleHash
 };

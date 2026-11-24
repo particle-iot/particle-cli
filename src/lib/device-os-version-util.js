@@ -1,9 +1,12 @@
 'use strict';
-const { ensureFolder } = require('../../settings');
+const settings = require('../../settings');
+const { ensureFolder } = settings;
 const { platforms } = require('@particle/device-constants');
 const path = require('path');
 const os = require('os');
-const request = require('request');
+const fetch = require('node-fetch');
+const { pipeline } = require('stream/promises');
+const { getProxyAgent } = require('./http-proxy');
 const fs = require('fs-extra');
 const { HalModuleParser } = require('binary-version-reader');
 
@@ -122,43 +125,19 @@ async function downloadFile({ url, directory, filename }) {
 	filename = filename || url.match(/.*\/(.*)/)[1];
 	await fs.ensureDir(directory);
 	const filePath = path.join(directory, filename);
-	const file = fs.createWriteStream(filePath);
 	try {
-		await new Promise((resolve, reject) => {
-			file.on('error', (error) => {
-				reject(error);
-			});
-			// only resolve once the data has been flushed to disk. Resolving when the
-			// response ends leaves the file truncated for whoever reads it next
-			file.on('finish', () => {
-				resolve();
-			});
-			const req = request.get(url);
-			req.on('response', (response) => {
-				if (response.statusCode !== 200) {
-					req.abort();
-					reject(new Error('Failed to download file: ' + response.statusCode));
-					return;
-				}
-
-				response.on('error', (error) => {
-					reject(error);
-				});
-				response.pipe(file);
-			});
-
-			req.on('error', (err) => {
-				reject(err);
-			});
-		});
+		const response = await fetch(url, { agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl }) });
+		if (response.status !== 200) {
+			throw new Error('Failed to download file: ' + response.status);
+		}
+		// pipeline only resolves once the data has been flushed to disk. Resolving
+		// earlier leaves the file truncated for whoever reads it next
+		await pipeline(response.body, fs.createWriteStream(filePath));
 		return filename;
 	} catch (error) {
-		file.destroy();
-		await new Promise((resolve) => file.once('close', resolve));
 		await fs.remove(filePath);
 		throw error;
 	}
-
 }
 
 module.exports = {

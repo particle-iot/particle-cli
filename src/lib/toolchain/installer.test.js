@@ -3,10 +3,12 @@ const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs-extra');
 const nock = require('nock');
-const archiver = require('archiver');
+const { TarArchive } = require('archiver');
 const { expect, sinon } = require('../../../test/setup');
 const { PATH_TMP_DIR } = require('../../../test/lib/env');
 const UI = require('../ui');
+const settings = require('../../../settings');
+const { startProxyRecorder } = require('../../../test/lib/proxy-recorder');
 const { ToolchainInstaller, RECEIPT_FILE, formatSize } = require('./installer');
 
 const FAKE_MAKEFILE = '# fake buildscripts Makefile for tests\nversion = 0.0.1\ncompile-user:\n\t@echo compiled\n';
@@ -16,13 +18,41 @@ const URL_PATH = '/buildscripts/buildscripts-v0.0.1.tar.gz';
 function fakeTarball() {
 	return new Promise((resolve, reject) => {
 		const chunks = [];
-		const archive = archiver('tar', { gzip: true });
+		const archive = new TarArchive({ gzip: true });
 		archive.on('data', (chunk) => chunks.push(chunk));
 		archive.on('end', () => resolve(Buffer.concat(chunks)));
 		archive.on('error', reject);
 		archive.append(FAKE_MAKEFILE, { name: 'Makefile' });
 		archive.finalize();
 	});
+}
+
+// Build a .tar.gz by hand so tests can include entries that archiving tools
+// refuse to create, like `../escape.txt`
+function rawTarGz(entries) {
+	const blocks = [];
+	for (const { name, content, mode = 0o644 } of entries) {
+		const data = Buffer.from(content);
+		const header = Buffer.alloc(512);
+		header.write(name, 0, 100, 'utf8');
+		header.write(`${mode.toString(8).padStart(7, '0')}\0`, 100);
+		header.write('0000000\0', 108);
+		header.write('0000000\0', 116);
+		header.write(`${data.length.toString(8).padStart(11, '0')}\0`, 124);
+		header.write('00000000000\0', 136);
+		header.write('        ', 148);
+		header.write('0', 156);
+		header.write('ustar\0', 257);
+		header.write('00', 263);
+		let checksum = 0;
+		for (const byte of header) {
+			checksum += byte;
+		}
+		header.write(`${checksum.toString(8).padStart(6, '0')}\0 `, 148);
+		blocks.push(header, data, Buffer.alloc((512 - (data.length % 512)) % 512));
+	}
+	blocks.push(Buffer.alloc(1024));
+	return require('zlib').gzipSync(Buffer.concat(blocks));
 }
 
 describe('Toolchain installer', () => {
@@ -134,9 +164,92 @@ describe('Toolchain installer', () => {
 		expect(await fs.pathExists(installer.rootFor(dependency))).to.equal(false);
 	});
 
+	describe('unpacking', () => {
+		function serve(archive) {
+			dependency.sha256 = crypto.createHash('sha256').update(archive).digest('hex');
+			nock(HOST)
+				.head(URL_PATH).reply(200, '', { 'content-length': `${archive.length}` })
+				.get(URL_PATH).reply(200, archive, { 'content-length': `${archive.length}` });
+		}
+
+		it('unpacks nested directories and keeps executable permissions', async () => {
+			serve(rawTarGz([
+				{ name: 'bin/arm-none-eabi-gcc', content: '#!/bin/sh\necho gcc\n', mode: 0o755 },
+				{ name: 'share/doc/README', content: 'docs' }
+			]));
+
+			await installer.ensureInstalled([dependency]);
+
+			const root = installer.rootFor(dependency);
+			expect(await fs.readFile(path.join(root, 'bin/arm-none-eabi-gcc'), 'utf8')).to.equal('#!/bin/sh\necho gcc\n');
+			expect(await fs.readFile(path.join(root, 'share/doc/README'), 'utf8')).to.equal('docs');
+			if (process.platform !== 'win32') {
+				const mode = (await fs.stat(path.join(root, 'bin/arm-none-eabi-gcc'))).mode;
+				expect(mode & 0o111, 'executable bits').to.not.equal(0);
+			}
+		});
+
+		it('never writes outside the install directory for `..` entries', async () => {
+			serve(rawTarGz([
+				{ name: '../escape.txt', content: 'escaped' },
+				{ name: 'Makefile', content: FAKE_MAKEFILE }
+			]));
+
+			await installer.ensureInstalled([dependency]).catch(() => {});
+
+			const root = installer.rootFor(dependency);
+			expect(await fs.pathExists(path.join(root, '..', 'escape.txt'))).to.equal(false);
+		});
+
+		it('unpacks absolute path entries inside the install directory', async () => {
+			const outside = path.join(PATH_TMP_DIR, 'absolute-entry-under-test.txt');
+			await fs.remove(outside);
+			serve(rawTarGz([{ name: outside, content: 'absolute' }]));
+
+			await installer.ensureInstalled([dependency]).catch(() => {});
+
+			expect(await fs.pathExists(outside)).to.equal(false);
+		});
+	});
+
 	it('formats sizes for the download notice', () => {
 		expect(formatSize(183)).to.equal('1 KB');
 		expect(formatSize(425 * 1024 * 1024)).to.equal('425 MB');
 		expect(formatSize(1.8 * 1024 * 1024 * 1024)).to.equal('1.8 GB');
 	});
+	describe('proxy', () => {
+		const originalProxyUrl = settings.proxyUrl;
+		let proxy;
+
+		afterEach(async () => {
+			settings.proxyUrl = originalProxyUrl;
+			await proxy.close();
+		});
+
+		const makeRequests = async () => {
+			expect(await installer._contentLength(dependency.url)).to.equal(0);
+			await expect(installer._download(dependency, path.join(toolchainDir, 'download.tmp'))).to.be.rejected;
+		};
+
+		const expectProxied = () => {
+			expect(proxy.requests).to.have.lengthOf(2);
+			for (const request of proxy.requests) {
+				expect(request).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			}
+		};
+
+		it('routes the HEAD and download requests through HTTPS_PROXY', async () => {
+			proxy = await startProxyRecorder();
+			await makeRequests();
+			expectProxied();
+		});
+
+		it('routes the HEAD and download requests through the profile proxyUrl', async () => {
+			proxy = await startProxyRecorder({ setEnv: false });
+			settings.proxyUrl = proxy.url;
+			await makeRequests();
+			expectProxied();
+		});
+	});
+
 });

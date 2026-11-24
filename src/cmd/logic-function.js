@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const LogicFunction = require('../lib/logic-function');
-const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
+const logicFunctionTemplatePath = path.join(__dirname, '..', '..', 'assets', 'logicFunction');
 const CLICommandBase = require('./base');
 
 /**

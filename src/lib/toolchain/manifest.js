@@ -1,6 +1,8 @@
 'use strict';
 const os = require('os');
 const fetch = require('node-fetch');
+const settings = require('../../../settings');
+const { getProxyAgent } = require('../http-proxy');
 const ParticleCache = require('../particle-cache');
 
 // The toolchain manifest Workbench uses: one entry per Device OS version, each
@@ -137,7 +139,7 @@ async function fetchManifest({ cache = new ParticleCache(), url = MANIFEST_URL, 
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 	try {
-		const response = await fetch(url, { headers, signal: controller.signal });
+		const response = await fetch(url, { headers, signal: controller.signal, agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl }) });
 		if (response.status === 304 && cached) {
 			cache.set(MANIFEST_CACHE_KEY, { ...cached, fetchedAt: Date.now() });
 			return new ToolchainManifest(cached.data);

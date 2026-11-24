@@ -7,7 +7,9 @@ const semver = require('semver');
 const log = require('../lib/log');
 const chalk = require('chalk');
 const settings = require('../../settings');
-const request = require('request');
+const fetch = require('node-fetch');
+const { pipeline } = require('stream/promises');
+const { getProxyAgent } = require('../lib/http-proxy');
 const zlib = require('zlib');
 const Spinner = require('cli-spinner').Spinner;
 const crypto = require('crypto');
@@ -67,28 +69,29 @@ class UpdateCliCommand {
 	async downloadManifest(version) {
 		const fileName = version ? `manifest-${version}.json` : 'manifest.json';
 		const url = `https://${settings.manifestHost}/particle-cli/${fileName}`;
-		return new Promise((resolve, reject) => {
-			return request(url, (error, response, body) => {
-				if (error) {
-					return this.logAndReject(error, reject, version);
-				}
-				if (response.statusCode !== 200) {
-					return this.logAndReject(`Failed to download manifest: Status Code ${response.statusCode}`, reject, version);
-				}
-				try {
-					resolve(JSON.parse(body));
-				} catch (error) {
-					this.logAndReject(error, reject, version);
-				}
-			});
-		});
+		let body;
+		try {
+			const response = await fetch(url, { agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl }) });
+			if (response.status !== 200) {
+				return this.logAndReject(`Failed to download manifest: Status Code ${response.status}`, version);
+			}
+			body = await response.text();
+		} catch (error) {
+			return this.logAndReject(error, version);
+		}
+		try {
+			return JSON.parse(body);
+		} catch (error) {
+			return this.logAndReject(error, version);
+		}
 	}
 
-	logAndReject(error, reject, version) {
+	logAndReject(error, version) {
 		const baseMessage = 'We were unable to check for updates';
 		const message = version ? `${baseMessage}: Version ${version} not found` : `${baseMessage} Please try again later`;
 		log.error(error.message || error);
-		reject(message);
+		// rejects with a string, as callers and tests expect
+		return Promise.reject(message);
 	}
 
 	async downloadCLI(manifest, _os = os) {
@@ -99,30 +102,18 @@ class UpdateCliCommand {
 			const filePath = path.join(os.tmpdir(), fileNameWithoutLastExtension);
 			const tempFilePath = `${filePath}.gz`;
 
-			const output = fs.createWriteStream(tempFilePath);
+			const response = await fetch(url, { agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl }) });
+			if (response.status !== 200) {
+				log.debug(`Failed to download CLI: Status Code ${response.status}`);
+				throw new Error('No file found to download');
+			}
+			await pipeline(response.body, fs.createWriteStream(tempFilePath));
 
-			return await new Promise((resolve, reject) => {
-				request(url)
-					.on('response', (response) => {
-						if (response.statusCode !== 200) {
-							log.debug(`Failed to download CLI: Status Code ${response.statusCode}`);
-							return reject(new Error('No file found to download'));
-						}
-					})
-					.pipe(output)
-					.on('finish', async () => {
-						const fileHash = await this.getFileHash(tempFilePath);
-						if (fileHash === expectedHash) {
-							const unzipPath = await this.unzipFile(tempFilePath, filePath);
-							resolve(unzipPath);
-						} else {
-							reject(new Error('Hash mismatch'));
-						}
-					})
-					.on('error', (error) => {
-						reject(error);
-					});
-			});
+			const fileHash = await this.getFileHash(tempFilePath);
+			if (fileHash !== expectedHash) {
+				throw new Error('Hash mismatch');
+			}
+			return await this.unzipFile(tempFilePath, filePath);
 		} catch (error) {
 			log.debug(`Failed during download or verification: ${error}`);
 			throw new Error('Failed to download or verify the CLI, please try again later');

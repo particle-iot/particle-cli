@@ -5,6 +5,8 @@ const nock = require('nock');
 const { expect } = require('../../../test/setup');
 const { PATH_TMP_DIR, PATH_FIXTURES_DIR } = require('../../../test/lib/env');
 const ParticleCache = require('../particle-cache');
+const settings = require('../../../settings');
+const { startProxyRecorder } = require('../../../test/lib/proxy-recorder');
 const {
 	ToolchainManifest,
 	fetchManifest,
@@ -183,6 +185,31 @@ describe('Toolchain manifest', () => {
 		it('treats an HTTP error like being offline', async () => {
 			nock('https://binaries.particle.io').get('/toolchain-manager/manifest.json').reply(500);
 			await expect(fetchManifest({ cache })).to.be.rejectedWith('Could not download the toolchain manifest: HTTP 500');
+		});
+
+		describe('proxy', () => {
+			const originalProxyUrl = settings.proxyUrl;
+			let proxy;
+
+			afterEach(async () => {
+				settings.proxyUrl = originalProxyUrl;
+				await proxy.close();
+			});
+
+			it('routes the request through HTTPS_PROXY', async () => {
+				proxy = await startProxyRecorder();
+				await expect(fetchManifest({ cache })).to.be.rejectedWith('Could not download the toolchain manifest');
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			});
+
+			it('routes the request through the profile proxyUrl', async () => {
+				proxy = await startProxyRecorder({ setEnv: false });
+				settings.proxyUrl = proxy.url;
+				await expect(fetchManifest({ cache })).to.be.rejectedWith('Could not download the toolchain manifest');
+				expect(proxy.requests).to.have.lengthOf(1);
+				expect(proxy.requests[0]).to.match(/^CONNECT binaries\.particle\.io:443 /);
+			});
 		});
 
 		it('points at the public manifest by default', () => {

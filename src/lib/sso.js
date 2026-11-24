@@ -1,24 +1,25 @@
 'use strict';
-const request = require('request');
+const fetch = require('node-fetch');
+const querystring = require('querystring');
 const jose = require('jose');
 const openurl = require('./openurl');
 const settings = require('../../settings');
+const { getProxyAgent } = require('./http-proxy');
 const WAIT_BETWEEN_REQUESTS = 5000;
 
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const _makeRequest = async ({ url, method, form }) => {
-	return new Promise((resolve, reject) => {
-		const requestData = { url, method, form };
-
-		request(requestData, function cb(error, response, body) {
-			if (error) {
-				return reject(error);
-			}
-			return resolve(JSON.parse(body));
-		});
-
+	const response = await fetch(url, {
+		method,
+		// querystring encodes the same way `request` did (spaces as %20)
+		body: querystring.stringify(form),
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		agent: getProxyAgent(url, { proxyUrl: settings.proxyUrl })
 	});
+	// OAuth errors such as `authorization_pending` come with a 4xx status and a
+	// JSON body the caller needs, so the body is parsed regardless of status
+	return JSON.parse(await response.text());
 };
 
 const _getKeySet = (url) => {

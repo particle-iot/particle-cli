@@ -10,7 +10,7 @@ const childProcess = require('child_process');
 const { PLATFORMS } = require('./platform');
 const log = require('./log');
 const { DeviceProtectionError } = require('particle-usb');
-const archiver = require('archiver');
+const { ZipArchive } = require('archiver');
 const { createHash } = require('crypto');
 
 module.exports = {
@@ -440,7 +440,7 @@ module.exports = {
 	compressDir({ pattern, pathToCompress, outputDir, outputFile }) {
 		const outputFilePath = path.join(outputDir, outputFile);
 		const output = fs.createWriteStream(outputFilePath);
-		const archive = archiver('zip', {
+		const archive = new ZipArchive({
 			zlib: { level: 9 } // Sets the compression level.
 		});
 		archive.pipe(output);
